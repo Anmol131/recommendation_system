@@ -16,12 +16,13 @@ app.get('/', (req, res) => {
   res.json({ message: '🚀 Recommendation Platform API is running!' });
 });
 
-// Routes (will add soon)
-// app.use('/api/movies', require('./routes/movieRoutes'));
-// app.use('/api/books',  require('./routes/bookRoutes'));
-// app.use('/api/games',  require('./routes/gameRoutes'));
-// app.use('/api/music',  require('./routes/musicRoutes'));
-// app.use('/api/auth',   require('./routes/authRoutes'));
+// Routes for authentication, movies, books, games, music, and user profile
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/movies', require('./routes/movieRoutes'));
+app.use('/api/books', require('./routes/bookRoutes'));
+app.use('/api/games', require('./routes/gameRoutes'));
+app.use('/api/music', require('./routes/musicRoutes'));
+app.use('/api/user', require('./routes/userRoutes'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
