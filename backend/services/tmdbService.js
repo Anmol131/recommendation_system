@@ -16,6 +16,7 @@ async function searchMovies(query) {
       },
     });
 
+    console.log('[TMDB] total_results:', response.data.total_results);
     const results = response.data.results || [];
 
     const mapped = results.map((r) => ({
@@ -31,15 +32,19 @@ async function searchMovies(query) {
       enriched: true,
     }));
 
-    await Promise.all(
-      mapped.map((movie) =>
-        Movie.findOneAndUpdate(
-          { tmdbId: movie.tmdbId },
-          { $set: movie },
-          { upsert: true, new: true, setDefaultsOnInsert: true }
-        )
-      )
+ await Promise.all(
+  mapped.map((movie) => {
+    const { movieId, ...rest } = movie;
+    return Movie.findOneAndUpdate(
+      { tmdbId: movie.tmdbId },
+      { 
+        $set: rest,
+        $setOnInsert: { movieId }
+      },
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
+  })
+);
 
     return mapped;
   } catch (err) {
@@ -79,7 +84,7 @@ async function getMovieDetails(tmdbId) {
     const movie = await Movie.findOneAndUpdate(
       { tmdbId },
       { $set: update },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
 
     return movie;

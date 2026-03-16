@@ -7,32 +7,36 @@ const SPOTIFY_BASE_URL = process.env.SPOTIFY_BASE_URL || 'https://api.spotify.co
 
 // In-memory token cache
 let cachedToken = null;
-let tokenExpiresAt = 0;
+let tokenExpiry = 0;
 
 async function getSpotifyToken() {
-  if (cachedToken && Date.now() < tokenExpiresAt) {
+  if (cachedToken && Date.now() < tokenExpiry - 60000) {
     return cachedToken;
   }
 
-  const credentials = Buffer.from(
-    `${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`
-  ).toString('base64');
+  try {
+    const credentials = Buffer.from(
+      `${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`
+    ).toString('base64');
 
-  const response = await axios.post(
-    'https://accounts.spotify.com/api/token',
-    'grant_type=client_credentials',
-    {
-      headers: {
-        Authorization: `Basic ${credentials}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    }
-  );
+    const response = await axios.post(
+      'https://accounts.spotify.com/api/token',
+      'grant_type=client_credentials',
+      {
+        headers: {
+          Authorization: `Basic ${credentials}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      }
+    );
 
-  cachedToken = response.data.access_token;
-  // Subtract 5s to avoid using a token right as it expires
-  tokenExpiresAt = Date.now() + response.data.expires_in * 1000 - 5000;
-  return cachedToken;
+    cachedToken = response.data.access_token;
+    tokenExpiry = Date.now() + (response.data.expires_in * 1000);
+    return cachedToken;
+  } catch (err) {
+    console.error('[Spotify] Token error body:', err.response?.data);
+    throw err;
+  }
 }
 
 function mapTrack(track) {
@@ -71,7 +75,7 @@ async function searchTracks(query) {
         Music.findOneAndUpdate(
           { trackId: track.trackId },
           { $set: track },
-          { upsert: true, new: true, setDefaultsOnInsert: true }
+          { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
         )
       )
     );
@@ -96,7 +100,7 @@ async function getTrackDetails(trackId) {
     const track = await Music.findOneAndUpdate(
       { trackId: mapped.trackId },
       { $set: mapped },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
 
     return track;

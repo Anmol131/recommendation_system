@@ -7,18 +7,16 @@ const MediaCard = ({ item, type = 'movie' }) => {
 
   // Determine image source based on type
   const getImage = () => {
-    switch (type) {
-      case 'movie':
-        return item.poster || null;
-      case 'book':
-        return item.cover || null;
-      case 'game':
-        return item.image || null;
-      case 'music':
-        return item.cover || null;
-      default:
-        return null;
-    }
+    return (
+      item.posterPath ||
+      item.poster ||
+      item.albumArt ||
+      item.thumbnail ||
+      item.coverImage ||
+      item.cover ||
+      item.image ||
+      null
+    );
   };
 
   // Get initials for placeholder

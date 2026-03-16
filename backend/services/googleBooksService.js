@@ -44,7 +44,11 @@ async function searchBooks(query) {
       },
     });
 
-    const items = response.data.items || [];
+    if (!response.data.items || response.data.items.length === 0) {
+      console.warn('[GoogleBooks] No results for query:', query);
+      return [];
+    }
+    const items = response.data.items;
     const mapped = items.map(mapVolumeToBook).filter(Boolean);
 
     await Promise.all(
@@ -52,7 +56,7 @@ async function searchBooks(query) {
         Book.findOneAndUpdate(
           { isbn: book.isbn },
           { $set: book },
-          { upsert: true, new: true, setDefaultsOnInsert: true }
+          { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
         )
       )
     );
@@ -82,7 +86,7 @@ async function getBookDetails(isbn) {
     const book = await Book.findOneAndUpdate(
       { isbn: mapped.isbn },
       { $set: mapped },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
 
     return book;

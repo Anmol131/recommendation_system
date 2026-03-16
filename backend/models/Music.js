@@ -4,8 +4,7 @@ const musicSchema = new mongoose.Schema(
 	{
 		trackId: {
 			type: String,
-			unique: true,
-			index: true,
+			sparse: true,
 		},
 		title: String,
 		artist: String,
@@ -29,6 +28,21 @@ const musicSchema = new mongoose.Schema(
 		enriched: {
 			type: Boolean,
 			default: false,
+		},
+		lastfmId: {
+			type: String,
+			sparse: true,
+		},
+		lastfmUrl: {
+			type: String,
+		},
+		albumArt: {
+			type: String,
+			default: null,
+		},
+		genres: {
+			type: [String],
+			default: [],
 		},
 	},
 	{

@@ -19,7 +19,7 @@ const Navbar = () => {
   };
 
   const tabs = [
-    { id: 'all', label: 'All', type: null },
+    { id: 'all', label: 'Home', type: null },
     { id: 'movies', label: 'Movies', type: 'movies' },
     { id: 'books', label: 'Books', type: 'books' },
     { id: 'games', label: 'Games', type: 'games' },
@@ -44,8 +44,7 @@ const Navbar = () => {
           <div
             onClick={() => navigate('/')}
             className="text-2xl font-bold bg-gradient-to-r from-primary to-primaryDark bg-clip-text text-transparent cursor-pointer hover:opacity-80 transition whitespace-nowrap glow-purple"
-          >
-            AI Recommender
+          >Vibeify
           </div>
 
           {/* Search */}
@@ -111,7 +110,7 @@ const Navbar = () => {
       </div>
 
       {/* Tab navigation */}
-      <div className="px-6 py-4 border-t border-surface2 flex gap-8 overflow-x-auto hide-scrollbar">
+      <div className="px-6 py-4 border-t border-surface2 flex justify-center gap-8 overflow-x-auto hide-scrollbar">
         {tabs.map((tab) => (
           <button
             key={tab.id}

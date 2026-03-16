@@ -82,10 +82,10 @@ function SearchPage() {
         ]);
 
         const nextBuckets = {
-          movies: responses[0].status === 'fulfilled' ? responses[0].value.data || [] : [],
-          books: responses[1].status === 'fulfilled' ? responses[1].value.data || [] : [],
-          games: responses[2].status === 'fulfilled' ? responses[2].value.data || [] : [],
-          music: responses[3].status === 'fulfilled' ? responses[3].value.data || [] : [],
+          movies: responses[0].status === 'fulfilled' ? responses[0].value.data?.items ?? responses[0].value.data ?? [] : [],
+          books: responses[1].status === 'fulfilled' ? responses[1].value.data?.items ?? responses[1].value.data ?? [] : [],
+          games: responses[2].status === 'fulfilled' ? responses[2].value.data?.items ?? responses[2].value.data ?? [] : [],
+          music: responses[3].status === 'fulfilled' ? responses[3].value.data?.items ?? responses[3].value.data ?? [] : [],
         };
 
         setResultBuckets(nextBuckets);
