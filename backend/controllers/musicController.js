@@ -1,4 +1,5 @@
 const Music = require('../models/Music');
+const { searchTracksWithFallback, getTrackDetails } = require('../services/spotifyService');
 
 const getMusic = async (req, res) => {
 	try {
@@ -44,14 +45,9 @@ const searchMusic = async (req, res) => {
 			return res.status(400).json({ success: false, message: 'Search query q is required' });
 		}
 
-		const tracks = await Music.find(
-			{ $text: { $search: q } },
-			{ score: { $meta: 'textScore' } }
-		)
-			.sort({ score: { $meta: 'textScore' } })
-			.limit(20);
+		const results = await searchTracksWithFallback(q);
 
-		return res.status(200).json({ success: true, data: tracks });
+		return res.status(200).json({ success: true, data: results });
 	} catch (error) {
 		return res.status(500).json({ success: false, message: 'Failed to search music' });
 	}
@@ -60,8 +56,17 @@ const searchMusic = async (req, res) => {
 const getMusicByTrackId = async (req, res) => {
 	try {
 		const { trackId } = req.params;
-		const track = await Music.findOne({ trackId });
+		let track = await Music.findOne({ trackId });
 
+		if (track) {
+			if (!track.enriched) {
+				track = await getTrackDetails(trackId);
+			}
+			return res.status(200).json({ success: true, data: track });
+		}
+
+		// Not in DB — fetch from Spotify
+		track = await getTrackDetails(trackId);
 		if (!track) {
 			return res.status(404).json({ success: false, message: 'Music track not found' });
 		}

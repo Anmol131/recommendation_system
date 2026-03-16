@@ -1,4 +1,5 @@
 const Book = require('../models/Book');
+const { searchBooksWithFallback, getBookDetails } = require('../services/googleBooksService');
 
 const getBooks = async (req, res) => {
 	try {
@@ -48,14 +49,9 @@ const searchBooks = async (req, res) => {
 			return res.status(400).json({ success: false, message: 'Search query q is required' });
 		}
 
-		const books = await Book.find(
-			{ $text: { $search: q } },
-			{ score: { $meta: 'textScore' } }
-		)
-			.sort({ score: { $meta: 'textScore' } })
-			.limit(20);
+		const results = await searchBooksWithFallback(q);
 
-		return res.status(200).json({ success: true, data: books });
+		return res.status(200).json({ success: true, data: results });
 	} catch (error) {
 		return res.status(500).json({ success: false, message: 'Failed to search books' });
 	}
@@ -64,8 +60,17 @@ const searchBooks = async (req, res) => {
 const getBookByIsbn = async (req, res) => {
 	try {
 		const { isbn } = req.params;
-		const book = await Book.findOne({ isbn });
+		let book = await Book.findOne({ isbn });
 
+		if (book) {
+			if (!book.enriched) {
+				book = await getBookDetails(isbn);
+			}
+			return res.status(200).json({ success: true, data: book });
+		}
+
+		// Not in DB — fetch from Google Books
+		book = await getBookDetails(isbn);
 		if (!book) {
 			return res.status(404).json({ success: false, message: 'Book not found' });
 		}

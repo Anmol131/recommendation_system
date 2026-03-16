@@ -1,4 +1,5 @@
 const Movie = require('../models/Movie');
+const { searchMoviesWithFallback, getMovieDetails } = require('../services/tmdbService');
 
 const getMovies = async (req, res) => {
 	try {
@@ -48,14 +49,9 @@ const searchMovies = async (req, res) => {
 			return res.status(400).json({ success: false, message: 'Search query q is required' });
 		}
 
-		const movies = await Movie.find(
-			{ $text: { $search: q } },
-			{ score: { $meta: 'textScore' } }
-		)
-			.sort({ score: { $meta: 'textScore' } })
-			.limit(20);
+		const results = await searchMoviesWithFallback(q);
 
-		return res.status(200).json({ success: true, data: movies });
+		return res.status(200).json({ success: true, data: results });
 	} catch (error) {
 		return res.status(500).json({ success: false, message: 'Failed to search movies' });
 	}
@@ -69,8 +65,17 @@ const getMovieById = async (req, res) => {
 			return res.status(400).json({ success: false, message: 'Invalid movie id' });
 		}
 
-		const movie = await Movie.findOne({ movieId });
+		let movie = await Movie.findOne({ movieId });
 
+		if (movie) {
+			if (!movie.enriched && movie.tmdbId) {
+				movie = await getMovieDetails(movie.tmdbId);
+			}
+			return res.status(200).json({ success: true, data: movie });
+		}
+
+		// Not in DB — treat the route param as a tmdbId
+		movie = await getMovieDetails(movieId);
 		if (!movie) {
 			return res.status(404).json({ success: false, message: 'Movie not found' });
 		}
