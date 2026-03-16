@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
+import { FaSpotify, FaYoutube } from 'react-icons/fa';
 import { FiExternalLink, FiLoader, FiMusic } from 'react-icons/fi';
 import { useParams } from 'react-router-dom';
 import HorizontalScroll from '../components/HorizontalScroll';
+import ShareButton from '../components/ShareButton';
+import UserRating from '../components/UserRating';
 import * as endpoints from '../api/endpoints';
 
 function getInitials(value) {
@@ -40,17 +43,23 @@ function MusicDetailPage() {
 
         const fallbackResponse = await endpoints.searchMusic(trackId);
         const fallbackMatch = (fallbackResponse.data || []).find(
-          (item) => String(item.trackId) === String(trackId)
+          (item) =>
+            String(item.trackId) === String(trackId) ||
+            String(item._id) === String(trackId) ||
+            String(item.lastfmId) === String(trackId)
         );
         setTrack(fallbackMatch || null);
-      } catch (error) {
+      } catch {
         try {
           const fallbackResponse = await endpoints.searchMusic(trackId);
           const fallbackMatch = (fallbackResponse.data || []).find(
-            (item) => String(item.trackId) === String(trackId)
+            (item) =>
+              String(item.trackId) === String(trackId) ||
+              String(item._id) === String(trackId) ||
+              String(item.lastfmId) === String(trackId)
           );
           setTrack(fallbackMatch || null);
-        } catch (fallbackError) {
+        } catch {
           setTrack(null);
         }
       } finally {
@@ -63,7 +72,8 @@ function MusicDetailPage() {
 
   useEffect(() => {
     const loadMore = async () => {
-      if (!track?.artist) {
+      const artistName = track?.artist || track?.artistName;
+      if (!artistName) {
         setMoreTracks([]);
         setMoreLoading(false);
         return;
@@ -71,10 +81,14 @@ function MusicDetailPage() {
 
       setMoreLoading(true);
       try {
-        const response = await endpoints.searchMusic(track.artist);
-        const filtered = (response.data || []).filter((item) => item.trackId !== track.trackId);
+        const response = await endpoints.searchMusic(artistName);
+        const currentTrackId = track?._id || track?.trackId || track?.lastfmId;
+        const filtered = (response.data || []).filter((item) => {
+          const itemId = item._id || item.trackId || item.lastfmId;
+          return String(itemId) !== String(currentTrackId);
+        });
         setMoreTracks(filtered.slice(0, 8));
-      } catch (error) {
+      } catch {
         setMoreTracks([]);
       } finally {
         setMoreLoading(false);
@@ -99,30 +113,46 @@ function MusicDetailPage() {
     return <div className="px-6 py-24 text-center text-muted">Track not found.</div>;
   }
 
+  const title = track?.title || track?.name || 'Unknown Title';
+  const artist = track?.artist || track?.artistName || 'Unknown artist';
+  const album = track?.album || track?.albumName || 'Unknown album';
+  const albumArt = track?.albumArt || track?.image || track?.cover || null;
+  const duration = track?.duration || track?.durationSec || track?.durationMs || null;
+  const trackIdentity = track?._id || track?.trackId || track?.lastfmId;
+  const rawPopularity = Number(track?.popularity || 0);
+  const popularityPercent = Math.min(Math.round((rawPopularity / 2000000) * 100), 100);
+  const popularityLabel = rawPopularity > 1000
+    ? `${(rawPopularity / 1000).toFixed(0)}K listeners`
+    : `${rawPopularity} listeners`;
+
+  const youtubeMusicVideoUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${title} ${artist} official music video`.trim()).replace(/%20/g, '+')}`;
+  const youtubeLyricsUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${title} ${artist} lyrics`.trim()).replace(/%20/g, '+')}`;
+  const spotifyUrl = track.spotifyUrl || `https://open.spotify.com/search/${encodeURIComponent(`${title} ${artist}`.trim()).replace(/%20/g, '+')}`;
+
   return (
     <div className="px-6 py-8 sm:px-8 lg:px-10">
       <section className="grid gap-8 lg:grid-cols-5">
         <div className="lg:col-span-2">
-          {track.cover ? (
+          {albumArt ? (
             <img
-              src={track.cover}
-              alt={track.title}
+              src={albumArt}
+              alt={title}
               className="aspect-square w-full rounded-xl border border-surface2 object-cover shadow-[0_0_35px_rgba(184,169,245,0.35)]"
             />
           ) : (
             <div className="flex aspect-square w-full items-center justify-center rounded-xl bg-gradient-to-br from-primaryDark to-primary text-6xl font-bold text-bg shadow-[0_0_35px_rgba(184,169,245,0.35)]">
               <div className="flex flex-col items-center gap-3">
                 <FiMusic size={60} />
-                <span className="text-xl">{getInitials(track.title)}</span>
+                <span className="text-xl">{getInitials(title)}</span>
               </div>
             </div>
           )}
         </div>
 
         <div className="lg:col-span-3">
-          <h1 className="text-4xl font-bold text-white">{track.title}</h1>
-          <p className="mt-2 text-lg text-muted">{track.artist || 'Unknown artist'}</p>
-          <p className="mt-1 text-sm text-muted">💿 Album: {track.album || 'Unknown album'}</p>
+          <h1 className="text-4xl font-bold text-white">{title}</h1>
+          <p className="mt-2 text-lg text-muted">{artist}</p>
+          <p className="mt-1 text-sm text-muted">💿 Album: {album}</p>
 
           <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
             {track.genre && (
@@ -136,17 +166,17 @@ function MusicDetailPage() {
           <div className="mt-6 max-w-xl">
             <div className="mb-2 flex items-center justify-between text-sm text-muted">
               <span>Popularity</span>
-              <span>{track.popularity || 0}%</span>
+              <span>{popularityLabel}</span>
             </div>
             <div className="h-3 w-full rounded-full bg-surface2">
               <div
                 className="h-3 rounded-full bg-primary"
-                style={{ width: `${Math.min(Number(track.popularity || 0), 100)}%` }}
+                style={{ width: `${popularityPercent}%` }}
               />
             </div>
           </div>
 
-          <p className="mt-5 text-sm text-muted">Duration: {formatDuration(track.durationSec)}</p>
+          <p className="mt-5 text-sm text-muted">Duration: {duration ? formatDuration(duration) : 'N/A'}</p>
 
           {track.previewUrl && (
             <div className="mt-5 max-w-xl rounded-xl border border-surface2 bg-surface2 p-3">
@@ -158,33 +188,51 @@ function MusicDetailPage() {
             </div>
           )}
 
-          {track.spotifyUrl && (
-            <div className="mt-6">
+          <div className="mt-8">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-primary">Actions</h2>
+            <div className="flex flex-wrap gap-2">
               <a
-                href={track.spotifyUrl}
+                href={youtubeMusicVideoUrl}
                 target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl bg-[#1DB954] px-4 py-3 font-semibold text-white transition hover:opacity-90"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#FF0000] px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
               >
-                Open in Spotify
-                <FiExternalLink />
+                <FaYoutube />
+                Music Video
               </a>
-            </div>
-          )}
-
-          {!track.previewUrl && !track.spotifyUrl && (
-            <div className="mt-6">
               <a
-                href={`https://open.spotify.com/track/${track.trackId}`}
+                href={youtubeLyricsUrl}
                 target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-surface2 px-4 py-3 font-semibold text-primary transition hover:text-white"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg border border-[#FF3C3C] bg-[#B31217] px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
               >
-                Full track on Spotify
-                <FiExternalLink />
+                <FaYoutube />
+                Lyrics Video
               </a>
+              <a
+                href={spotifyUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#1DB954] px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
+              >
+                <FaSpotify />
+                Open Spotify
+              </a>
+              {track.lastfmUrl && (
+                <a
+                  href={track.lastfmUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#d51007] px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
+                >
+                  Last.fm
+                  <FiExternalLink size={14} />
+                </a>
+              )}
+              <ShareButton />
+              <UserRating itemType="music" itemId={trackIdentity} />
             </div>
-          )}
+          </div>
         </div>
       </section>
 

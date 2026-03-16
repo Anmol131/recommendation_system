@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FaApple, FaLinux, FaMobileAlt, FaWindows } from 'react-icons/fa';
+import { FaApple, FaGooglePlay, FaLinux, FaMobileAlt, FaSteam, FaWindows, FaYoutube } from 'react-icons/fa';
 import { FiMonitor, FiStar } from 'react-icons/fi';
 import { useParams } from 'react-router-dom';
 import HorizontalScroll from '../components/HorizontalScroll';
+import ShareButton from '../components/ShareButton';
+import UserRating from '../components/UserRating';
 import * as endpoints from '../api/endpoints';
 
 function getInitials(value) {
@@ -20,6 +22,25 @@ function GameDetailPage() {
   const [similarGames, setSimilarGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [similarLoading, setSimilarLoading] = useState(true);
+  const youtubeTrailerUrl = useMemo(() => {
+    const query = `${game?.title || ''} official trailer gameplay`.trim();
+    return `https://www.youtube.com/results?search_query=${encodeURIComponent(query).replace(/%20/g, '+')}`;
+  }, [game?.title]);
+
+  const steamUrl = useMemo(() => {
+    if (!game || game.platform !== 'pc') {
+      return '';
+    }
+    return `https://store.steampowered.com/app/${game.gameId}`;
+  }, [game]);
+
+  const googlePlayUrl = useMemo(() => {
+    if (!game || game.platform !== 'mobile') {
+      return '';
+    }
+    const query = `${game.title || ''}`.trim();
+    return `https://play.google.com/store/search?q=${encodeURIComponent(query).replace(/%20/g, '+')}&c=apps`;
+  }, [game]);
 
   useEffect(() => {
     const loadGame = async () => {
@@ -27,7 +48,7 @@ function GameDetailPage() {
       try {
         const response = await endpoints.getGameById(gameId);
         setGame(response.data || null);
-      } catch (error) {
+      } catch {
         setGame(null);
       } finally {
         setLoading(false);
@@ -56,7 +77,7 @@ function GameDetailPage() {
 
         const filtered = (response.data.items || []).filter((item) => item.gameId !== game.gameId);
         setSimilarGames(filtered.slice(0, 8));
-      } catch (error) {
+      } catch {
         setSimilarGames([]);
       } finally {
         setSimilarLoading(false);
@@ -177,6 +198,45 @@ function GameDetailPage() {
               </div>
             </div>
           )}
+
+          <div className="mt-8">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-primary">Actions</h2>
+            <div className="flex flex-wrap gap-2">
+              <a
+                href={youtubeTrailerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#FF0000] px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
+              >
+                <FaYoutube />
+                Watch on YouTube
+              </a>
+              {game.platform === 'pc' && (
+                <a
+                  href={steamUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#1b2838] px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
+                >
+                  <FaSteam />
+                  View on Steam
+                </a>
+              )}
+              {game.platform === 'mobile' && (
+                <a
+                  href={googlePlayUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#1FA463] px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
+                >
+                  <FaGooglePlay />
+                  Google Play
+                </a>
+              )}
+              <ShareButton />
+              <UserRating itemType="game" itemId={game.gameId} />
+            </div>
+          </div>
         </div>
       </section>
 

@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
+import { FaAmazon, FaBook, FaYoutube } from 'react-icons/fa';
 import { FiExternalLink, FiStar } from 'react-icons/fi';
 import { useParams } from 'react-router-dom';
 import HorizontalScroll from '../components/HorizontalScroll';
+import ShareButton from '../components/ShareButton';
+import UserRating from '../components/UserRating';
 import * as endpoints from '../api/endpoints';
 
 function getInitials(value) {
@@ -37,7 +40,7 @@ function BookDetailPage() {
       try {
         const response = await endpoints.getBookByIsbn(isbn);
         setBook(response.data || null);
-      } catch (error) {
+      } catch {
         setBook(null);
       } finally {
         setLoading(false);
@@ -61,7 +64,7 @@ function BookDetailPage() {
         const response = await endpoints.searchBooks(query);
         const filtered = (response.data || []).filter((item) => item.isbn !== book.isbn);
         setSimilarBooks(filtered.slice(0, 8));
-      } catch (error) {
+      } catch {
         setSimilarBooks([]);
       } finally {
         setSimilarLoading(false);
@@ -78,6 +81,11 @@ function BookDetailPage() {
   if (!book) {
     return <div className="px-6 py-24 text-center text-muted">Book not found.</div>;
   }
+
+  const goodreadsUrl = `https://www.goodreads.com/search?q=${encodeURIComponent(book.isbn || '').replace(/%20/g, '+')}`;
+  const amazonUrl = `https://www.amazon.com/s?k=${encodeURIComponent(book.isbn || '').replace(/%20/g, '+')}`;
+  const youtubeReviewUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${book.title || ''} ${book.author || ''} book review`.trim()).replace(/%20/g, '+')}`;
+  const googleBooksUrl = `https://books.google.com/books?vid=ISBN${book.isbn}`;
 
   return (
     <div className="px-6 py-8 sm:px-8 lg:px-10">
@@ -129,16 +137,48 @@ function BookDetailPage() {
             )}
           </div>
 
-          <div className="mt-6">
-            <a
-              href={`https://books.google.com/books?vid=ISBN${book.isbn}`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-3 font-semibold text-bg transition hover:bg-primaryDark"
-            >
-              Find on Google Books
-              <FiExternalLink />
-            </a>
+          <div className="mt-8">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-primary">Actions</h2>
+            <div className="flex flex-wrap gap-2">
+              <a
+                href={googleBooksUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-bg transition hover:brightness-110"
+              >
+                Find on Google Books
+                <FiExternalLink size={14} />
+              </a>
+              <a
+                href={goodreadsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#b6906b] px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
+              >
+                <FaBook />
+                Goodreads
+              </a>
+              <a
+                href={amazonUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#FF9900] px-4 py-2 text-sm font-medium text-black transition hover:brightness-110"
+              >
+                <FaAmazon />
+                Amazon
+              </a>
+              <a
+                href={youtubeReviewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#FF0000] px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
+              >
+                <FaYoutube />
+                Book Review
+              </a>
+              <ShareButton />
+              <UserRating itemType="book" itemId={book.isbn} />
+            </div>
           </div>
         </div>
       </section>

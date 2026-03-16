@@ -43,7 +43,12 @@ const MediaCard = ({ item, type = 'movie' }) => {
         navigate(`/games/${item.gameId || item.id}`);
         break;
       case 'music':
-        navigate(`/music/${item.trackId}`);
+        {
+          const musicId = item._id || item.trackId || item.lastfmId;
+          if (musicId) {
+            navigate(`/music/${musicId}`);
+          }
+        }
         break;
       default:
         break;

@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
+import { FaYoutube } from 'react-icons/fa';
 import { FiExternalLink, FiStar } from 'react-icons/fi';
 import { useParams } from 'react-router-dom';
 import HorizontalScroll from '../components/HorizontalScroll';
+import ShareButton from '../components/ShareButton';
+import UserRating from '../components/UserRating';
 import * as endpoints from '../api/endpoints';
 
 const TMDB_GENRES = {
@@ -84,6 +87,23 @@ function MovieDetailPage() {
   const [loading, setLoading] = useState(true);
   const [similarLoading, setSimilarLoading] = useState(true);
   const genrePills = normalizeGenres(movie?.genres);
+  const trailerUrl = useMemo(() => {
+    if (!movie) {
+      return '#';
+    }
+
+    if (movie.trailer) {
+      return movie.trailer;
+    }
+
+    const query = `${movie.title || ''} ${movie.year || ''} official trailer`.trim();
+    return `https://www.youtube.com/results?search_query=${encodeURIComponent(query).replace(/%20/g, '+')}`;
+  }, [movie]);
+
+  const youtubeSearchUrl = useMemo(() => {
+    const query = `${movie?.title || ''} ${movie?.year || ''} movie`.trim();
+    return `https://www.youtube.com/results?search_query=${encodeURIComponent(query).replace(/%20/g, '+')}`;
+  }, [movie?.title, movie?.year]);
 
   useEffect(() => {
     const loadMovie = async () => {
@@ -91,7 +111,7 @@ function MovieDetailPage() {
       try {
         const response = await endpoints.getMovieById(id);
         setMovie(response.data || null);
-      } catch (error) {
+      } catch {
         setMovie(null);
       } finally {
         setLoading(false);
@@ -122,7 +142,7 @@ function MovieDetailPage() {
           (item) => String(item.movieId) !== String(movie.movieId)
         );
         setSimilarMovies(filtered.slice(0, 8));
-      } catch (error) {
+      } catch {
         setSimilarMovies([]);
       } finally {
         setSimilarLoading(false);
@@ -193,24 +213,39 @@ function MovieDetailPage() {
             <span className="font-semibold">Starring:</span> {castText}
           </p>
 
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            {movie.trailer && (
+          <div className="mt-8">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-primary">Actions</h2>
+            <div className="flex flex-wrap gap-2">
               <a
-                href={movie.trailer}
+                href={trailerUrl}
                 target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-3 font-semibold text-bg transition hover:bg-primaryDark"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-bg transition hover:brightness-110"
               >
                 ▶ Watch Trailer
-                <FiExternalLink />
+                <FiExternalLink size={14} />
               </a>
-            )}
+              <a
+                href={youtubeSearchUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#FF0000] px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
+              >
+                <FaYoutube />
+                Search YouTube
+              </a>
+              <ShareButton />
+              <UserRating itemType="movie" itemId={movie.movieId} />
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2">
             {movie.tmdbId && (
               <a
                 href={`https://www.themoviedb.org/movie/${movie.tmdbId}`}
                 target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg bg-surface2 px-3 py-2 text-xs font-semibold text-muted hover:text-white"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-surface2 px-3 py-2 text-xs font-semibold text-muted transition hover:brightness-110 hover:text-white"
               >
                 TMDB
                 <FiExternalLink size={14} />
@@ -220,8 +255,8 @@ function MovieDetailPage() {
               <a
                 href={`https://www.imdb.com/title/${movie.imdbId}`}
                 target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg bg-surface2 px-3 py-2 text-xs font-semibold text-muted hover:text-white"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-surface2 px-3 py-2 text-xs font-semibold text-muted transition hover:brightness-110 hover:text-white"
               >
                 IMDb
                 <FiExternalLink size={14} />

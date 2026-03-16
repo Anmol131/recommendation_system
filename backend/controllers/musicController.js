@@ -94,17 +94,27 @@ const getMusicByTrackId = async (req, res) => {
   try {
     const { trackId } = req.params;
 
-    // 1. Check MongoDB first (works for both seeded trackId and lastfmId)
-    const track = await Music.findOne({
-      $or: [{ trackId }, { lastfmId: trackId }],
-    }).lean();
+    // 1. Try MongoDB _id first (most common case — clicking a card)
+    let track = null;
 
+    const mongoose = require('mongoose');
+    if (mongoose.Types.ObjectId.isValid(trackId)) {
+      track = await Music.findById(trackId).lean();
+    }
+
+    // 2. If not found by _id, try trackId or lastfmId fields
+    if (!track) {
+      track = await Music.findOne({
+        $or: [{ trackId }, { lastfmId: trackId }],
+      }).lean();
+    }
+
+    // 3. If found in MongoDB, return it
     if (track) {
       return res.status(200).json({ success: true, data: track });
     }
 
-    // 2. Try Last.fm by splitting the lastfmId format "trackname-artistname"
-    //    or just search for it
+    // 4. Only call Last.fm if genuinely not in MongoDB at all
     try {
       const { results } = await lastfmService.searchTracks(trackId, 1);
       if (results.length > 0) {
