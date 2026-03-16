@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FiSearch } from 'react-icons/fi';
 import { MdClose } from 'react-icons/md';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import MediaCard from '../components/MediaCard';
 import * as endpoints from '../api/endpoints';
 
@@ -38,15 +38,13 @@ const emptyBuckets = {
 };
 
 function SearchPage() {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [query, setQuery] = useState(searchParams.get('q') || '');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState([]);
   const [resultBuckets, setResultBuckets] = useState(emptyBuckets);
   const [tabCounts, setTabCounts] = useState({ movies: 0, books: 0, games: 0, music: 0 });
+  const query = searchParams.get('q') || '';
   const activeTab = searchParams.get('type') || 'all';
-  const searchQuery = searchParams.get('q') || '';
 
   const endpointsMap = useMemo(
     () => ({
@@ -59,12 +57,8 @@ function SearchPage() {
   );
 
   useEffect(() => {
-    setQuery(searchQuery);
-  }, [searchQuery]);
-
-  useEffect(() => {
     const fetchAllResults = async () => {
-      if (!searchQuery.trim()) {
+      if (!query.trim()) {
         setResultBuckets(emptyBuckets);
         setTabCounts({ movies: 0, books: 0, games: 0, music: 0 });
         setResults([]);
@@ -75,10 +69,10 @@ function SearchPage() {
 
       try {
         const responses = await Promise.allSettled([
-          endpoints.searchMovies(searchQuery),
-          endpoints.searchBooks(searchQuery),
-          endpoints.searchGames(searchQuery),
-          endpoints.searchMusic(searchQuery),
+          endpoints.searchMovies(query),
+          endpoints.searchBooks(query),
+          endpoints.searchGames(query),
+          endpoints.searchMusic(query),
         ]);
 
         const nextBuckets = {
@@ -105,7 +99,7 @@ function SearchPage() {
     };
 
     fetchAllResults();
-  }, [searchQuery]);
+  }, [activeTab, query]);
 
   useEffect(() => {
     if (activeTab === 'all') {
@@ -126,24 +120,11 @@ function SearchPage() {
 
   const submitSearch = (event) => {
     event.preventDefault();
-    const trimmedQuery = query.trim();
-    if (!trimmedQuery) {
-      return;
-    }
-
-    const params = new URLSearchParams(searchParams);
-    params.set('q', trimmedQuery);
-    setSearchParams(params);
+    setSearchParams({ q: query, type: activeTab });
   };
 
   const switchTab = (tabKey) => {
-    const params = new URLSearchParams(searchParams);
-    if (tabKey === 'all') {
-      params.delete('type');
-    } else {
-      params.set('type', tabKey);
-    }
-    navigate(`/search?${params.toString()}`);
+    setSearchParams({ q: query, type: tabKey });
   };
 
   return (
@@ -154,14 +135,16 @@ function SearchPage() {
             <input
               type="text"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => {
+                setSearchParams({ q: event.target.value, type: activeTab });
+              }}
               placeholder="Search across movies, books, games and music"
               className="h-12 w-full rounded-xl bg-surface2 px-4 pr-10 text-white placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary"
             />
             {query && (
               <button
                 type="button"
-                onClick={() => setQuery('')}
+                onClick={() => setSearchParams({ q: '', type: activeTab })}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-white transition"
                 aria-label="Clear search"
               >
@@ -198,7 +181,7 @@ function SearchPage() {
 
         <div className="mt-6">
           <p className="text-sm text-muted">
-            {loading ? 'Searching...' : `Found ${results.length} results for '${searchQuery}'`}
+            {loading ? 'Searching...' : `Found ${results.length} results for '${query}'`}
           </p>
         </div>
 
@@ -210,7 +193,7 @@ function SearchPage() {
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-surface2 text-primary">
                 <FiSearch size={24} />
               </div>
-              <p className="text-lg font-semibold text-white">No results found for '{searchQuery || 'your search'}'</p>
+              <p className="text-lg font-semibold text-white">No results found for '{query || 'your search'}'</p>
               <p className="mt-2 text-sm text-muted">Try different keywords, spelling, or a broader query.</p>
             </div>
           ) : (

@@ -1,14 +1,39 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { FiSearch, FiLogOut, FiUser } from 'react-icons/fi';
 import { MdClose } from 'react-icons/md';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { user, isAuthenticated, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('all');
+
+  const isSearchPage = location.pathname === '/search';
+  const currentQuery = searchParams.get('q') || '';
+  const isActiveSearch = isSearchPage && currentQuery.trim();
+
+  const getActiveTab = () => {
+    if (isSearchPage) {
+      const type = searchParams.get('type') || 'all';
+      if (type === 'all') return 'Home';
+      return type.charAt(0).toUpperCase() + type.slice(1);
+    }
+
+    const path = location.pathname;
+    const typeParam = new URLSearchParams(location.search).get('type');
+
+    if (path.startsWith('/movies') || (path === '/browse' && typeParam === 'movies')) return 'Movies';
+    if (path.startsWith('/books') || (path === '/browse' && typeParam === 'books')) return 'Books';
+    if (path.startsWith('/games') || (path === '/browse' && typeParam === 'games')) return 'Games';
+    if (path.startsWith('/music') || (path === '/browse' && typeParam === 'music')) return 'Music';
+    if (path === '/' || path === '/browse') return 'Home';
+    return '';
+  };
+
+  const activeTab = getActiveTab();
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -19,20 +44,21 @@ const Navbar = () => {
   };
 
   const tabs = [
-    { id: 'all', label: 'Home', type: null },
-    { id: 'movies', label: 'Movies', type: 'movies' },
-    { id: 'books', label: 'Books', type: 'books' },
-    { id: 'games', label: 'Games', type: 'games' },
-    { id: 'music', label: 'Music', type: 'music' },
+    { id: 'all', label: 'Home', to: '/' },
+    { id: 'movies', label: 'Movies', to: '/browse?type=movies' },
+    { id: 'books', label: 'Books', to: '/browse?type=books' },
+    { id: 'games', label: 'Games', to: '/browse?type=games' },
+    { id: 'music', label: 'Music', to: '/browse?type=music' },
   ];
 
-  const handleTabClick = (tabId, type) => {
-    setActiveTab(tabId);
-    if (type) {
-      navigate(`/browse?type=${type}`);
-    } else {
-      navigate('/');
+  const handleNavClick = (event, tabId) => {
+    if (!isActiveSearch) {
+      return;
     }
+
+    event.preventDefault();
+    const searchType = tabId === 'all' ? 'all' : tabId;
+    navigate(`/search?q=${encodeURIComponent(currentQuery)}&type=${searchType}`);
   };
 
   return (
@@ -41,11 +67,12 @@ const Navbar = () => {
       <div className="px-6 py-4">
         <div className="flex items-center justify-between gap-8">
           {/* Logo */}
-          <div
-            onClick={() => navigate('/')}
+          <Link
+            to="/"
             className="text-2xl font-bold bg-gradient-to-r from-primary to-primaryDark bg-clip-text text-transparent cursor-pointer hover:opacity-80 transition whitespace-nowrap glow-purple"
-          >Vibeify
-          </div>
+          >
+            Vibeify
+          </Link>
 
           {/* Search */}
           <form
@@ -112,17 +139,18 @@ const Navbar = () => {
       {/* Tab navigation */}
       <div className="px-6 py-4 border-t border-surface2 flex justify-center gap-8 overflow-x-auto hide-scrollbar">
         {tabs.map((tab) => (
-          <button
+          <Link
             key={tab.id}
-            onClick={() => handleTabClick(tab.id, tab.type)}
+            to={tab.to}
+            onClick={(event) => handleNavClick(event, tab.id)}
             className={`whitespace-nowrap text-sm font-medium pb-2 transition ${
-              activeTab === tab.id
+              activeTab === tab.label
                 ? 'text-primary border-b-2 border-primary'
                 : 'text-muted hover:text-primary'
             }`}
           >
             {tab.label}
-          </button>
+          </Link>
         ))}
       </div>
 
