@@ -16,8 +16,20 @@ const getBooks = async (req, res) => {
 			query.year = Number(req.query.year);
 		}
 
-		const sortBy = req.query.sortBy === 'year' ? 'year' : 'avgRating';
-		const sort = { [sortBy]: -1 };
+		// Sorting
+		const sortParam = req.query.sort || 'popular';
+		let sort = {};
+		if (sortParam === 'popularity' || sortParam === 'popular') {
+			sort = { ratingsCount: -1 };
+		} else if (sortParam === 'rating') {
+			sort = { averageRating: -1 };
+		} else if (sortParam === 'newest') {
+			sort = { publishedDate: -1 };
+		} else if (sortParam === 'az') {
+			sort = { title: 1 };
+		} else {
+			sort = { ratingsCount: -1 };
+		}
 
 		const totalItems = await Book.countDocuments(query);
 		const totalPages = Math.ceil(totalItems / limit) || 1;

@@ -19,8 +19,21 @@ const getMusic = async (req, res) => {
     const totalItems = await Music.countDocuments(query);
     const totalPages = Math.ceil(totalItems / limit) || 1;
 
+    // Sorting
+    const sortParam = req.query.sort || 'popular';
+    let sort = {};
+    if (sortParam === 'popularity' || sortParam === 'popular') {
+      sort = { popularity: -1 };
+    } else if (sortParam === 'newest') {
+      sort = { releaseDate: -1 };
+    } else if (sortParam === 'az') {
+      sort = { title: 1 };
+    } else {
+      sort = { popularity: -1 };
+    }
+
     const tracks = await Music.find(query)
-      .sort({ popularity: -1 })
+      .sort(sort)
       .skip((page - 1) * limit)
       .limit(limit);
 

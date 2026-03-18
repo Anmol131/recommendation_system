@@ -2,43 +2,74 @@ const Movie = require('../models/Movie');
 const { searchMoviesWithFallback, getMovieDetails } = require('../services/tmdbService');
 
 const getMovies = async (req, res) => {
-	try {
-		const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-		const limit = Math.max(parseInt(req.query.limit, 10) || 20, 1);
+  try {
+    const page  = Math.max(parseInt(req.query.page,  10) || 1, 1);
+    const limit = Math.max(parseInt(req.query.limit, 10) || 20, 1);
+    const skip  = (page - 1) * limit;
 
-		const query = {};
+    const query = {};
 
-		if (req.query.genre) {
-			query.genres = req.query.genre;
+    // Genre filter
+    if (req.query.genre) {
+      query.genres = { $regex: req.query.genre, $options: 'i' };
+    }
+
+		if (req.query.category === 'tv') {
+			query.mediaType = 'tv';
+		} else if (req.query.category === 'movie') {
+			query.$or = [
+				{ mediaType: 'movie' },
+				{ mediaType: { $exists: false } },
+				{ mediaType: null },
+			];
 		}
 
-		if (req.query.year) {
-			query.year = Number(req.query.year);
-		}
+    // Sort mapping
+    const sortParam = req.query.sort || 'popularity';
+    let sort = {};
+	if (sortParam === 'popularity' || !sortParam) sort = { ratingCount: -1, popularity: -1, avgRating: -1 };
+    else if (sortParam === 'rating')   sort = { voteAverage: -1 };
+    else if (sortParam === 'newest')   sort = { releaseDate: -1 };
+    else if (sortParam === 'az')       sort = { title: 1 };
+	else                               sort = { ratingCount: -1, popularity: -1, avgRating: -1 };
 
-		const sortBy = req.query.sortBy === 'year' ? 'year' : 'avgRating';
-		const sort = { [sortBy]: -1 };
+		const [movies, total] = await Promise.all([
+      Movie.find(query).sort(sort).skip(skip).limit(limit).lean(),
+      Movie.countDocuments(query),
+    ]);
 
-		const totalItems = await Movie.countDocuments(query);
-		const totalPages = Math.ceil(totalItems / limit) || 1;
+		const items = await Promise.all(
+			movies.map(async (movie) => {
+				if (movie.poster || movie.posterPath || !movie.tmdbId) {
+					return movie;
+				}
 
-		const movies = await Movie.find(query)
-			.sort(sort)
-			.skip((page - 1) * limit)
-			.limit(limit);
+				try {
+					const enriched = await getMovieDetails(movie.tmdbId);
+					if (enriched?.poster) {
+						return { ...movie, poster: enriched.poster };
+					}
+				} catch (enrichError) {
+					console.error('poster enrich error:', enrichError.message);
+				}
 
-		return res.status(200).json({
-			success: true,
-			data: {
-				items: movies,
-				totalPages,
-				currentPage: page,
-				totalItems,
-			},
-		});
-	} catch (error) {
-		return res.status(500).json({ success: false, message: 'Failed to fetch movies' });
-	}
+				return movie;
+			})
+		);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+				items,
+        totalItems:  total,
+        totalPages:  Math.ceil(total / limit),
+        currentPage: page,
+      },
+    });
+  } catch (error) {
+    console.error('getMovies error:', error.message);
+    return res.status(500).json({ success: false, message: 'Failed to fetch movies' });
+  }
 };
 
 const searchMovies = async (req, res) => {
@@ -86,8 +117,172 @@ const getMovieById = async (req, res) => {
 	}
 };
 
+const syncPopularMovies = async (req, res) => {
+	try {
+		const axios = require('axios');
+		const TMDB_API_KEY = process.env.TMDB_API_KEY;
+		const TMDB_BASE_URL = process.env.TMDB_BASE_URL;
+
+		let totalSaved = 0;
+
+		// Fetch 5 pages of popular movies from TMDB (100 movies)
+		for (let page = 1; page <= 5; page++) {
+			const { data } = await axios.get(`${TMDB_BASE_URL}/movie/popular`, {
+				params: { api_key: TMDB_API_KEY, language: 'en-US', page },
+			});
+
+			for (const movie of data.results) {
+				await Movie.findOneAndUpdate(
+					{ tmdbId: movie.id },
+					{
+						$set: {
+							tmdbId:           movie.id,
+							title:            movie.title,
+							overview:         movie.overview,
+							posterPath:       movie.poster_path
+								? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+								: null,
+							backdropPath:     movie.backdrop_path
+								? `https://image.tmdb.org/t/p/original${movie.backdrop_path}`
+								: null,
+							releaseDate:      movie.release_date,
+							voteAverage:      movie.vote_average,
+							voteCount:        movie.vote_count,
+							ratingCount:      movie.vote_count || 0,
+							popularity:       movie.popularity,
+							genres:           movie.genre_ids || [],
+							originalLanguage: movie.original_language,
+							mediaType:        'movie',
+						},
+					},
+					{ upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
+				);
+				totalSaved++;
+			}
+		}
+
+		// Also fetch trending this week
+		const { data: trending } = await axios.get(
+			`${TMDB_BASE_URL}/trending/movie/week`,
+			{ params: { api_key: TMDB_API_KEY } }
+		);
+
+		for (const movie of trending.results) {
+			await Movie.findOneAndUpdate(
+				{ tmdbId: movie.id },
+				{
+					$set: {
+						tmdbId:      movie.id,
+						title:       movie.title,
+						overview:    movie.overview,
+						posterPath:  movie.poster_path
+							? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+							: null,
+						releaseDate: movie.release_date,
+						voteAverage: movie.vote_average,
+						voteCount:   movie.vote_count,
+						ratingCount: movie.vote_count || 0,
+						popularity:  movie.popularity,
+						genres:      movie.genre_ids || [],
+						mediaType:   'movie',
+					},
+				},
+				{ upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
+			);
+			totalSaved++;
+		}
+
+		res.json({ success: true, message: `Synced ${totalSaved} popular movies from TMDB` });
+	} catch (err) {
+		console.error('syncPopularMovies error:', err.message);
+		res.status(500).json({ success: false, message: err.message });
+	}
+};
+
+const syncPopularTV = async (req, res) => {
+	try {
+		const axios = require('axios');
+		const TMDB_API_KEY = process.env.TMDB_API_KEY;
+		const TMDB_BASE_URL = process.env.TMDB_BASE_URL;
+
+		let totalSaved = 0;
+
+		for (let page = 1; page <= 5; page++) {
+			const { data } = await axios.get(`${TMDB_BASE_URL}/tv/popular`, {
+				params: { api_key: TMDB_API_KEY, language: 'en-US', page },
+			});
+
+			for (const show of data.results) {
+				await Movie.findOneAndUpdate(
+					{ tmdbId: show.id },
+					{
+						$set: {
+							tmdbId:           show.id,
+							title:            show.name,
+							overview:         show.overview,
+							posterPath:       show.poster_path
+								? `https://image.tmdb.org/t/p/w500${show.poster_path}`
+								: null,
+							backdropPath:     show.backdrop_path
+								? `https://image.tmdb.org/t/p/original${show.backdrop_path}`
+								: null,
+							releaseDate:      show.first_air_date,
+							voteAverage:      show.vote_average,
+							voteCount:        show.vote_count,
+							ratingCount:      show.vote_count || 0,
+							popularity:       show.popularity,
+							genres:           show.genre_ids || [],
+							originalLanguage: show.original_language,
+							mediaType:        'tv',
+						},
+					},
+					{ upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
+				);
+				totalSaved++;
+			}
+		}
+
+		const { data: trending } = await axios.get(
+			`${TMDB_BASE_URL}/trending/tv/week`,
+			{ params: { api_key: TMDB_API_KEY } }
+		);
+
+		for (const show of trending.results) {
+			await Movie.findOneAndUpdate(
+				{ tmdbId: show.id },
+				{
+					$set: {
+						tmdbId:      show.id,
+						title:       show.name,
+						overview:    show.overview,
+						posterPath:  show.poster_path
+							? `https://image.tmdb.org/t/p/w500${show.poster_path}`
+							: null,
+						releaseDate: show.first_air_date,
+						voteAverage: show.vote_average,
+						voteCount:   show.vote_count,
+						ratingCount: show.vote_count || 0,
+						popularity:  show.popularity,
+						genres:      show.genre_ids || [],
+						mediaType:   'tv',
+					},
+				},
+				{ upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
+			);
+			totalSaved++;
+		}
+
+		res.json({ success: true, message: `Synced ${totalSaved} popular TV shows from TMDB` });
+	} catch (err) {
+		console.error('syncPopularTV error:', err.message);
+		res.status(500).json({ success: false, message: err.message });
+	}
+};
+
 module.exports = {
 	getMovies,
 	searchMovies,
 	getMovieById,
+	syncPopularMovies,
+	syncPopularTV,
 };

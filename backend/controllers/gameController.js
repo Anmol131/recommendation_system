@@ -8,15 +8,28 @@ const getGames = async (req, res) => {
 		const query = {};
 
 		if (req.query.platform) {
-			query.platform = req.query.platform;
+			// Allow regex for multi-platform
+			query.platform = { $regex: req.query.platform, $options: 'i' };
 		}
 
 		if (req.query.genre) {
 			query.genres = req.query.genre;
 		}
 
-		const sortBy = req.query.sortBy === 'rating' ? 'rating' : 'totalReviews';
-		const sort = { [sortBy]: -1 };
+		// Sorting
+		const sortParam = req.query.sort || 'popular';
+		let sort = {};
+		if (sortParam === 'popularity' || sortParam === 'popular') {
+			sort = { rating: -1 };
+		} else if (sortParam === 'rating') {
+			sort = { rating: -1 };
+		} else if (sortParam === 'newest') {
+			sort = { releaseDate: -1 };
+		} else if (sortParam === 'az') {
+			sort = { title: 1 };
+		} else {
+			sort = { rating: -1 };
+		}
 
 		const totalItems = await Game.countDocuments(query);
 		const totalPages = Math.ceil(totalItems / limit) || 1;

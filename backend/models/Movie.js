@@ -4,8 +4,7 @@ const movieSchema = new mongoose.Schema(
 	{
 		movieId: {
 			type: Number,
-			unique: true,
-			index: true,
+			sparse: true,
 		},
 		title: String,
 		year: Number,
@@ -30,6 +29,11 @@ const movieSchema = new mongoose.Schema(
 			type: String,
 			default: null,
 		},
+		mediaType: {
+			type: String,
+			enum: ['movie', 'tv'],
+			default: 'movie',
+		},
 		enriched: {
 			type: Boolean,
 			default: false,
@@ -37,8 +41,9 @@ const movieSchema = new mongoose.Schema(
 	},
 	{
 		timestamps: true,
-	}
+	},
 );
+
 
 movieSchema.index({ title: 'text', genres: 'text' });
 

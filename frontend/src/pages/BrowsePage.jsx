@@ -48,32 +48,31 @@ const typeConfig = {
     label: 'Movies',
     cardType: 'movie',
     getList: endpoints.getMovies,
-    sortOptions: ['rating', 'year'],
+    sortOptions: ['popularity', 'rating', 'newest', 'az'],
   },
   books: {
     label: 'Books',
     cardType: 'book',
     getList: endpoints.getBooks,
-    sortOptions: ['rating', 'year'],
+    sortOptions: ['popularity', 'rating', 'newest', 'az'],
   },
   games: {
     label: 'Games',
     cardType: 'game',
     getList: endpoints.getGames,
-    sortOptions: ['rating', 'popularity'],
+    sortOptions: ['popularity', 'rating', 'newest', 'az'],
   },
   music: {
     label: 'Music',
     cardType: 'music',
     getList: endpoints.getMusic,
-    sortOptions: ['popularity'],
+    sortOptions: ['popularity', 'listeners', 'az', 'newest'],
   },
 };
 
 const defaultFilters = {
   genres: [],
-  sortBy: 'rating',
-  platform: '',
+  sortBy: 'popularity',
   page: 1,
 };
 
@@ -108,10 +107,10 @@ function BrowsePage() {
   const currentType = searchParams.get('type') || 'movies';
   const safeType = typeConfig[currentType] ? currentType : 'movies';
   const config = typeConfig[safeType];
+  const [mediaCategory, setMediaCategory] = useState('all');
   const [filters, setFilters] = useState({
     genres: parseGenreParam(searchParams.get('genre')),
-    sortBy: searchParams.get('sortBy') || (safeType === 'music' ? 'popularity' : defaultFilters.sortBy),
-    platform: searchParams.get('platform') || defaultFilters.platform,
+    sortBy: searchParams.get('sortBy') || 'popularity',
     page: Number(searchParams.get('page') || defaultFilters.page),
   });
   const [items, setItems] = useState([]);
@@ -124,11 +123,16 @@ function BrowsePage() {
   useEffect(() => {
     setFilters({
       genres: parseGenreParam(searchParams.get('genre')),
-      sortBy: searchParams.get('sortBy') || (safeType === 'music' ? 'popularity' : 'rating'),
-      platform: searchParams.get('platform') || '',
+      sortBy: searchParams.get('sortBy') || 'popularity',
       page: Number(searchParams.get('page') || 1),
     });
   }, [searchParams, safeType]);
+
+  useEffect(() => {
+    if (safeType !== 'movies') {
+      setMediaCategory('all');
+    }
+  }, [safeType]);
 
   useEffect(() => {
     const loadItems = async () => {
@@ -137,7 +141,7 @@ function BrowsePage() {
       try {
         const params = {
           page: filters.page,
-          limit: 12,
+          limit: safeType === 'movies' ? 20 : 12,
         };
 
         if (filters.genres.length > 0) {
@@ -148,11 +152,13 @@ function BrowsePage() {
         }
 
         if (filters.sortBy) {
-          params.sortBy = filters.sortBy;
+          params.sort = filters.sortBy;
+        } else {
+          params.sort = 'popularity';
         }
 
-        if (safeType === 'games' && filters.platform) {
-          params.platform = filters.platform;
+        if (safeType === 'movies' && mediaCategory !== 'all') {
+          params.category = mediaCategory;
         }
 
         const response = await config.getList(params);
@@ -169,7 +175,7 @@ function BrowsePage() {
     };
 
     loadItems();
-  }, [config, filters, safeType]);
+  }, [config, filters, mediaCategory, safeType]);
 
   const updateParams = (nextFilters, nextType = safeType) => {
     const params = new URLSearchParams();
@@ -181,8 +187,8 @@ function BrowsePage() {
     if (nextFilters.sortBy) {
       params.set('sortBy', nextFilters.sortBy);
     }
-    if (nextFilters.platform && nextType === 'games') {
-      params.set('platform', nextFilters.platform);
+    if (nextType === 'movies' && mediaCategory !== 'all') {
+      params.set('category', mediaCategory);
     }
     if (nextFilters.page > 1) {
       params.set('page', String(nextFilters.page));
@@ -198,8 +204,7 @@ function BrowsePage() {
   const resetFilters = () => {
     const nextFilters = {
       genres: [],
-      sortBy: safeType === 'music' ? 'popularity' : 'rating',
-      platform: '',
+      sortBy: 'popularity',
       page: 1,
     };
     setFilters(nextFilters);
@@ -222,32 +227,6 @@ function BrowsePage() {
       <div className="grid gap-8 lg:grid-cols-[250px,1fr]">
         <aside className="h-fit rounded-2xl border border-surface2 bg-surface p-5 lg:sticky lg:top-36">
           <h2 className="text-xl font-semibold text-white">Filters</h2>
-
-          <div className="mt-6 space-y-3">
-            <p className="text-sm font-medium text-muted">Type</p>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(typeConfig).map(([typeKey, value]) => (
-                <button
-                  key={typeKey}
-                  onClick={() => {
-                    const nextFilters = {
-                      genres: [],
-                      sortBy: typeKey === 'music' ? 'popularity' : 'rating',
-                      platform: '',
-                      page: 1,
-                    };
-                    setFilters(nextFilters);
-                    updateParams(nextFilters, typeKey);
-                  }}
-                  className={`rounded-full px-3 py-2 text-sm transition ${
-                    safeType === typeKey ? 'bg-primary text-bg' : 'bg-surface2 text-muted hover:text-white'
-                  }`}
-                >
-                  {value.label}
-                </button>
-              ))}
-            </div>
-          </div>
 
           <div className="mt-6 space-y-3">
             <label className="block text-sm font-medium text-muted">Genre</label>
@@ -310,61 +289,108 @@ function BrowsePage() {
             )}
           </div>
 
-          <div className="mt-6 space-y-3">
-            <p className="text-sm font-medium text-muted">Sort by</p>
-            <div className="space-y-2">
-              {['rating', 'year', 'popularity'].filter((option) => config.sortOptions.includes(option)).map((option) => (
-                <label key={option} className="flex items-center gap-3 text-sm text-white">
-                  <input
-                    type="radio"
-                    name="sortBy"
-                    checked={filters.sortBy === option}
-                    onChange={() => setFilters((current) => ({ ...current, sortBy: option }))}
-                    className="accent-primary"
-                  />
-                  <span className="capitalize">{option}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {safeType === 'games' && (
+          {safeType === 'movies' && (
             <div className="mt-6 space-y-3">
-              <p className="text-sm font-medium text-muted">Platform</p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setFilters((current) => ({ ...current, platform: '' }))}
-                  className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
-                    filters.platform === '' ? 'bg-primary text-bg' : 'bg-surface2 text-muted hover:text-white'
-                  }`}
-                >
-                  All
-                </button>
-                <button
-                  onClick={() => setFilters((current) => ({ ...current, platform: 'pc' }))}
-                  className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
-                    filters.platform === 'pc'
-                      ? 'text-white'
-                      : 'bg-surface2 text-muted hover:text-white'
-                  }`}
-                  style={{ backgroundColor: filters.platform === 'pc' ? '#3B82F6' : undefined }}
-                >
-                  🖥️ PC
-                </button>
-                <button
-                  onClick={() => setFilters((current) => ({ ...current, platform: 'mobile' }))}
-                  className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
-                    filters.platform === 'mobile'
-                      ? 'text-white'
-                      : 'bg-surface2 text-muted hover:text-white'
-                  }`}
-                  style={{ backgroundColor: filters.platform === 'mobile' ? '#10B981' : undefined }}
-                >
-                  📱 Mobile
-                </button>
+              <p className="text-sm font-medium text-muted">Category</p>
+              <div className="space-y-2">
+                {[
+                  { label: 'All', value: 'all' },
+                  { label: 'Movies', value: 'movie' },
+                  { label: 'TV Series', value: 'tv' },
+                ].map((option) => (
+                  <label key={option.value} className="flex items-center gap-3 text-sm text-white">
+                    <input
+                      type="radio"
+                      name="mediaCategory"
+                      checked={mediaCategory === option.value}
+                      onChange={() => setMediaCategory(option.value)}
+                      className="accent-primary"
+                    />
+                    <span>{option.label}</span>
+                  </label>
+                ))}
               </div>
             </div>
           )}
+
+          {/* Music-specific filters */}
+          {safeType === 'music' && (
+            <div className="mt-6 space-y-3">
+              <p className="text-sm font-medium text-muted">Sort by</p>
+              <div className="space-y-2">
+                {[
+                  { label: 'Popularity', value: 'popularity' },
+                  { label: 'Most Listened', value: 'listeners' },
+                  { label: 'A-Z', value: 'az' },
+                  { label: 'Newest', value: 'newest' },
+                ].map((option) => (
+                  <label key={option.value} className="flex items-center gap-3 text-sm text-white">
+                    <input
+                      type="radio"
+                      name="sortBy"
+                      checked={filters.sortBy === option.value}
+                      onChange={() => setFilters((current) => ({ ...current, sortBy: option.value }))}
+                      className="accent-primary"
+                    />
+                    <span>{option.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Books-specific filters */}
+          {safeType === 'books' && (
+            <div className="mt-6 space-y-3">
+              <p className="text-sm font-medium text-muted">Sort by</p>
+              <div className="space-y-2">
+                {[
+                  { label: 'Popularity', value: 'popularity' },
+                  { label: 'Rating', value: 'rating' },
+                  { label: 'Newest', value: 'newest' },
+                  { label: 'A-Z', value: 'az' },
+                ].map((option) => (
+                  <label key={option.value} className="flex items-center gap-3 text-sm text-white">
+                    <input
+                      type="radio"
+                      name="sortBy"
+                      checked={filters.sortBy === option.value}
+                      onChange={() => setFilters((current) => ({ ...current, sortBy: option.value }))}
+                      className="accent-primary"
+                    />
+                    <span>{option.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* General Sort by section for all types except music/books (which have custom above) */}
+          {!(safeType === 'music' || safeType === 'books') && (
+            <div className="mt-6 space-y-3">
+              <p className="text-sm font-medium text-muted">Sort by</p>
+              <div className="space-y-2">
+                {[
+                  { label: 'Popularity', value: 'popularity' },
+                  { label: 'Rating / Score', value: 'rating' },
+                  { label: 'Newest', value: 'newest' },
+                  { label: 'A-Z (Title)', value: 'az' },
+                ].map((option) => (
+                  <label key={option.value} className="flex items-center gap-3 text-sm text-white">
+                    <input
+                      type="radio"
+                      name="sortBy"
+                      checked={filters.sortBy === option.value}
+                      onChange={() => setFilters((current) => ({ ...current, sortBy: option.value }))}
+                      className="accent-primary"
+                    />
+                    <span>{option.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
 
           <div className="mt-8 grid gap-3">
             <button
