@@ -135,7 +135,7 @@ function MovieDetailPage() {
         const response = await endpoints.getMovies({
           limit: 8,
           genre: primaryGenre,
-          sortBy: 'rating',
+          sort: 'rating',
         });
 
         const filtered = (response.data.items || []).filter(

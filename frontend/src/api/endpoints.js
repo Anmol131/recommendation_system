@@ -90,6 +90,11 @@ export const getMusicByTrackId = async (trackId) => {
   return data;
 };
 
+export const getSimilarTracks = async (trackId) => {
+  const { data } = await instance.get(`/music/${trackId}/similar`);
+  return data;
+};
+
 // ─────────────────────────────────────────
 // USER
 // ─────────────────────────────────────────

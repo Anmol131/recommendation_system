@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { FiSearch } from 'react-icons/fi';
 import { MdClose } from 'react-icons/md';
 import { useSearchParams } from 'react-router-dom';
@@ -30,21 +30,15 @@ function SearchSkeletons() {
   );
 }
 
-const emptyBuckets = {
-  movies: [],
-  books: [],
-  games: [],
-  music: [],
-};
-
 function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState([]);
-  const [resultBuckets, setResultBuckets] = useState(emptyBuckets);
   const [tabCounts, setTabCounts] = useState({ movies: 0, books: 0, games: 0, music: 0 });
-  const query = searchParams.get('q') || '';
-  const activeTab = searchParams.get('type') || 'all';
+  const [query, setQuery] = useState(searchParams.get('q') || '');
+  const [type, setType] = useState(searchParams.get('type') || 'all');
+  const [debouncedQuery, setDebouncedQuery] = useState((searchParams.get('q') || '').trim());
+  const searchDebounceRef = useRef(null);
 
   const endpointsMap = useMemo(
     () => ({
@@ -57,9 +51,39 @@ function SearchPage() {
   );
 
   useEffect(() => {
-    const fetchAllResults = async () => {
-      if (!query.trim()) {
-        setResultBuckets(emptyBuckets);
+    setQuery(searchParams.get('q') || '');
+    setType(searchParams.get('type') || 'all');
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+    }
+
+    searchDebounceRef.current = setTimeout(() => {
+      const normalizedQuery = query.trim();
+      setDebouncedQuery(normalizedQuery);
+
+      const nextParams = new URLSearchParams();
+      if (normalizedQuery) {
+        nextParams.set('q', normalizedQuery);
+      }
+      nextParams.set('type', type);
+      setSearchParams(nextParams, { replace: true });
+    }, 400);
+
+    return () => {
+      if (searchDebounceRef.current) {
+        clearTimeout(searchDebounceRef.current);
+      }
+    };
+  }, [query, setSearchParams, type]);
+
+  useEffect(() => {
+    const parseItems = (payload) => payload?.data?.items ?? payload?.data ?? [];
+
+    const fetchByActiveTab = async () => {
+      if (!debouncedQuery) {
         setTabCounts({ movies: 0, books: 0, games: 0, music: 0 });
         setResults([]);
         return;
@@ -68,29 +92,50 @@ function SearchPage() {
       setLoading(true);
 
       try {
-        const responses = await Promise.allSettled([
-          endpoints.searchMovies(query),
-          endpoints.searchBooks(query),
-          endpoints.searchGames(query),
-          endpoints.searchMusic(query),
-        ]);
+        if (type === 'all') {
+          const keys = Object.keys(endpointsMap);
+          const responses = await Promise.allSettled(keys.map((key) => endpointsMap[key].fn(debouncedQuery)));
 
-        const nextBuckets = {
-          movies: responses[0].status === 'fulfilled' ? responses[0].value.data?.items ?? responses[0].value.data ?? [] : [],
-          books: responses[1].status === 'fulfilled' ? responses[1].value.data?.items ?? responses[1].value.data ?? [] : [],
-          games: responses[2].status === 'fulfilled' ? responses[2].value.data?.items ?? responses[2].value.data ?? [] : [],
-          music: responses[3].status === 'fulfilled' ? responses[3].value.data?.items ?? responses[3].value.data ?? [] : [],
-        };
+          const nextBuckets = {
+            movies: responses[0].status === 'fulfilled' ? parseItems(responses[0].value) : [],
+            books: responses[1].status === 'fulfilled' ? parseItems(responses[1].value) : [],
+            games: responses[2].status === 'fulfilled' ? parseItems(responses[2].value) : [],
+            music: responses[3].status === 'fulfilled' ? parseItems(responses[3].value) : [],
+          };
 
-        setResultBuckets(nextBuckets);
+          setTabCounts({
+            movies: nextBuckets.movies.length,
+            books: nextBuckets.books.length,
+            games: nextBuckets.games.length,
+            music: nextBuckets.music.length,
+          });
+
+          setResults([
+            ...nextBuckets.movies.map((item) => ({ ...item, __type: 'movie' })),
+            ...nextBuckets.books.map((item) => ({ ...item, __type: 'book' })),
+            ...nextBuckets.games.map((item) => ({ ...item, __type: 'game' })),
+            ...nextBuckets.music.map((item) => ({ ...item, __type: 'music' })),
+          ]);
+          return;
+        }
+
+        const selected = endpointsMap[type];
+        if (!selected) {
+          setTabCounts({ movies: 0, books: 0, games: 0, music: 0 });
+          setResults([]);
+          return;
+        }
+
+        const response = await selected.fn(debouncedQuery);
+        const items = parseItems(response);
         setTabCounts({
-          movies: nextBuckets.movies.length,
-          books: nextBuckets.books.length,
-          games: nextBuckets.games.length,
-          music: nextBuckets.music.length,
+          movies: type === 'movies' ? items.length : 0,
+          books: type === 'books' ? items.length : 0,
+          games: type === 'games' ? items.length : 0,
+          music: type === 'music' ? items.length : 0,
         });
+        setResults(items.map((item) => ({ ...item, __type: selected.type })));
       } catch (error) {
-        setResultBuckets(emptyBuckets);
         setTabCounts({ movies: 0, books: 0, games: 0, music: 0 });
         setResults([]);
       } finally {
@@ -98,33 +143,24 @@ function SearchPage() {
       }
     };
 
-    fetchAllResults();
-  }, [activeTab, query]);
-
-  useEffect(() => {
-    if (activeTab === 'all') {
-      const combined = [
-        ...resultBuckets.movies.map((item) => ({ ...item, __type: 'movie' })),
-        ...resultBuckets.books.map((item) => ({ ...item, __type: 'book' })),
-        ...resultBuckets.games.map((item) => ({ ...item, __type: 'game' })),
-        ...resultBuckets.music.map((item) => ({ ...item, __type: 'music' })),
-      ];
-      setResults(combined);
-      return;
-    }
-
-    const selected = endpointsMap[activeTab];
-    const bucket = resultBuckets[activeTab] || [];
-    setResults(bucket.map((item) => ({ ...item, __type: selected.type })));
-  }, [activeTab, endpointsMap, resultBuckets]);
+    fetchByActiveTab();
+  }, [debouncedQuery, endpointsMap, type]);
 
   const submitSearch = (event) => {
     event.preventDefault();
-    setSearchParams({ q: query, type: activeTab });
+    const normalizedQuery = query.trim();
+    setDebouncedQuery(normalizedQuery);
+
+    const nextParams = new URLSearchParams();
+    if (normalizedQuery) {
+      nextParams.set('q', normalizedQuery);
+    }
+    nextParams.set('type', type);
+    setSearchParams(nextParams);
   };
 
   const switchTab = (tabKey) => {
-    setSearchParams({ q: query, type: tabKey });
+    setType(tabKey);
   };
 
   return (
@@ -136,7 +172,7 @@ function SearchPage() {
               type="text"
               value={query}
               onChange={(event) => {
-                setSearchParams({ q: event.target.value, type: activeTab });
+                setQuery(event.target.value);
               }}
               placeholder="Search across movies, books, games and music"
               className="h-12 w-full rounded-xl bg-surface2 px-4 pr-10 text-white placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary"
@@ -144,7 +180,7 @@ function SearchPage() {
             {query && (
               <button
                 type="button"
-                onClick={() => setSearchParams({ q: '', type: activeTab })}
+                onClick={() => setQuery('')}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-white transition"
                 aria-label="Clear search"
               >
@@ -167,7 +203,7 @@ function SearchPage() {
               key={tab.key}
               onClick={() => switchTab(tab.key)}
               className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                activeTab === tab.key ? 'bg-primary text-bg' : 'bg-surface text-muted hover:text-white'
+                type === tab.key ? 'bg-primary text-bg' : 'bg-surface text-muted hover:text-white'
               }`}
             >
               {tab.label}

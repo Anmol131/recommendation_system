@@ -107,10 +107,12 @@ function BrowsePage() {
   const currentType = searchParams.get('type') || 'movies';
   const safeType = typeConfig[currentType] ? currentType : 'movies';
   const config = typeConfig[safeType];
-  const [mediaCategory, setMediaCategory] = useState('all');
+  const [mediaCategory, setMediaCategory] = useState(
+    safeType === 'movies' ? searchParams.get('category') || 'all' : 'all'
+  );
   const [filters, setFilters] = useState({
     genres: parseGenreParam(searchParams.get('genre')),
-    sortBy: searchParams.get('sortBy') || 'popularity',
+    sortBy: searchParams.get('sort') || 'popularity',
     page: Number(searchParams.get('page') || defaultFilters.page),
   });
   const [items, setItems] = useState([]);
@@ -123,16 +125,29 @@ function BrowsePage() {
   useEffect(() => {
     setFilters({
       genres: parseGenreParam(searchParams.get('genre')),
-      sortBy: searchParams.get('sortBy') || 'popularity',
+      sortBy: searchParams.get('sort') || 'popularity',
       page: Number(searchParams.get('page') || 1),
     });
   }, [searchParams, safeType]);
 
   useEffect(() => {
-    if (safeType !== 'movies') {
-      setMediaCategory('all');
+    const nextCategory = safeType === 'movies' ? searchParams.get('category') || 'all' : 'all';
+    setMediaCategory(nextCategory);
+  }, [searchParams, safeType]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+
+    if (safeType === 'movies' && mediaCategory !== 'all') {
+      params.set('category', mediaCategory);
+    } else {
+      params.delete('category');
     }
-  }, [safeType]);
+
+    if (params.toString() !== searchParams.toString()) {
+      setSearchParams(params, { replace: true });
+    }
+  }, [mediaCategory, safeType, searchParams, setSearchParams]);
 
   useEffect(() => {
     const loadItems = async () => {
@@ -177,7 +192,7 @@ function BrowsePage() {
     loadItems();
   }, [config, filters, mediaCategory, safeType]);
 
-  const updateParams = (nextFilters, nextType = safeType) => {
+  const updateParams = (nextFilters, nextType = safeType, nextCategory = mediaCategory) => {
     const params = new URLSearchParams();
     params.set('type', nextType);
 
@@ -185,10 +200,10 @@ function BrowsePage() {
       params.set('genre', nextFilters.genres.join(','));
     }
     if (nextFilters.sortBy) {
-      params.set('sortBy', nextFilters.sortBy);
+      params.set('sort', nextFilters.sortBy);
     }
-    if (nextType === 'movies' && mediaCategory !== 'all') {
-      params.set('category', mediaCategory);
+    if (nextType === 'movies' && nextCategory !== 'all') {
+      params.set('category', nextCategory);
     }
     if (nextFilters.page > 1) {
       params.set('page', String(nextFilters.page));

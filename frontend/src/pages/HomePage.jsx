@@ -23,10 +23,10 @@ function HomePage() {
   useEffect(() => {
     const loadSections = async () => {
       const requests = [
-        endpoints.getMovies({ limit: 20, sortBy: 'rating' }),
-        endpoints.getBooks({ limit: 20, sortBy: 'rating' }),
-        endpoints.getGames({ limit: 20, sortBy: 'totalReviews' }),
-        endpoints.getMusic({ limit: 20, sortBy: 'popularity' }),
+        endpoints.getMovies({ limit: 20, sort: 'rating' }),
+        endpoints.getBooks({ limit: 20, sort: 'rating' }),
+        endpoints.getGames({ limit: 20, sort: 'totalReviews' }),
+        endpoints.getMusic({ limit: 20, sort: 'popularity' }),
       ];
 
       const [moviesResponse, booksResponse, gamesResponse, musicResponse] = await Promise.allSettled(requests);

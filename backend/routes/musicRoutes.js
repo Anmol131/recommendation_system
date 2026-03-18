@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.get('/', getMusic);
 router.get('/search', searchMusic);
-router.get('/:trackId', getMusicByTrackId);
 router.get('/:trackId/similar', getSimilarTracks);
+router.get('/:trackId', getMusicByTrackId);
 
 module.exports = router;

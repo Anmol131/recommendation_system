@@ -72,7 +72,7 @@ function GameDetailPage() {
           limit: 8,
           platform: game.platform,
           genre: game.genres?.[0] || '',
-          sortBy: 'rating',
+          sort: 'rating',
         });
 
         const filtered = (response.data.items || []).filter((item) => item.gameId !== game.gameId);

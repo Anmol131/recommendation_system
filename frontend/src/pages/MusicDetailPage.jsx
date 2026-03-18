@@ -36,13 +36,13 @@ function MusicDetailPage() {
       console.log('Fetching trackId:', trackId);
       try {
         const response = await endpoints.getMusicByTrackId(trackId);
-        if (response.data) {
+        if (response?.success && response?.data) {
           setTrack(response.data);
           return;
         }
 
         const fallbackResponse = await endpoints.searchMusic(trackId);
-        const fallbackMatch = (fallbackResponse.data || []).find(
+        const fallbackMatch = (fallbackResponse?.data?.items || []).find(
           (item) =>
             String(item.trackId) === String(trackId) ||
             String(item._id) === String(trackId) ||
@@ -52,7 +52,7 @@ function MusicDetailPage() {
       } catch {
         try {
           const fallbackResponse = await endpoints.searchMusic(trackId);
-          const fallbackMatch = (fallbackResponse.data || []).find(
+          const fallbackMatch = (fallbackResponse?.data?.items || []).find(
             (item) =>
               String(item.trackId) === String(trackId) ||
               String(item._id) === String(trackId) ||
@@ -81,9 +81,10 @@ function MusicDetailPage() {
 
       setMoreLoading(true);
       try {
-        const response = await endpoints.searchMusic(artistName);
+        const similarLookupId = track?.trackId || track?.lastfmId || track?._id;
+        const response = await endpoints.getSimilarTracks(similarLookupId);
         const currentTrackId = track?._id || track?.trackId || track?.lastfmId;
-        const filtered = (response.data || []).filter((item) => {
+        const filtered = (response?.data || []).filter((item) => {
           const itemId = item._id || item.trackId || item.lastfmId;
           return String(itemId) !== String(currentTrackId);
         });
