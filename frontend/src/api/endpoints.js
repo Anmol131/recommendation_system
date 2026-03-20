@@ -108,6 +108,8 @@ export const updatePreferences = async (preferences) => {
   return data;
 };
 
+export const updateAvatar = (avatar) => instance.put('/user/avatar', { avatar }).then((r) => r.data);
+
 export const addHistory = async (type, itemId, action, rating = null) => {
   const { data } = await instance.post('/user/history', { type, itemId, action, rating });
   return data;

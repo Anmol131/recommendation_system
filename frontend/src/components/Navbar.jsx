@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { FiSearch, FiLogOut, FiUser } from 'react-icons/fi';
+import { FiSearch, FiLogOut, FiUser, FiSettings } from 'react-icons/fi';
 import { MdClose } from 'react-icons/md';
 import { useAuth } from '../context/AuthContext';
+import { getAvatarById } from '../constants/avatars';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -10,6 +11,8 @@ const Navbar = () => {
   const [searchParams] = useSearchParams();
   const { user, isAuthenticated, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef(null);
 
   const isSearchPage = location.pathname === '/search';
   const currentQuery = searchParams.get('q') || '';
@@ -61,6 +64,28 @@ const Navbar = () => {
     navigate(`/search?q=${encodeURIComponent(currentQuery)}&type=${searchType}`);
   };
 
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    setIsMenuOpen(false);
+    logout();
+    navigate('/login');
+  };
+
+  const avatar = getAvatarById(user?.avatar || 'avatar-1');
+  const firstLetter = user?.name?.[0]?.toUpperCase() || 'U';
+
   return (
     <nav className="sticky top-0 z-50 bg-surface border-b border-surface2">
       {/* Top bar */}
@@ -105,24 +130,70 @@ const Navbar = () => {
           </form>
 
           {/* Right section */}
-          <div className="flex items-center gap-4">
+          <div className="relative flex items-center gap-4" ref={menuRef}>
             {isAuthenticated ? (
               <>
-                <div className="flex items-center gap-3 px-4 py-2 rounded-lg bg-surface2">
-                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-bg font-bold">
-                    {user?.name?.[0]?.toUpperCase() || 'U'}
-                  </div>
-                  <span className="text-sm font-medium hidden sm:block">
-                    {user?.name?.split(' ')[0] || 'User'}
-                  </span>
-                </div>
                 <button
-                  onClick={logout}
-                  className="p-2 rounded-lg hover:bg-surface2 text-muted hover:text-primary transition"
-                  title="Logout"
+                  type="button"
+                  onClick={() => setIsMenuOpen((current) => !current)}
+                  className="rounded-full border border-white/15 bg-white/5 p-0.5 transition hover:border-primary/60"
+                  aria-label="Open profile menu"
                 >
-                  <FiLogOut size={20} />
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br ${avatar.gradient} font-bold text-white`}>
+                    {firstLetter}
+                  </div>
                 </button>
+
+                {isMenuOpen && (
+                  <div className="absolute right-0 top-14 z-50 w-72 rounded-2xl border border-white/10 bg-[#1a1a2e]/95 p-3 shadow-xl shadow-black/40 backdrop-blur-xl">
+                    <div className="flex items-center gap-3 p-2">
+                      <div className={`flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br ${avatar.gradient} text-lg font-bold text-white`}>
+                        {firstLetter}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-white">{user?.name || 'User'}</p>
+                        <p className="truncate text-xs text-muted">{user?.email || 'No email'}</p>
+                      </div>
+                    </div>
+
+                    <div className="my-2 h-px bg-white/10" />
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        navigate('/profile');
+                      }}
+                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-white transition hover:bg-white/10"
+                    >
+                      <FiUser size={16} />
+                      Profile
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        navigate('/preferences');
+                      }}
+                      className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-white transition hover:bg-white/10"
+                    >
+                      <FiSettings size={16} />
+                      Preferences
+                    </button>
+
+                    <div className="my-2 h-px bg-white/10" />
+
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-red-200 transition hover:bg-red-500/20"
+                    >
+                      <FiLogOut size={16} />
+                      Logout
+                    </button>
+                  </div>
+                )}
               </>
             ) : (
               <button

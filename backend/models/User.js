@@ -65,6 +65,10 @@ const userSchema = new mongoose.Schema(
 			type: [historySchema],
 			default: [],
 		},
+		avatar: {
+			type: String,
+			default: 'avatar-1',
+		},
 	},
 	{
 		timestamps: true,

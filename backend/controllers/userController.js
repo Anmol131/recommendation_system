@@ -58,6 +58,29 @@ const updatePreferences = async (req, res) => {
   }
 };
 
+const updateAvatar = async (req, res) => {
+  try {
+    const { avatar } = req.body;
+
+    if (!avatar) {
+      return res.status(400).json({ success: false, message: 'Avatar is required' });
+    }
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.avatar = avatar;
+    await user.save();
+
+    return res.status(200).json({ success: true, data: { avatar: user.avatar } });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to update avatar' });
+  }
+};
+
 const addHistory = async (req, res) => {
   try {
     const { type, itemId, action, rating } = req.body;
@@ -116,6 +139,7 @@ const getHistory = async (req, res) => {
 module.exports = {
   getProfile,
   updatePreferences,
+  updateAvatar,
   addHistory,
   getHistory,
 };

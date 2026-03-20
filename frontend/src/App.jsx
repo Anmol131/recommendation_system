@@ -7,6 +7,7 @@ import SearchPage from './pages/SearchPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
+import PreferencesPage from './pages/PreferencesPage';
 import MovieDetailPage from './pages/MovieDetailPage';
 import BookDetailPage from './pages/BookDetailPage';
 import GameDetailPage from './pages/GameDetailPage';
@@ -46,6 +47,14 @@ function App() {
             element={(
               <ProtectedRoute>
                 <ProfilePage />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/preferences"
+            element={(
+              <ProtectedRoute>
+                <PreferencesPage />
               </ProtectedRoute>
             )}
           />
