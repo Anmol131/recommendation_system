@@ -3,6 +3,7 @@ const {
   getProfile,
   updatePreferences,
   updateAvatar,
+  updateBio,
   addHistory,
   getHistory,
 } = require('../controllers/userController');
@@ -15,6 +16,7 @@ router.use(protect);
 router.get('/profile', getProfile);
 router.put('/preferences', updatePreferences);
 router.put('/avatar', protect, updateAvatar);
+router.put('/bio', protect, updateBio);
 router.post('/history', addHistory);
 router.get('/history', getHistory);
 

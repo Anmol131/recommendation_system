@@ -5,15 +5,18 @@ import {
   Camera,
   Clock3,
   Heart,
+  Lock,
+  Pencil,
   Sparkles,
   Star,
+  Trophy,
   Tv,
   X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import * as endpoints from '../api/endpoints';
 import Toast from '../components/Toast';
-import { AVATARS, getAvatarById } from '../constants/avatars';
+import { AVATARS, AvatarDisplay } from '../constants/avatars';
 
 const preferenceStyles = {
   movies: 'bg-blue-500/20 text-blue-200 border-blue-400/30',
@@ -76,11 +79,13 @@ function ProfileSkeleton() {
 }
 
 function ProfilePage() {
-  const { user, setUserAvatar } = useAuth();
+  const { user, setUserAvatar, setUserBio } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [editingBio, setEditingBio] = useState(false);
+  const [bioInput, setBioInput] = useState('');
   const [avatarUpdating, setAvatarUpdating] = useState(false);
   const [toast, setToast] = useState({ message: '', type: 'success' });
 
@@ -89,7 +94,9 @@ function ProfilePage() {
     setError('');
     try {
       const response = await endpoints.getProfile();
-      setProfile(response.data || null);
+      const nextProfile = response.data || null;
+      setProfile(nextProfile);
+      setBioInput(nextProfile?.bio || '');
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to load profile. Please try again.');
       setProfile(null);
@@ -147,9 +154,8 @@ function ProfilePage() {
   const createdYear = safeProfile.createdAt
     ? new Date(safeProfile.createdAt).getFullYear()
     : new Date().getFullYear();
-  const avatarLetter = (displayName.charAt(0) || 'L').toUpperCase();
   const currentAvatarId = safeProfile.avatar || user?.avatar || 'avatar-1';
-  const currentAvatar = getAvatarById(currentAvatarId);
+  const currentBio = typeof safeProfile.bio === 'string' ? safeProfile.bio : '';
 
   const preferences = safeProfile.preferences || {
     movies: [],
@@ -157,6 +163,15 @@ function ProfilePage() {
     games: [],
     music: [],
   };
+
+  const badgeDefinitions = [
+    { id: 'movie-explorer', label: 'Movie Explorer', icon: Tv, earned: history.some((item) => item.type === 'movie') },
+    { id: 'music-lover', label: 'Music Lover', icon: Sparkles, earned: history.some((item) => item.type === 'music') },
+    { id: 'bookworm', label: 'Bookworm', icon: Bookmark, earned: history.some((item) => item.type === 'book') },
+    { id: 'gamer', label: 'Gamer', icon: Star, earned: history.some((item) => item.type === 'game') },
+    { id: 'critic', label: 'Critic', icon: Pencil, earned: history.filter((item) => item.action === 'rated').length >= 3 },
+    { id: 'super-fan', label: 'Super Fan', icon: Heart, earned: history.filter((item) => item.action === 'liked').length >= 5 },
+  ];
 
   const handleAvatarPick = async (avatarId) => {
     setAvatarUpdating(true);
@@ -171,11 +186,41 @@ function ProfilePage() {
 
       setUserAvatar(nextAvatar);
       setToast({ message: 'Avatar updated!', type: 'success' });
-      setShowAvatarModal(false);
+      setShowAvatarPicker(false);
     } catch (err) {
       setToast({ message: err?.response?.data?.message || 'Failed to update avatar.', type: 'info' });
     } finally {
       setAvatarUpdating(false);
+    }
+  };
+
+  const handleBioCancel = () => {
+    setBioInput(currentBio);
+    setEditingBio(false);
+  };
+
+  const handleBioSave = async () => {
+    const trimmedBio = bioInput.trim();
+
+    if (trimmedBio.length > 150) {
+      setToast({ message: 'Bio must be 150 characters or fewer.', type: 'info' });
+      return;
+    }
+
+    try {
+      const response = await endpoints.updateBio(trimmedBio);
+      const nextBio = response?.data?.bio ?? trimmedBio;
+
+      setProfile((current) => ({
+        ...(current || {}),
+        bio: nextBio,
+      }));
+      setUserBio(nextBio);
+      setBioInput(nextBio);
+      setEditingBio(false);
+      setToast({ message: 'Bio updated!', type: 'success' });
+    } catch (err) {
+      setToast({ message: err?.response?.data?.message || 'Failed to update bio.', type: 'info' });
     }
   };
 
@@ -191,13 +236,11 @@ function ProfilePage() {
         <div className="pointer-events-none absolute -right-16 -top-20 h-52 w-52 rounded-full bg-gradient-to-br from-primary/30 to-blue-500/20 blur-3xl" />
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center">
           <div className="relative h-20 w-20">
-            <div className={`flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br ${currentAvatar.gradient} text-3xl font-bold text-white shadow-lg shadow-primary/30`}>
-              {avatarLetter}
-            </div>
+            <AvatarDisplay avatarId={currentAvatarId} size={80} />
             <button
               type="button"
-              onClick={() => setShowAvatarModal(true)}
-              className="absolute bottom-0 right-0 rounded-full border border-white/20 bg-bg/90 p-1.5 text-primary transition hover:bg-bg"
+              onClick={() => setShowAvatarPicker(true)}
+              className="absolute bottom-0 right-0 rounded-full border border-white/20 bg-white/10 p-1.5 text-primary transition hover:bg-white/20"
               aria-label="Edit avatar"
             >
               <Camera size={14} />
@@ -206,6 +249,62 @@ function ProfilePage() {
           <div>
             <h1 className="text-3xl font-bold text-white">{displayName}</h1>
             <p className="mt-1 text-sm text-muted">{displayEmail}</p>
+            {!editingBio ? (
+              currentBio ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBioInput(currentBio);
+                    setEditingBio(true);
+                  }}
+                  className="mt-2 inline-flex items-center gap-2 text-left text-sm text-white/80 transition hover:text-white"
+                >
+                  <span>{currentBio}</span>
+                  <Pencil size={13} />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBioInput('');
+                    setEditingBio(true);
+                  }}
+                  className="mt-2 text-sm text-white/50 transition hover:text-white/80"
+                >
+                  + Add a bio
+                </button>
+              )
+            ) : (
+              <div className="mt-3 w-full max-w-md space-y-2">
+                <textarea
+                  value={bioInput}
+                  onChange={(event) => setBioInput(event.target.value)}
+                  maxLength={150}
+                  rows={3}
+                  className="w-full resize-none rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-primary/60"
+                  placeholder="Tell everyone what you are into"
+                />
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs text-white/50">{bioInput.length} / 150</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleBioCancel}
+                      className="rounded-lg border border-white/20 px-3 py-1.5 text-xs font-medium text-white/80 transition hover:bg-white/10"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleBioSave}
+                      className="rounded-lg border border-violet-400/40 bg-violet-500/20 px-3 py-1.5 text-xs font-medium text-violet-200 transition hover:bg-violet-500/30"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             <span className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-blue-100">
               <Sparkles size={13} />
               Member since {createdYear}
@@ -214,14 +313,14 @@ function ProfilePage() {
         </div>
       </section>
 
-      {showAvatarModal && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl rounded-3xl border border-white/10 bg-[#1a1a2e]/95 p-5 shadow-2xl shadow-black/50 backdrop-blur-xl sm:p-6">
-            <div className="mb-5 flex items-center justify-between">
+      {showAvatarPicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-sm rounded-3xl border border-white/10 bg-[#13131f] p-6">
+            <div className="flex items-center justify-between">
               <h3 className="text-xl font-semibold text-white">Choose your avatar</h3>
               <button
                 type="button"
-                onClick={() => setShowAvatarModal(false)}
+                onClick={() => setShowAvatarPicker(false)}
                 className="rounded-full border border-white/15 bg-white/5 p-1.5 text-muted transition hover:text-white"
                 aria-label="Close avatar picker"
               >
@@ -229,7 +328,7 @@ function ProfilePage() {
               </button>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+            <div className="mt-4 grid grid-cols-4 gap-3">
               {AVATARS.map((avatar) => {
                 const selected = currentAvatarId === avatar.id;
 
@@ -239,17 +338,10 @@ function ProfilePage() {
                     type="button"
                     disabled={avatarUpdating}
                     onClick={() => handleAvatarPick(avatar.id)}
-                    className={`rounded-2xl border p-2 transition ${
-                      selected
-                        ? 'border-primary bg-primary/10 ring-2 ring-primary/60'
-                        : 'border-white/10 bg-white/5 hover:border-white/30'
-                    }`}
+                    className={`rounded-2xl ring-2 ring-transparent transition hover:ring-white/30 ${selected ? 'ring-violet-500' : ''}`}
                     aria-label={`Select ${avatar.id}`}
                   >
-                    <div className={`mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br ${avatar.gradient} text-2xl font-bold text-white`}>
-                      {avatarLetter}
-                    </div>
-                    <p className="mt-2 text-xs font-medium text-muted">{avatar.id}</p>
+                    <AvatarDisplay avatarId={avatar.id} size={64} className="cursor-pointer" />
                   </button>
                 );
               })}
@@ -273,6 +365,32 @@ function ProfilePage() {
           <p className="text-sm text-muted">Watched</p>
           <p className="mt-1 text-3xl font-bold text-white">{watchedCount}</p>
         </article>
+      </section>
+
+      <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+        <div className="mb-5 flex items-center gap-2 text-white">
+          <Trophy size={18} className="text-violet-300" />
+          <h2 className="text-xl font-semibold">Your Badges</h2>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          {badgeDefinitions.map((badge) => {
+            const Icon = badge.icon;
+            return (
+              <div
+                key={badge.id}
+                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium ${
+                  badge.earned
+                    ? 'border-violet-400/40 bg-violet-500/20 text-violet-200'
+                    : 'border-white/10 bg-white/5 text-white/30 opacity-40'
+                }`}
+              >
+                <Icon size={14} />
+                <span>{badge.label}</span>
+                {!badge.earned && <Lock size={13} />}
+              </div>
+            );
+          })}
+        </div>
       </section>
 
       <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">

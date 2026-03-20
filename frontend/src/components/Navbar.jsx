@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { FiSearch, FiLogOut, FiUser, FiSettings } from 'react-icons/fi';
 import { MdClose } from 'react-icons/md';
 import { useAuth } from '../context/AuthContext';
-import { getAvatarById } from '../constants/avatars';
+import { AvatarDisplay } from '../constants/avatars';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -83,8 +83,7 @@ const Navbar = () => {
     navigate('/login');
   };
 
-  const avatar = getAvatarById(user?.avatar || 'avatar-1');
-  const firstLetter = user?.name?.[0]?.toUpperCase() || 'U';
+  const avatarId = user?.avatar || 'avatar-1';
 
   return (
     <nav className="sticky top-0 z-50 bg-surface border-b border-surface2">
@@ -136,27 +135,23 @@ const Navbar = () => {
                 <button
                   type="button"
                   onClick={() => setIsMenuOpen((current) => !current)}
-                  className="rounded-full border border-white/15 bg-white/5 p-0.5 transition hover:border-primary/60"
+                  className="rounded-2xl border border-white/15 bg-white/5 p-1 transition hover:border-primary/60"
                   aria-label="Open profile menu"
                 >
-                  <div className={`flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br ${avatar.gradient} font-bold text-white`}>
-                    {firstLetter}
-                  </div>
+                  <AvatarDisplay avatarId={avatarId} size={36} className="rounded-xl" />
                 </button>
 
                 {isMenuOpen && (
-                  <div className="absolute right-0 top-14 z-50 w-72 rounded-2xl border border-white/10 bg-[#1a1a2e]/95 p-3 shadow-xl shadow-black/40 backdrop-blur-xl">
+                  <div className="absolute right-0 top-14 z-50 min-w-[200px] rounded-2xl border border-white/10 bg-[#13131f] p-3 shadow-xl backdrop-blur-xl">
                     <div className="flex items-center gap-3 p-2">
-                      <div className={`flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br ${avatar.gradient} text-lg font-bold text-white`}>
-                        {firstLetter}
-                      </div>
+                      <AvatarDisplay avatarId={avatarId} size={48} className="rounded-xl" />
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-white">{user?.name || 'User'}</p>
                         <p className="truncate text-xs text-muted">{user?.email || 'No email'}</p>
                       </div>
                     </div>
 
-                    <div className="my-2 h-px bg-white/10" />
+                    <div className="my-2 border-t border-white/10" />
 
                     <button
                       type="button"
@@ -164,7 +159,7 @@ const Navbar = () => {
                         setIsMenuOpen(false);
                         navigate('/profile');
                       }}
-                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-white transition hover:bg-white/10"
+                      className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm text-white/80 transition hover:bg-white/5"
                     >
                       <FiUser size={16} />
                       Profile
@@ -176,18 +171,18 @@ const Navbar = () => {
                         setIsMenuOpen(false);
                         navigate('/preferences');
                       }}
-                      className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-white transition hover:bg-white/10"
+                      className="mt-1 flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm text-white/80 transition hover:bg-white/5"
                     >
                       <FiSettings size={16} />
                       Preferences
                     </button>
 
-                    <div className="my-2 h-px bg-white/10" />
+                    <div className="my-2 border-t border-white/10" />
 
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-red-200 transition hover:bg-red-500/20"
+                      className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm text-red-400 transition hover:bg-white/5"
                     >
                       <FiLogOut size={16} />
                       Logout

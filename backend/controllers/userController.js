@@ -62,7 +62,7 @@ const updateAvatar = async (req, res) => {
   try {
     const { avatar } = req.body;
 
-    if (!avatar) {
+    if (typeof avatar !== 'string' || !avatar.trim()) {
       return res.status(400).json({ success: false, message: 'Avatar is required' });
     }
 
@@ -72,12 +72,40 @@ const updateAvatar = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    user.avatar = avatar;
+    user.avatar = avatar.trim();
     await user.save();
 
     return res.status(200).json({ success: true, data: { avatar: user.avatar } });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to update avatar' });
+  }
+};
+
+const updateBio = async (req, res) => {
+  try {
+    if (typeof req.body?.bio !== 'string') {
+      return res.status(400).json({ success: false, message: 'Bio must be a string' });
+    }
+
+    const bioInput = req.body.bio;
+    const bio = bioInput.trim();
+
+    if (bio.length > 150) {
+      return res.status(400).json({ success: false, message: 'Bio must be 150 characters or fewer' });
+    }
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.bio = bio;
+    await user.save();
+
+    return res.status(200).json({ success: true, data: { bio: user.bio } });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to update bio' });
   }
 };
 
@@ -140,6 +168,7 @@ module.exports = {
   getProfile,
   updatePreferences,
   updateAvatar,
+  updateBio,
   addHistory,
   getHistory,
 };

@@ -61,13 +61,18 @@ const userSchema = new mongoose.Schema(
 				default: [],
 			},
 		},
-		history: {
-			type: [historySchema],
-			default: [],
-		},
 		avatar: {
 			type: String,
 			default: 'avatar-1',
+		},
+		bio: {
+			type: String,
+			default: '',
+			maxlength: 150,
+		},
+		history: {
+			type: [historySchema],
+			default: [],
 		},
 	},
 	{

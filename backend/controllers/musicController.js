@@ -81,7 +81,6 @@ const searchMusic = async (req, res) => {
         .lean(),
       Music.countDocuments(mongoQuery),
     ]);
-
     // 3. If MongoDB has results use them (includes freshly upserted Last.fm data)
     //    If MongoDB is empty (cold start), fall back to raw Last.fm results
     const results = tracks.length > 0 ? tracks : lastfmResults;
