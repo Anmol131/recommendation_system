@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import { useAuth } from './context/AuthContext';
 import HomePage from './pages/HomePage';
@@ -12,6 +12,7 @@ import MovieDetailPage from './pages/MovieDetailPage';
 import BookDetailPage from './pages/BookDetailPage';
 import GameDetailPage from './pages/GameDetailPage';
 import MusicDetailPage from './pages/MusicDetailPage';
+import ExplorePage from './pages/ExplorePage';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -28,20 +29,31 @@ function ProtectedRoute({ children }) {
 }
 
 function App() {
+  const location = useLocation();
+
   return (
     <div className="min-h-screen bg-bg text-white">
-      <Navbar />
+      {location.pathname !== '/' ? <Navbar /> : null}
       <main className="pt-2">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/browse" element={<BrowsePage />} />
           <Route path="/search" element={<SearchPage />} />
+          <Route path="/movies" element={<MovieDetailPage />} />
           <Route path="/movies/:id" element={<MovieDetailPage />} />
           <Route path="/books/:isbn" element={<BookDetailPage />} />
           <Route path="/games/:gameId" element={<GameDetailPage />} />
           <Route path="/music/:trackId" element={<MusicDetailPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route
+            path="/explore"
+            element={(
+              <ProtectedRoute>
+                <ExplorePage />
+              </ProtectedRoute>
+            )}
+          />
           <Route
             path="/profile"
             element={(
