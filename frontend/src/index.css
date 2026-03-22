@@ -44,6 +44,10 @@ body {
   box-shadow: 0 0 40px rgba(184, 169, 245, 0.5);
 }
 
+.ambient-shadow {
+  box-shadow: 0 20px 40px -10px rgba(62, 37, 72, 0.08);
+}
+
 /* Gradient placeholder */
 .gradient-placeholder {
   background: linear-gradient(135deg, #8B7CF6 0%, #B8A9F5 100%);

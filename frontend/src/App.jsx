@@ -17,6 +17,7 @@ import MusicPage from './pages/MusicPage';
 import MusicDetailPage from './pages/MusicDetailPage';
 import ExplorePage from './pages/ExplorePage';
 import AboutPage from './pages/AboutPage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -75,6 +76,14 @@ function App() {
             element={(
               <ProtectedRoute>
                 <PreferencesPage />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/change-password"
+            element={(
+              <ProtectedRoute>
+                <ChangePasswordPage />
               </ProtectedRoute>
             )}
           />

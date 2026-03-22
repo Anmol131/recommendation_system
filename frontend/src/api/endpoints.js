@@ -136,6 +136,10 @@ export const updateAvatar = (avatar) => instance.put('/user/avatar', { avatar })
 
 export const updateBio = (bio) => instance.put('/user/bio', { bio }).then((r) => r.data);
 
+export const updatePassword = (payload) => instance.put('/user/change-password', payload).then((r) => r.data);
+
+export const changePassword = updatePassword;
+
 export const addHistory = async (type, itemId, action, rating = null) => {
   const { data } = await instance.post('/user/history', { type, itemId, action, rating });
   return data;
