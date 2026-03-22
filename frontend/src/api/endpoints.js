@@ -3,13 +3,37 @@ import instance from './axios';
 // ─────────────────────────────────────────
 // AUTH
 // ─────────────────────────────────────────
-export const register = async (name, email, password) => {
-  const { data } = await instance.post('/auth/register', { name, email, password });
+export const register = async (nameOrPayload, emailArg, passwordArg) => {
+  const payload =
+    typeof nameOrPayload === 'object' && nameOrPayload !== null
+      ? {
+          name: nameOrPayload.name,
+          email: nameOrPayload.email,
+          password: nameOrPayload.password,
+        }
+      : {
+          name: nameOrPayload,
+          email: emailArg,
+          password: passwordArg,
+        };
+
+  const { data } = await instance.post('/auth/register', payload);
   return data;
 };
 
-export const login = async (email, password) => {
-  const { data } = await instance.post('/auth/login', { email, password });
+export const login = async (emailOrPayload, passwordArg) => {
+  const payload =
+    typeof emailOrPayload === 'object' && emailOrPayload !== null
+      ? {
+          email: emailOrPayload.email,
+          password: emailOrPayload.password,
+        }
+      : {
+          email: emailOrPayload,
+          password: passwordArg,
+        };
+
+  const { data } = await instance.post('/auth/login', payload);
   return data;
 };
 

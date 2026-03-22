@@ -53,17 +53,21 @@ export const AuthProvider = ({ children }) => {
     loadUser();
   }, [token, setUserAvatar]);
 
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (emailOrPayload, password) => {
     try {
-      const response = await api.login(email, password);
-      const newToken = response.data.token;
-      const resolvedAvatar = response.data.user?.avatar || getStoredAvatar();
-      const resolvedBio = typeof response.data.user?.bio === 'string' ? response.data.user.bio : '';
+      const payload =
+        typeof emailOrPayload === 'object' && emailOrPayload !== null
+          ? emailOrPayload
+          : await api.login(emailOrPayload, password);
+
+      const newToken = payload.token;
+      const resolvedAvatar = payload.user?.avatar || getStoredAvatar();
+      const resolvedBio = typeof payload.user?.bio === 'string' ? payload.user.bio : '';
       localStorage.setItem('token', newToken);
       setToken(newToken);
-      setUser({ ...response.data.user, avatar: resolvedAvatar, bio: resolvedBio });
+      setUser({ ...payload.user, avatar: resolvedAvatar, bio: resolvedBio });
       setUserAvatar(resolvedAvatar);
-      return response;
+      return payload;
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
