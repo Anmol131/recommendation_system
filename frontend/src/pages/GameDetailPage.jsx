@@ -1,253 +1,339 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FaApple, FaGooglePlay, FaLinux, FaMobileAlt, FaSteam, FaWindows, FaYoutube } from 'react-icons/fa';
-import { FiMonitor, FiStar } from 'react-icons/fi';
-import { useParams } from 'react-router-dom';
-import HorizontalScroll from '../components/HorizontalScroll';
-import ShareButton from '../components/ShareButton';
-import UserRating from '../components/UserRating';
+import { ArrowLeft, ArrowRight, ExternalLink, MapPin, Play, Search, Star } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
 import * as endpoints from '../api/endpoints';
+import { useAuth } from '../context/AuthContext';
 
-function getInitials(value) {
-  return (value || 'Game')
-    .split(' ')
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase();
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=1600';
+
+const getList = (payload) => {
+  if (Array.isArray(payload?.data?.items)) return payload.data.items;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.items)) return payload.items;
+  return [];
+};
+
+const normalizeGenres = (value) => {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (typeof value === 'string') {
+    return value
+      .split(/[|,]/)
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+  return [];
+};
+
+const formatRating = (value) => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric.toFixed(1) : 'N/A';
+};
+
+function DetailSkeleton() {
+  return (
+    <div className="min-h-screen bg-surface text-on-surface animate-pulse">
+      <div className="sticky top-0 z-50 h-20 bg-white/70 backdrop-blur-xl shadow-[0_20px_40px_-10px_rgba(62,37,72,0.08)]" />
+      <div className="h-[78vh] bg-surface-container-high" />
+      <div className="mx-auto grid max-w-[1440px] grid-cols-1 gap-10 px-8 py-16 md:grid-cols-12">
+        <div className="md:col-span-8 space-y-6">
+          <div className="h-8 w-52 rounded bg-surface-container-highest" />
+          <div className="h-28 rounded bg-surface-container-highest" />
+          <div className="grid grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="h-24 rounded-xl bg-surface-container-highest" />
+            ))}
+          </div>
+        </div>
+        <div className="md:col-span-4 space-y-5">
+          <div className="h-48 rounded-2xl bg-surface-container-highest" />
+          <div className="h-24 rounded-2xl bg-surface-container-highest" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FriendlyError() {
+  const navigate = useNavigate();
+
+  return (
+    <div className="min-h-screen bg-surface px-6 py-20 text-on-surface">
+      <div className="mx-auto max-w-2xl rounded-2xl bg-surface-container-low p-8 text-center shadow-[0_25px_55px_-26px_rgba(62,37,72,0.28)]">
+        <h1 className="text-3xl font-bold tracking-tight">Game not available right now</h1>
+        <p className="mt-3 text-on-surface-variant">
+          We could not load this game at the moment. Try going back and opening another title.
+        </p>
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 font-semibold text-on-primary shadow-[0_20px_35px_-20px_rgba(131,25,218,0.7)]"
+        >
+          <ArrowLeft size={16} />
+          Go Back
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function GameDetailPage() {
-  const { gameId } = useParams();
-  const [game, setGame] = useState(null);
-  const [similarGames, setSimilarGames] = useState([]);
+  const navigate = useNavigate();
+  const { id, gameId } = useParams();
+  const { isAuthenticated } = useAuth();
+  const lookupId = id || gameId;
+
+  const [item, setItem] = useState(null);
+  const [similarItems, setSimilarItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [similarLoading, setSimilarLoading] = useState(true);
-  const youtubeTrailerUrl = useMemo(() => {
-    const query = `${game?.title || ''} official trailer gameplay`.trim();
-    return `https://www.youtube.com/results?search_query=${encodeURIComponent(query).replace(/%20/g, '+')}`;
-  }, [game?.title]);
-
-  const steamUrl = useMemo(() => {
-    if (!game || game.platform !== 'pc') {
-      return '';
-    }
-    return `https://store.steampowered.com/app/${game.gameId}`;
-  }, [game]);
-
-  const googlePlayUrl = useMemo(() => {
-    if (!game || game.platform !== 'mobile') {
-      return '';
-    }
-    const query = `${game.title || ''}`.trim();
-    return `https://play.google.com/store/search?q=${encodeURIComponent(query).replace(/%20/g, '+')}&c=apps`;
-  }, [game]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const loadGame = async () => {
+    let cancelled = false;
+
+    const loadPage = async () => {
       setLoading(true);
+      setError('');
+
       try {
-        const response = await endpoints.getGameById(gameId);
-        setGame(response.data || null);
+        const [detail, similar] = await Promise.all([
+          endpoints.getGameById(lookupId),
+          endpoints.getGames({ limit: 4, sort: 'rating' }),
+        ]);
+
+        if (cancelled) return;
+
+        const game = detail?.data || detail;
+        const similarList = getList(similar)
+          .filter((entry) => String(entry?._id) !== String(game?._id))
+          .slice(0, 4);
+
+        setItem(game || null);
+        setSimilarItems(similarList);
       } catch {
-        setGame(null);
+        if (!cancelled) setError('load-failed');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    loadGame();
-  }, [gameId]);
+    if (lookupId) {
+      loadPage();
+    } else {
+      setLoading(false);
+      setError('missing-id');
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [lookupId]);
 
   useEffect(() => {
-    const loadSimilar = async () => {
-      if (!game) {
-        setSimilarGames([]);
-        setSimilarLoading(false);
-        return;
-      }
+    if (!lookupId || !isAuthenticated) return;
+    endpoints.addHistory('game', lookupId, 'viewed').catch(() => {});
+  }, [lookupId, isAuthenticated]);
 
-      setSimilarLoading(true);
-      try {
-        const response = await endpoints.getGames({
-          limit: 8,
-          platform: game.platform,
-          genre: game.genres?.[0] || '',
-          sort: 'rating',
-        });
+  const genres = useMemo(() => normalizeGenres(item?.genres || item?.genre), [item]);
 
-        const filtered = (response.data.items || []).filter((item) => item.gameId !== game.gameId);
-        setSimilarGames(filtered.slice(0, 8));
-      } catch {
-        setSimilarGames([]);
-      } finally {
-        setSimilarLoading(false);
-      }
-    };
-
-    loadSimilar();
-  }, [game]);
-
-  const compatibility = useMemo(() => {
-    const raw = (game?.pcPlatform || '').toLowerCase();
-    return {
-      windows: raw.includes('windows') || raw.includes('win'),
-      mac: raw.includes('mac'),
-      linux: raw.includes('linux'),
-    };
-  }, [game?.pcPlatform]);
-
-  const ratingUi = useMemo(() => {
-    if (!game) {
-      return null;
-    }
-    if (game.platform === 'pc') {
-      const percent = Math.min(Math.round((game.rating || 0) * 20), 100);
-      return (
-        <div className="w-full max-w-sm">
-          <div className="mb-1 flex items-center justify-between text-sm text-muted">
-            <span>Approval</span>
-            <span>{percent}%</span>
-          </div>
-          <div className="h-3 w-full rounded-full bg-surface2">
-            <div className="h-3 rounded-full bg-primary" style={{ width: `${percent}%` }} />
-          </div>
-        </div>
-      );
-    }
-    return (
-      <span className="inline-flex items-center gap-2 text-white">
-        <FiStar className="text-gold" fill="currentColor" />
-        {Number(game.rating || 0).toFixed(1)} stars
-      </span>
-    );
-  }, [game]);
-
-  if (loading) {
-    return <div className="px-6 py-24 text-center text-muted">Loading game details...</div>;
-  }
-
-  if (!game) {
-    return <div className="px-6 py-24 text-center text-muted">Game not found.</div>;
-  }
+  if (loading) return <DetailSkeleton />;
+  if (error || !item) return <FriendlyError />;
 
   return (
-    <div className="px-6 py-8 sm:px-8 lg:px-10">
-      <section className="grid gap-8 lg:grid-cols-5">
-        <div className="lg:col-span-2">
-          {game.image ? (
-            <img
-              src={game.image}
-              alt={game.title}
-              className="h-full w-full rounded-xl border border-surface2 object-cover"
-            />
-          ) : (
-            <div className="flex min-h-[420px] w-full items-center justify-center rounded-xl bg-gradient-to-br from-primaryDark to-primary text-6xl font-bold text-bg">
-              {getInitials(game.title)}
-            </div>
-          )}
+    <div className="min-h-screen bg-surface font-body text-on-surface">
+      <nav className="sticky top-0 z-50 w-full bg-white/60 backdrop-blur-md shadow-[0_20px_40px_-10px_rgba(62,37,72,0.08)]">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-8 text-sm font-medium tracking-wide">
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="text-2xl font-bold tracking-tight text-on-background"
+          >
+            Vibeify
+          </button>
+          <div className="hidden items-center gap-8 md:flex">
+            <button type="button" onClick={() => navigate('/')} className="text-on-surface-variant hover:text-primary">Home</button>
+            <button type="button" onClick={() => navigate('/explore')} className="text-on-surface-variant hover:text-primary">Explore</button>
+            <button type="button" onClick={() => navigate('/games')} className="font-semibold text-primary">Games</button>
+          </div>
+          <div className="flex items-center gap-4 text-on-surface-variant">
+            <button type="button" onClick={() => navigate('/search')} className="rounded-lg p-2 hover:bg-surface-container-highest">
+              <Search size={18} />
+            </button>
+          </div>
         </div>
+      </nav>
 
-        <div className="lg:col-span-3">
-          <h1 className="text-4xl font-bold text-white">{game.title}</h1>
-          <p className="mt-2 text-lg text-muted">{game.developer || 'Unknown developer'}</p>
-
-          <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
-            <span className="inline-flex items-center gap-2 rounded-full bg-primary/20 px-3 py-1 text-primary">
-              {game.platform === 'pc' ? <FiMonitor /> : <FaMobileAlt />}
-              {game.platform === 'pc' ? 'PC' : 'Mobile'}
-            </span>
-            {game.releaseYear && (
-              <span className="rounded-full bg-primary/20 px-3 py-1 font-semibold text-primary">{game.releaseYear}</span>
-            )}
-            {game.source && (
-              <span className="rounded-full bg-surface2 px-3 py-1 text-muted uppercase">{game.source}</span>
-            )}
-            {(game.genres || []).map((genre) => (
-              <span key={genre} className="rounded-full bg-surface2 px-3 py-1 text-muted">
-                {genre}
-              </span>
-            ))}
+      <main>
+        <section className="relative h-[86vh] min-h-[680px] w-full overflow-hidden bg-surface-container-lowest">
+          <div className="absolute inset-0 z-0">
+            <img src={item.image || FALLBACK_IMAGE} alt={item.title} className="h-full w-full object-cover" />
+            <div className="absolute inset-0 shadow-[inset_0_-120px_100px_-20px_rgba(62,37,72,0.9)]" />
+            <div className="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-transparent" />
           </div>
 
-          <div className="mt-5 flex flex-col gap-3">
-            {ratingUi}
-            <span className="text-muted">{game.totalReviews || 0} reviews</span>
-            {game.platform === 'mobile' && game.installs && (
-              <span className="text-sm text-muted">{game.installs} installs</span>
-            )}
-            {game.platform === 'pc' && game.recommendations !== undefined && (
-              <span className="text-sm text-muted">{game.recommendations} recommendations</span>
-            )}
-          </div>
-
-          <p className="mt-6 text-base leading-relaxed text-muted">{game.description || 'No description available.'}</p>
-
-          {game.platform === 'pc' && (
-            <div className="mt-6">
-              <p className="mb-2 text-sm font-semibold text-white">PC Compatibility</p>
-              <div className="flex items-center gap-3 text-muted">
-                <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm ${compatibility.windows ? 'bg-primary/20 text-primary' : 'bg-surface2'}`}>
-                  <FaWindows /> Windows
+          <div className="relative z-10 mx-auto flex h-full max-w-[1440px] flex-col justify-end px-8 pb-24">
+            <div className="max-w-3xl space-y-6">
+              <div className="flex flex-wrap items-center gap-4">
+                <span className="rounded-full bg-secondary-container px-3 py-1 text-xs font-bold uppercase tracking-widest text-on-secondary-container">
+                  {genres[0] || 'Adventure'}
                 </span>
-                <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm ${compatibility.mac ? 'bg-primary/20 text-primary' : 'bg-surface2'}`}>
-                  <FaApple /> Mac
-                </span>
-                <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm ${compatibility.linux ? 'bg-primary/20 text-primary' : 'bg-surface2'}`}>
-                  <FaLinux /> Linux
-                </span>
+                <div className="flex items-center gap-1 text-tertiary-fixed-dim">
+                  <Star size={14} className="fill-current" />
+                  <span className="text-sm font-bold">{formatRating(item.rating)} Rating</span>
+                </div>
+                <span className="text-sm font-medium text-white/80">{item.platform || 'Platform N/A'}</span>
               </div>
-            </div>
-          )}
 
-          <div className="mt-8">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-primary">Actions</h2>
-            <div className="flex flex-wrap gap-2">
-              <a
-                href={youtubeTrailerUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg bg-[#FF0000] px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
-              >
-                <FaYoutube />
-                Watch on YouTube
-              </a>
-              {game.platform === 'pc' && (
+              <h1 className="text-5xl font-bold leading-[0.9] tracking-tighter text-white drop-shadow-2xl sm:text-7xl">
+                {item.title}
+              </h1>
+
+              <p className="max-w-xl text-lg font-medium leading-relaxed text-white/90">
+                {item.description || 'No description is available for this game yet.'}
+              </p>
+
+              <div className="flex flex-wrap items-center gap-4 pt-4">
                 <a
-                  href={steamUrl}
+                  href={item.spotifyUrl || `https://store.steampowered.com/search/?term=${encodeURIComponent(item.title || '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-lg bg-[#1b2838] px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
+                  className="inline-flex items-center gap-3 rounded-lg bg-gradient-to-br from-primary to-primary-container px-8 py-4 text-lg font-bold text-on-primary shadow-xl transition-all hover:scale-105"
                 >
-                  <FaSteam />
+                  <Play size={18} />
                   View on Steam
                 </a>
-              )}
-              {game.platform === 'mobile' && (
-                <a
-                  href={googlePlayUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-lg bg-[#1FA463] px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-3 rounded-lg bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-xl transition-all hover:bg-white/20"
                 >
-                  <FaGooglePlay />
-                  Google Play
-                </a>
-              )}
-              <ShareButton />
-              <UserRating itemType="game" itemId={game.gameId} />
+                  <MapPin size={18} />
+                  Add to Wishlist
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="mt-8">
-        <HorizontalScroll
-          title="Similar Games"
-          items={similarGames}
-          type="game"
-          loading={similarLoading}
-        />
-      </section>
+        <section className="mx-auto grid max-w-[1440px] grid-cols-1 gap-16 px-8 py-24 md:grid-cols-12">
+          <div className="space-y-12 md:col-span-8">
+            <div>
+              <h2 className="mb-6 flex items-center gap-3 text-2xl font-bold tracking-tight">
+                <span className="h-[2px] w-12 bg-primary" />
+                Storyline
+              </h2>
+              <p className="text-xl leading-relaxed text-on-surface-variant">
+                {item.description || 'No description is available for this game yet.'}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 pt-4 sm:grid-cols-3">
+              <div className="space-y-2 rounded-xl bg-surface-container-low p-6 shadow-[0_16px_35px_-24px_rgba(62,37,72,0.3)]">
+                <span className="text-xs font-bold uppercase tracking-widest text-primary/60">Developer</span>
+                <p className="text-lg font-bold">{item.developer || 'Unknown'}</p>
+              </div>
+              <div className="space-y-2 rounded-xl bg-surface-container-low p-6 shadow-[0_16px_35px_-24px_rgba(62,37,72,0.3)]">
+                <span className="text-xs font-bold uppercase tracking-widest text-primary/60">Platform</span>
+                <p className="text-lg font-bold">{item.platform || 'Not listed'}</p>
+              </div>
+              <div className="space-y-2 rounded-xl bg-surface-container-low p-6 shadow-[0_16px_35px_-24px_rgba(62,37,72,0.3)]">
+                <span className="text-xs font-bold uppercase tracking-widest text-primary/60">Release Year</span>
+                <p className="text-lg font-bold">{item.releaseYear || 'N/A'}</p>
+              </div>
+            </div>
+          </div>
+
+          <aside className="space-y-8 md:col-span-4">
+            <div className="space-y-6 rounded-2xl bg-surface-container-highest p-8 shadow-[0_20px_45px_-28px_rgba(62,37,72,0.4)]">
+              <h3 className="text-xl font-bold">Where to Play</h3>
+              <div className="space-y-4">
+                <a
+                  href="https://store.steampowered.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center justify-between rounded-lg bg-surface-container-lowest p-4 shadow-[0_12px_24px_-20px_rgba(62,37,72,0.35)]"
+                >
+                  <span className="font-semibold transition-colors group-hover:text-primary">Steam</span>
+                  <ExternalLink size={14} className="text-on-surface-variant" />
+                </a>
+                <a
+                  href="https://store.epicgames.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center justify-between rounded-lg bg-surface-container-lowest p-4 shadow-[0_12px_24px_-20px_rgba(62,37,72,0.35)]"
+                >
+                  <span className="font-semibold transition-colors group-hover:text-primary">Epic Games</span>
+                  <ExternalLink size={14} className="text-on-surface-variant" />
+                </a>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-on-surface-variant/60">Keywords</h3>
+              <div className="flex flex-wrap gap-2">
+                {genres.length > 0 ? genres.map((genre) => (
+                  <span key={genre} className="rounded-full bg-surface-container-low px-3 py-1 text-xs font-medium">
+                    {genre}
+                  </span>
+                )) : (
+                  <span className="rounded-full bg-surface-container-low px-3 py-1 text-xs font-medium">Gaming</span>
+                )}
+              </div>
+            </div>
+          </aside>
+        </section>
+
+        <section className="bg-surface-container-low py-24">
+          <div className="mx-auto max-w-[1440px] px-8">
+            <div className="mb-12 flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <h2 className="mb-2 text-4xl font-bold leading-none tracking-tighter">Similar Discoveries</h2>
+                <p className="font-medium text-on-surface-variant">Curated based on your current game taste.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate('/games')}
+                className="group flex items-center gap-2 font-bold text-primary transition-all hover:gap-4"
+              >
+                Explore Full Library
+                <ArrowRight size={16} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+              {similarItems.map((similar) => (
+                <button
+                  key={similar._id}
+                  type="button"
+                  onClick={() => navigate(`/games/${similar._id}`)}
+                  className="group text-left"
+                >
+                  <div className="relative mb-4 aspect-[2/3] overflow-hidden rounded-xl shadow-lg transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-2xl">
+                    <img src={similar.image || FALLBACK_IMAGE} alt={similar.title} className="h-full w-full object-cover" />
+                    <div className="absolute right-4 top-4 rounded-md bg-surface/80 px-2 py-1 text-[10px] font-bold backdrop-blur-md">
+                      {formatRating(similar.rating)}
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-bold transition-colors group-hover:text-primary">{similar.title}</h3>
+                  <p className="text-sm text-on-surface-variant">{similar.releaseYear || 'N/A'} • {(normalizeGenres(similar.genres)[0] || 'Game')}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="w-full bg-[#f5f0f7] py-12">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-8 md:flex-row">
+          <div className="flex flex-col items-center gap-1 md:items-start">
+            <span className="text-lg font-semibold text-on-background">Vibeify</span>
+            <p className="text-xs text-on-background/60">© 2024 Vibeify. The Digital Curator.</p>
+          </div>
+          <div className="flex gap-8">
+            <button type="button" className="text-xs text-on-background/60 transition-colors hover:text-primary">Privacy</button>
+            <button type="button" className="text-xs text-on-background/60 transition-colors hover:text-primary">Terms</button>
+            <button type="button" className="text-xs text-on-background/60 transition-colors hover:text-primary">Feedback</button>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
