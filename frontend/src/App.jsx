@@ -16,6 +16,7 @@ import GamesPage from './pages/GamesPage';
 import MusicPage from './pages/MusicPage';
 import MusicDetailPage from './pages/MusicDetailPage';
 import ExplorePage from './pages/ExplorePage';
+import AboutPage from './pages/AboutPage';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -50,6 +51,7 @@ function App() {
           <Route path="/games/:gameId" element={<GameDetailPage />} />
           <Route path="/music" element={<MusicPage />} />
           <Route path="/music/:trackId" element={<MusicDetailPage />} />
+          <Route path="/about" element={<AboutPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route
