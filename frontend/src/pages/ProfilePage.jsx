@@ -1,102 +1,160 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  Bookmark,
-  Camera,
-  Clock3,
-  Heart,
-  Lock,
+  BookOpen,
+  ChevronRight,
+  Clapperboard,
+  Gamepad2,
+  Music,
   Pencil,
+  Settings,
   Sparkles,
   Star,
-  Trophy,
-  Tv,
   X,
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 import * as endpoints from '../api/endpoints';
-import Toast from '../components/Toast';
+import { useAuth } from '../context/AuthContext';
 import { AVATARS, AvatarDisplay } from '../constants/avatars';
 
-const preferenceStyles = {
-  movies: 'bg-blue-500/20 text-blue-200 border-blue-400/30',
-  games: 'bg-violet-500/20 text-violet-200 border-violet-400/30',
-  music: 'bg-fuchsia-500/20 text-fuchsia-200 border-fuchsia-400/30',
-  books: 'bg-cyan-500/20 text-cyan-200 border-cyan-400/30',
+const fallbackGenres = {
+  movie: 'Cinema',
+  book: 'Literature',
+  game: 'Action RPG',
+  music: 'Alt Mix',
 };
 
-function getTypeLabel(type = '') {
-  const map = {
-    movie: 'Movie',
-    game: 'Game',
-    book: 'Book',
-    music: 'Music',
-  };
-  return map[type] || 'Media';
+const fallbackDescriptions = {
+  movie: 'A cinematic pick aligned with your current taste profile.',
+  book: 'A thoughtful read chosen for your literary mood.',
+  game: 'An engaging game recommendation built from your activity.',
+  music: 'A track selection tuned to your listening behavior.',
+};
+
+function toProfileData(response) {
+  if (!response) {
+    return null;
+  }
+  if (response.data && typeof response.data === 'object') {
+    return response.data;
+  }
+  return response;
 }
 
-function formatDate(date) {
-  if (!date) return 'Unknown date';
-  const parsed = new Date(date);
-  if (Number.isNaN(parsed.getTime())) return 'Unknown date';
-  return parsed.toLocaleString();
+function normalizeHistory(history) {
+  if (!Array.isArray(history)) {
+    return [];
+  }
+
+  return history.filter(Boolean).sort((a, b) => {
+    const aTime = new Date(a?.date || 0).getTime();
+    const bTime = new Date(b?.date || 0).getTime();
+    return bTime - aTime;
+  });
 }
 
-function HistoryCard({ item }) {
+function formatAddedLabel(value) {
+  if (!value) {
+    return 'Added recently';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return 'Added recently';
+  }
+
+  const diffMs = Date.now() - date.getTime();
+  const diffDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+
+  if (diffDays <= 0) {
+    return 'Added today';
+  }
+
+  if (diffDays === 1) {
+    return 'Added 1 day ago';
+  }
+
+  if (diffDays < 7) {
+    return `Added ${diffDays} days ago`;
+  }
+
+  const diffWeeks = Math.floor(diffDays / 7);
+  if (diffWeeks === 1) {
+    return 'Added 1 week ago';
+  }
+
+  return `Added ${diffWeeks} weeks ago`;
+}
+
+function readItemTitle(item) {
+  return item?.title || item?.name || item?.itemId || 'Untitled Pick';
+}
+
+function readItemImage(item) {
+  return item?.image || item?.poster || item?.cover || item?.thumbnail || null;
+}
+
+function readItemGenre(item) {
+  return item?.genre || fallbackGenres[item?.type] || 'Featured';
+}
+
+function readItemDescription(item) {
+  return item?.description || fallbackDescriptions[item?.type] || 'Curated for your profile.';
+}
+
+function readItemAuthor(item) {
+  return item?.author || item?.creator || item?.artist || 'Unknown Creator';
+}
+
+function isAvatarUrl(value) {
+  return typeof value === 'string' && /^https?:\/\//i.test(value);
+}
+
+function isAvatarPreset(value) {
+  return typeof value === 'string' && AVATARS.some((avatar) => avatar.id === value);
+}
+
+function insightFromHistoryCount(count) {
+  if (count < 10) {
+    return 'You are early in your curation journey. Keep liking content to unlock deeper personalization.';
+  }
+
+  if (count < 50) {
+    return 'Your taste profile is taking shape with strong signals around story-driven picks and stylized worlds.';
+  }
+
+  if (count < 120) {
+    return 'Your behavior points to high affinity for atmospheric worlds, rich narratives, and bold visual tone.';
+  }
+
+  return 'Based on your extensive saves, your profile strongly favors immersive aesthetics and slow-burn storytelling.';
+}
+
+function EmptyImage({ label = 'No cover' }) {
   return (
-    <article className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <span className="rounded-full border border-primary/40 bg-primary/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
-          {getTypeLabel(item.type)}
-        </span>
-        <span className="text-xs text-muted">{formatDate(item.date)}</span>
-      </div>
-      <h3 className="text-base font-semibold text-white">{item.itemId}</h3>
-      <p className="mt-1 text-sm capitalize text-muted">{item.action}</p>
-      {typeof item.rating === 'number' && (
-        <div className="mt-3 inline-flex items-center gap-2 rounded-lg border border-gold/30 bg-gold/10 px-3 py-1.5 text-sm text-gold">
-          <Star size={14} className="fill-current" />
-          {item.rating.toFixed(1)}
-        </div>
-      )}
-    </article>
-  );
-}
-
-function ProfileSkeleton() {
-  return (
-    <div className="mx-auto max-w-6xl animate-pulse space-y-6 px-6 py-8 sm:px-8 lg:px-10">
-      <div className="h-44 rounded-3xl border border-white/10 bg-white/5" />
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="h-28 rounded-2xl border border-white/10 bg-white/5" />
-        <div className="h-28 rounded-2xl border border-white/10 bg-white/5" />
-      </div>
-      <div className="h-80 rounded-3xl border border-white/10 bg-white/5" />
-      <div className="h-80 rounded-3xl border border-white/10 bg-white/5" />
-      <div className="h-56 rounded-3xl border border-white/10 bg-white/5" />
+    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-surface-container-high to-surface-container text-xs font-semibold uppercase tracking-widest text-on-surface-variant/70">
+      {label}
     </div>
   );
 }
 
 function ProfilePage() {
-  const { user, setUserAvatar, setUserBio } = useAuth();
+  const navigate = useNavigate();
+  const { user, setUserAvatar } = useAuth();
+
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
-  const [editingBio, setEditingBio] = useState(false);
-  const [bioInput, setBioInput] = useState('');
   const [avatarUpdating, setAvatarUpdating] = useState(false);
-  const [toast, setToast] = useState({ message: '', type: 'success' });
 
   const loadProfile = async () => {
     setLoading(true);
     setError('');
+
     try {
       const response = await endpoints.getProfile();
-      const nextProfile = response.data || null;
-      setProfile(nextProfile);
-      setBioInput(nextProfile?.bio || '');
+      const data = toProfileData(response);
+      setProfile(data || {});
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to load profile. Please try again.');
       setProfile(null);
@@ -109,28 +167,60 @@ function ProfilePage() {
     loadProfile();
   }, []);
 
-  useEffect(() => {
-    if (!toast.message) return undefined;
-    const timeout = setTimeout(() => {
-      setToast({ message: '', type: 'success' });
-    }, 3000);
-    return () => clearTimeout(timeout);
-  }, [toast.message]);
+  const safeProfile = profile || {};
+  const history = useMemo(() => normalizeHistory(safeProfile.history), [safeProfile.history]);
+  const likedHistory = useMemo(() => history.filter((item) => item?.action === 'liked'), [history]);
+  const bookWishlist = useMemo(() => history.filter((item) => item?.type === 'book'), [history]);
+  const recentGames = useMemo(() => history.filter((item) => item?.type === 'game').slice(0, 3), [history]);
+
+  const [showAllLiked, setShowAllLiked] = useState(false);
+
+  const displayedLiked = showAllLiked ? likedHistory : likedHistory.slice(0, 4);
+
+  const displayName = safeProfile?.name || user?.name || 'Curator';
+  const displayEmail = safeProfile?.email || user?.email || 'No email available';
+  const avatarValue = safeProfile?.avatar || user?.avatar || '';
+  const savedItemsCount = history.length;
+  const curatedListsCount = likedHistory.length;
+  const insightText = insightFromHistoryCount(savedItemsCount);
+
+  const handleAvatarPick = async (avatarId) => {
+    setAvatarUpdating(true);
+
+    try {
+      const response = await endpoints.updateAvatar(avatarId);
+      const data = toProfileData(response);
+      const nextAvatar = data?.avatar || avatarId;
+
+      setProfile((current) => ({
+        ...(current || {}),
+        avatar: nextAvatar,
+      }));
+      setUserAvatar(nextAvatar);
+      setShowAvatarPicker(false);
+    } finally {
+      setAvatarUpdating(false);
+    }
+  };
 
   if (loading) {
-    return <ProfileSkeleton />;
+    return (
+      <div className="mx-auto max-w-7xl px-6 py-16 md:px-12">
+        <div className="h-64 animate-pulse rounded-3xl bg-surface-container-low" />
+      </div>
+    );
   }
 
   if (error) {
     return (
-      <div className="mx-auto max-w-4xl px-6 py-20 sm:px-8 lg:px-10">
-        <div className="rounded-3xl border border-red-400/30 bg-red-500/10 p-8 text-center backdrop-blur-md">
-          <p className="text-lg font-semibold text-red-200">Unable to load your profile</p>
-          <p className="mt-2 text-sm text-red-100/80">{error}</p>
+      <div className="mx-auto max-w-4xl px-6 py-20 md:px-12">
+        <div className="rounded-3xl bg-surface-container-low p-8 shadow-[0_20px_40px_-10px_rgba(62,37,72,0.08)]">
+          <p className="text-lg font-semibold text-on-surface">Unable to load profile</p>
+          <p className="mt-2 text-sm text-on-surface-variant">{error}</p>
           <button
             type="button"
             onClick={loadProfile}
-            className="mt-6 rounded-xl border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20"
+            className="mt-6 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-on-primary transition hover:bg-primary-dim"
           >
             Retry
           </button>
@@ -139,198 +229,243 @@ function ProfilePage() {
     );
   }
 
-  const safeProfile = profile || {};
-  const history = Array.isArray(safeProfile.history) ? safeProfile.history : [];
-  const favorites = history.filter((item) => item.action === 'liked');
-  const recentHistory = [...history]
-    .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
-    .slice(0, 10);
-
-  const favoritesCount = favorites.length;
-  const watchedCount = history.length;
-
-  const displayName = safeProfile.name || user?.name || 'Lumina User';
-  const displayEmail = safeProfile.email || user?.email || 'No email available';
-  const createdYear = safeProfile.createdAt
-    ? new Date(safeProfile.createdAt).getFullYear()
-    : new Date().getFullYear();
-  const currentAvatarId = safeProfile.avatar || user?.avatar || 'avatar-1';
-  const currentBio = typeof safeProfile.bio === 'string' ? safeProfile.bio : '';
-
-  const preferences = safeProfile.preferences || {
-    movies: [],
-    books: [],
-    games: [],
-    music: [],
-  };
-
-  const badgeDefinitions = [
-    { id: 'movie-explorer', label: 'Movie Explorer', icon: Tv, earned: history.some((item) => item.type === 'movie') },
-    { id: 'music-lover', label: 'Music Lover', icon: Sparkles, earned: history.some((item) => item.type === 'music') },
-    { id: 'bookworm', label: 'Bookworm', icon: Bookmark, earned: history.some((item) => item.type === 'book') },
-    { id: 'gamer', label: 'Gamer', icon: Star, earned: history.some((item) => item.type === 'game') },
-    { id: 'critic', label: 'Critic', icon: Pencil, earned: history.filter((item) => item.action === 'rated').length >= 3 },
-    { id: 'super-fan', label: 'Super Fan', icon: Heart, earned: history.filter((item) => item.action === 'liked').length >= 5 },
-  ];
-
-  const handleAvatarPick = async (avatarId) => {
-    setAvatarUpdating(true);
-    try {
-      const response = await endpoints.updateAvatar(avatarId);
-      const nextAvatar = response?.data?.avatar || avatarId;
-
-      setProfile((current) => ({
-        ...(current || {}),
-        avatar: nextAvatar,
-      }));
-
-      setUserAvatar(nextAvatar);
-      setToast({ message: 'Avatar updated!', type: 'success' });
-      setShowAvatarPicker(false);
-    } catch (err) {
-      setToast({ message: err?.response?.data?.message || 'Failed to update avatar.', type: 'info' });
-    } finally {
-      setAvatarUpdating(false);
-    }
-  };
-
-  const handleBioCancel = () => {
-    setBioInput(currentBio);
-    setEditingBio(false);
-  };
-
-  const handleBioSave = async () => {
-    const trimmedBio = bioInput.trim();
-
-    if (trimmedBio.length > 150) {
-      setToast({ message: 'Bio must be 150 characters or fewer.', type: 'info' });
-      return;
-    }
-
-    try {
-      const response = await endpoints.updateBio(trimmedBio);
-      const nextBio = response?.data?.bio ?? trimmedBio;
-
-      setProfile((current) => ({
-        ...(current || {}),
-        bio: nextBio,
-      }));
-      setUserBio(nextBio);
-      setBioInput(nextBio);
-      setEditingBio(false);
-      setToast({ message: 'Bio updated!', type: 'success' });
-    } catch (err) {
-      setToast({ message: err?.response?.data?.message || 'Failed to update bio.', type: 'info' });
-    }
-  };
-
   return (
-    <div className="mx-auto max-w-6xl space-y-6 px-6 py-8 sm:px-8 lg:px-10">
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast({ message: '', type: 'success' })}
-      />
-
-      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl sm:p-8">
-        <div className="pointer-events-none absolute -right-16 -top-20 h-52 w-52 rounded-full bg-gradient-to-br from-primary/30 to-blue-500/20 blur-3xl" />
-        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center">
-          <div className="relative h-20 w-20">
-            <AvatarDisplay avatarId={currentAvatarId} size={80} />
+    <div className="bg-background text-on-surface">
+      <main className="mx-auto max-w-7xl px-6 pb-20 pt-12 md:px-12">
+        <section className="mb-16 flex flex-col items-center gap-10 md:flex-row md:items-end">
+          <div className="group relative">
+            <div className="h-52 w-52 overflow-hidden rounded-2xl ring-4 ring-white shadow-[0_20px_40px_-10px_rgba(62,37,72,0.14)]">
+              {isAvatarUrl(avatarValue) ? (
+                <img
+                  src={avatarValue}
+                  alt={`${displayName} avatar`}
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                />
+              ) : isAvatarPreset(avatarValue) ? (
+                <AvatarDisplay avatarId={avatarValue} size={208} className="h-full w-full rounded-none" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary to-primary-container text-7xl font-black text-on-primary">
+                  {displayName.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
             <button
               type="button"
               onClick={() => setShowAvatarPicker(true)}
-              className="absolute bottom-0 right-0 rounded-full border border-white/20 bg-white/10 p-1.5 text-primary transition hover:bg-white/20"
+              className="absolute -bottom-2 -right-2 flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-on-primary shadow-lg shadow-primary/25 transition-all hover:scale-110 active:scale-95"
               aria-label="Edit avatar"
             >
-              <Camera size={14} />
+              <Pencil className="h-4 w-4" />
             </button>
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-white">{displayName}</h1>
-            <p className="mt-1 text-sm text-muted">{displayEmail}</p>
-            {!editingBio ? (
-              currentBio ? (
+
+          <div className="flex-1 text-center md:text-left">
+            <h1 className="mb-2 text-5xl font-extrabold tracking-tight text-on-surface">{displayName}</h1>
+            <p className="mb-6 text-lg font-medium text-on-surface-variant opacity-80">{displayEmail}</p>
+            <div className="flex flex-wrap justify-center gap-3 md:justify-start">
+              <button
+                type="button"
+                className="rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold tracking-tight text-on-primary shadow-lg shadow-primary/20 transition-all hover:bg-primary-dim active:scale-95"
+              >
+                Edit Profile
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/preferences')}
+                className="flex items-center gap-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest px-6 py-2.5 text-sm font-semibold tracking-tight text-primary transition-all hover:bg-surface-container-low"
+              >
+                <Settings className="h-4 w-4" />
+                Preferences Shortcut
+              </button>
+            </div>
+          </div>
+
+          <div className="hidden self-start rounded-2xl border border-white/50 bg-white/40 p-6 shadow-[0_20px_40px_-10px_rgba(62,37,72,0.08)] backdrop-blur-sm lg:flex lg:gap-10">
+            <div className="text-center">
+              <span className="block text-3xl font-black text-primary">{savedItemsCount}</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60">Saved Items</span>
+            </div>
+            <div className="h-10 w-px self-center bg-outline-variant/20" />
+            <div className="text-center">
+              <span className="block text-3xl font-black text-primary">{curatedListsCount}</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60">Curated Lists</span>
+            </div>
+          </div>
+        </section>
+
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-12">
+          <div className="space-y-16 lg:col-span-8">
+            <section>
+              <header className="mb-8 flex items-center justify-between">
+                <h2 className="text-3xl font-bold tracking-tight text-on-surface">Saved Recommendations</h2>
                 <button
                   type="button"
-                  onClick={() => {
-                    setBioInput(currentBio);
-                    setEditingBio(true);
-                  }}
-                  className="mt-2 inline-flex items-center gap-2 text-left text-sm text-white/80 transition hover:text-white"
+                  onClick={() => setShowAllLiked((current) => !current)}
+                  className="flex items-center gap-1 text-sm font-bold uppercase tracking-widest text-primary hover:underline"
                 >
-                  <span>{currentBio}</span>
-                  <Pencil size={13} />
+                  {showAllLiked ? 'Show Less' : 'View All'}
+                  <ChevronRight className="h-4 w-4" />
                 </button>
+              </header>
+
+              {displayedLiked.length === 0 ? (
+                <div className="rounded-3xl bg-surface-container-low p-8 text-sm text-on-surface-variant shadow-[0_20px_40px_-10px_rgba(62,37,72,0.06)]">
+                  No liked items yet. Start exploring and like content to build your recommendation board.
+                </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBioInput('');
-                    setEditingBio(true);
-                  }}
-                  className="mt-2 text-sm text-white/50 transition hover:text-white/80"
-                >
-                  + Add a bio
-                </button>
-              )
-            ) : (
-              <div className="mt-3 w-full max-w-md space-y-2">
-                <textarea
-                  value={bioInput}
-                  onChange={(event) => setBioInput(event.target.value)}
-                  maxLength={150}
-                  rows={3}
-                  className="w-full resize-none rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-primary/60"
-                  placeholder="Tell everyone what you are into"
-                />
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs text-white/50">{bioInput.length} / 150</span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleBioCancel}
-                      className="rounded-lg border border-white/20 px-3 py-1.5 text-xs font-medium text-white/80 transition hover:bg-white/10"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleBioSave}
-                      className="rounded-lg border border-violet-400/40 bg-violet-500/20 px-3 py-1.5 text-xs font-medium text-violet-200 transition hover:bg-violet-500/30"
-                    >
-                      Save
-                    </button>
+                <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+                  {displayedLiked.map((item, index) => {
+                    const image = readItemImage(item);
+                    return (
+                      <article
+                        key={`${item?.itemId || 'liked'}-${item?.date || index}-${index}`}
+                        className="group overflow-hidden rounded-3xl bg-white shadow-[0_20px_40px_-10px_rgba(62,37,72,0.08)] transition-all duration-300 hover:shadow-[0_20px_40px_-10px_rgba(62,37,72,0.14)]"
+                      >
+                        <div className="relative aspect-[16/9] w-full overflow-hidden">
+                          {image ? (
+                            <img
+                              src={image}
+                              alt={readItemTitle(item)}
+                              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                            />
+                          ) : (
+                            <EmptyImage label={readItemGenre(item)} />
+                          )}
+                          <span className="absolute right-4 top-4 rounded-full bg-white/70 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-on-surface backdrop-blur-md">
+                            {readItemGenre(item)}
+                          </span>
+                        </div>
+                        <div className="p-6">
+                          <h3 className="mb-2 text-xl font-bold text-on-surface">{readItemTitle(item)}</h3>
+                          <p className="mb-6 line-clamp-2 text-sm leading-relaxed text-on-surface-variant">{readItemDescription(item)}</p>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-xs font-bold text-primary">
+                              <Star className="h-4 w-4 fill-current" />
+                              Recommended
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-tighter text-on-surface-variant/50">
+                              {formatAddedLabel(item?.date)}
+                            </span>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+
+            <section>
+              <header className="mb-8 flex items-center justify-between">
+                <h2 className="text-3xl font-bold tracking-tight text-on-surface">Book Wishlist</h2>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">
+                  {bookWishlist.length} ITEMS
+                </span>
+              </header>
+
+              {bookWishlist.length === 0 ? (
+                <div className="rounded-3xl bg-surface-container-low p-8 text-sm text-on-surface-variant shadow-[0_20px_40px_-10px_rgba(62,37,72,0.06)]">
+                  No books in your wishlist yet.
+                </div>
+              ) : (
+                <div className="flex flex-nowrap gap-6 overflow-x-auto pb-8">
+                  {bookWishlist.map((item, index) => {
+                    const image = readItemImage(item);
+                    return (
+                      <article
+                        key={`${item?.itemId || 'book'}-${item?.date || index}-${index}`}
+                        className="group w-64 flex-none rounded-3xl bg-white p-6 text-center shadow-[0_20px_40px_-10px_rgba(62,37,72,0.08)] transition-shadow hover:shadow-[0_20px_40px_-10px_rgba(62,37,72,0.14)]"
+                      >
+                        <div className="mx-auto mb-6 h-52 w-36 overflow-hidden rounded-lg shadow-xl transition-transform group-hover:-translate-y-2">
+                          {image ? (
+                            <img src={image} alt={readItemTitle(item)} className="h-full w-full object-cover" />
+                          ) : (
+                            <EmptyImage label="Book" />
+                          )}
+                        </div>
+                        <h4 className="mb-1 text-lg font-bold text-on-surface">{readItemTitle(item)}</h4>
+                        <p className="text-xs font-medium text-on-surface-variant">{readItemAuthor(item)}</p>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          </div>
+
+          <aside className="space-y-12 lg:col-span-4">
+            <section>
+              <h2 className="mb-8 text-2xl font-bold tracking-tight text-on-surface">Recently Played</h2>
+              <div className="space-y-4">
+                {recentGames.length === 0 ? (
+                  <div className="rounded-2xl bg-surface-container-low p-4 text-sm text-on-surface-variant shadow-[0_20px_40px_-10px_rgba(62,37,72,0.06)]">
+                    No recent game activity found.
                   </div>
+                ) : (
+                  recentGames.map((item, index) => {
+                    const image = readItemImage(item);
+                    return (
+                      <article
+                        key={`${item?.itemId || 'game'}-${item?.date || index}-${index}`}
+                        className="group flex cursor-pointer items-center gap-4 rounded-2xl bg-surface-container/50 p-4 transition-all hover:bg-surface-container"
+                      >
+                        <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl shadow-sm">
+                          {image ? (
+                            <img src={image} alt={readItemTitle(item)} className="h-full w-full object-cover" />
+                          ) : (
+                            <EmptyImage label="Game" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h5 className="truncate text-sm font-bold text-on-surface">{readItemTitle(item)}</h5>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60">{readItemGenre(item)}</p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-primary opacity-0 transition-opacity group-hover:opacity-100" />
+                      </article>
+                    );
+                  })
+                )}
+              </div>
+            </section>
+
+            <section className="rounded-3xl bg-inverse-surface p-8 text-on-primary shadow-xl shadow-purple-900/10">
+              <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/20">
+                <Sparkles className="h-6 w-6 text-primary-container" />
+              </div>
+              <h3 className="mb-3 text-xl font-bold tracking-tight">Curator Insights</h3>
+              <p className="mb-8 text-sm font-medium leading-relaxed text-on-primary/70">"{insightText}"</p>
+              <div className="space-y-3">
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-on-primary/60">
+                  <span>Taste Alignment</span>
+                  <span className="text-primary-container">98% Match</span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                  <div className="h-full w-[98%] bg-primary-container shadow-[0_0_10px_rgba(194,133,255,0.5)]" />
                 </div>
               </div>
-            )}
-            <span className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-blue-100">
-              <Sparkles size={13} />
-              Member since {createdYear}
-            </span>
-          </div>
+            </section>
+          </aside>
         </div>
-      </section>
+      </main>
 
       {showAvatarPicker && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="mx-4 w-full max-w-sm rounded-3xl border border-white/10 bg-[#13131f] p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl bg-surface-container-lowest p-6 shadow-[0_20px_40px_-10px_rgba(62,37,72,0.18)]">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-white">Choose your avatar</h3>
+              <h3 className="text-xl font-semibold text-on-surface">Choose your avatar</h3>
               <button
                 type="button"
                 onClick={() => setShowAvatarPicker(false)}
-                className="rounded-full border border-white/15 bg-white/5 p-1.5 text-muted transition hover:text-white"
+                className="rounded-full bg-surface-container p-1.5 text-on-surface-variant transition hover:text-on-surface"
                 aria-label="Close avatar picker"
               >
-                <X size={16} />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
             <div className="mt-4 grid grid-cols-4 gap-3">
               {AVATARS.map((avatar) => {
-                const selected = currentAvatarId === avatar.id;
+                const selected = avatarValue === avatar.id;
 
                 return (
                   <button
@@ -338,7 +473,7 @@ function ProfilePage() {
                     type="button"
                     disabled={avatarUpdating}
                     onClick={() => handleAvatarPick(avatar.id)}
-                    className={`rounded-2xl ring-2 ring-transparent transition hover:ring-white/30 ${selected ? 'ring-violet-500' : ''}`}
+                    className={`rounded-2xl ring-2 ring-transparent transition hover:ring-primary/40 ${selected ? 'ring-primary' : ''}`}
                     aria-label={`Select ${avatar.id}`}
                   >
                     <AvatarDisplay avatarId={avatar.id} size={64} className="cursor-pointer" />
@@ -349,127 +484,6 @@ function ProfilePage() {
           </div>
         </div>
       )}
-
-      <section className="grid gap-4 sm:grid-cols-2">
-        <article className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-md">
-          <div className="mb-3 inline-flex rounded-lg border border-primary/40 bg-primary/20 p-2 text-primary">
-            <Heart size={18} />
-          </div>
-          <p className="text-sm text-muted">Favorites</p>
-          <p className="mt-1 text-3xl font-bold text-white">{favoritesCount}</p>
-        </article>
-        <article className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-md">
-          <div className="mb-3 inline-flex rounded-lg border border-blue-400/40 bg-blue-500/20 p-2 text-blue-200">
-            <Tv size={18} />
-          </div>
-          <p className="text-sm text-muted">Watched</p>
-          <p className="mt-1 text-3xl font-bold text-white">{watchedCount}</p>
-        </article>
-      </section>
-
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-        <div className="mb-5 flex items-center gap-2 text-white">
-          <Trophy size={18} className="text-violet-300" />
-          <h2 className="text-xl font-semibold">Your Badges</h2>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          {badgeDefinitions.map((badge) => {
-            const Icon = badge.icon;
-            return (
-              <div
-                key={badge.id}
-                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium ${
-                  badge.earned
-                    ? 'border-violet-400/40 bg-violet-500/20 text-violet-200'
-                    : 'border-white/10 bg-white/5 text-white/30 opacity-40'
-                }`}
-              >
-                <Icon size={14} />
-                <span>{badge.label}</span>
-                {!badge.earned && <Lock size={13} />}
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-        <div className="mb-5 flex items-center gap-2 text-white">
-          <Heart size={18} className="text-primary" />
-          <h2 className="text-xl font-semibold">Your Favorites</h2>
-        </div>
-        {favorites.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 px-5 py-10 text-center text-muted">
-            You have not liked any items yet. Start exploring and tap like to build your favorites.
-          </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {favorites.map((item, index) => (
-              <HistoryCard key={`${item.itemId}-${item.date}-${index}`} item={item} />
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-        <div className="mb-5 flex items-center gap-2 text-white">
-          <Clock3 size={18} className="text-blue-300" />
-          <h2 className="text-xl font-semibold">Recently Watched</h2>
-        </div>
-        {recentHistory.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 px-5 py-10 text-center text-muted">
-            No activity yet. Your recent views and ratings will appear here.
-          </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {recentHistory.map((item, index) => (
-              <HistoryCard key={`${item.itemId}-${item.date}-${item.action}-${index}`} item={item} />
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-        <div className="mb-5 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-white">
-            <Bookmark size={18} className="text-violet-300" />
-            <h2 className="text-xl font-semibold">Preferences Snapshot</h2>
-          </div>
-          <Link
-            to="/preferences"
-            className="text-sm font-semibold text-primary transition hover:text-blue-300"
-          >
-            Edit preferences
-          </Link>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          {['movies', 'games', 'music', 'books'].map((group) => {
-            const list = Array.isArray(preferences[group]) ? preferences[group] : [];
-            return (
-              <div key={group} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="mb-3 text-sm font-semibold text-white">
-                  {group.charAt(0).toUpperCase() + group.slice(1)}
-                </p>
-                {list.length === 0 ? (
-                  <p className="text-sm text-muted">None set</p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {list.map((item) => (
-                      <span
-                        key={`${group}-${item}`}
-                        className={`rounded-full border px-3 py-1 text-xs font-medium ${preferenceStyles[group]}`}
-                      >
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </section>
     </div>
   );
 }

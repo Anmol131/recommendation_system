@@ -1,18 +1,14 @@
 import { useEffect, useState } from 'react';
 import {
-  Bell,
   BookOpen,
+  Check,
+  Clapperboard,
   Film,
   Gamepad2,
-  Lock,
   Music,
-  Settings,
-  Shield,
-  Sparkles,
-  LoaderCircle,
+  Music2,
 } from 'lucide-react';
 import * as endpoints from '../api/endpoints';
-import Toast from '../components/Toast';
 
 const MOVIE_GENRES = [
   'Action',
@@ -75,27 +71,6 @@ const MUSIC_GENRES = [
   'Reggae',
 ];
 
-const GENRE_SECTIONS = [
-  { key: 'movies', title: 'Movies', genres: MOVIE_GENRES, icon: Film },
-  { key: 'books', title: 'Books', genres: BOOK_GENRES, icon: BookOpen },
-  { key: 'games', title: 'Games', genres: GAME_GENRES, icon: Gamepad2 },
-  { key: 'music', title: 'Music', genres: MUSIC_GENRES, icon: Music },
-];
-
-const MEDIA_OPTIONS = [
-  { key: 'movies', title: 'Movies', description: 'Film recommendations, critics picks, and cinema gems.', icon: Film },
-  { key: 'games', title: 'Games', description: 'PC, console, and indie titles based on your play style.', icon: Gamepad2 },
-  { key: 'music', title: 'Music', description: 'Artists, tracks, and playlists tuned to your vibe.', icon: Music },
-  { key: 'books', title: 'Books', description: 'Novels and non-fiction to match your reading mood.', icon: BookOpen },
-];
-
-const NOTIFICATION_DEFAULTS = {
-  matchingRecommendations: true,
-  trendingGenres: true,
-  weeklyDigest: false,
-  emailNotifications: false,
-};
-
 const EMPTY_PREFERENCES = {
   movies: [],
   books: [],
@@ -103,55 +78,115 @@ const EMPTY_PREFERENCES = {
   music: [],
 };
 
-function PreferencesSkeleton() {
-  return (
-    <div className="mx-auto max-w-6xl animate-pulse space-y-6 px-6 py-8 sm:px-8 lg:px-10">
-      <div className="h-24 rounded-3xl border border-white/10 bg-white/5" />
-      <div className="h-72 rounded-3xl border border-white/10 bg-white/5" />
-      <div className="h-64 rounded-3xl border border-white/10 bg-white/5" />
-      <div className="h-48 rounded-3xl border border-white/10 bg-white/5" />
-    </div>
-  );
+const INTENSITY_STORAGE_KEY = 'vibeify_curation_intensity';
+
+const DOMAIN_CARDS = [
+  {
+    key: 'movies',
+    title: 'Movies',
+    description: 'Discover cinematic masterpieces and hidden gems from across the globe.',
+    icon: Film,
+  },
+  {
+    key: 'books',
+    title: 'Books',
+    description: 'From literary classics to modern thought-leadership, find your next read.',
+    icon: BookOpen,
+  },
+  {
+    key: 'games',
+    title: 'Games',
+    description: 'Immersive worlds and competitive challenges curated for your style.',
+    icon: Gamepad2,
+  },
+  {
+    key: 'music',
+    title: 'Music',
+    description: 'Sonic landscapes and rhythmic journeys tailored to your mood.',
+    icon: Music,
+  },
+];
+
+const GENRE_SECTIONS = [
+  { key: 'movies', title: 'Movies Genres', icon: Clapperboard, genres: MOVIE_GENRES },
+  { key: 'books', title: 'Books Genres', icon: BookOpen, genres: BOOK_GENRES },
+  { key: 'games', title: 'Games Genres', icon: Gamepad2, genres: GAME_GENRES },
+  { key: 'music', title: 'Music Genres', icon: Music2, genres: MUSIC_GENRES },
+];
+
+function toPreferenceData(response) {
+  if (!response) {
+    return EMPTY_PREFERENCES;
+  }
+
+  const payload = response.data && typeof response.data === 'object' ? response.data : response;
+
+  return {
+    movies: Array.isArray(payload.movies) ? payload.movies : [],
+    books: Array.isArray(payload.books) ? payload.books : [],
+    games: Array.isArray(payload.games) ? payload.games : [],
+    music: Array.isArray(payload.music) ? payload.music : [],
+  };
+}
+
+function intensityLabel(value) {
+  if (value <= 25) {
+    return {
+      title: 'Cautious',
+      blurb: 'We will prioritize familiar, proven recommendations with minimal risk.',
+    };
+  }
+
+  if (value <= 50) {
+    return {
+      title: 'Balanced',
+      blurb: 'A healthy blend of trusted favorites and occasional fresh discoveries.',
+    };
+  }
+
+  if (value <= 75) {
+    return {
+      title: 'Adventurous',
+      blurb: 'We will surface niche, bold picks while still keeping relevance high.',
+    };
+  }
+
+  return {
+    title: 'Experimental',
+    blurb: 'Expect avant-garde, edge-case, and deeply exploratory recommendations.',
+  };
 }
 
 function PreferencesPage() {
   const [preferences, setPreferences] = useState(EMPTY_PREFERENCES);
-  const [initialPreferences, setInitialPreferences] = useState(EMPTY_PREFERENCES);
-  const [activeTab, setActiveTab] = useState('movies');
-  const [preferredMediaTypes, setPreferredMediaTypes] = useState(['movies', 'books', 'games', 'music']);
-  const [notifications, setNotifications] = useState(NOTIFICATION_DEFAULTS);
+  const [selectedDomains, setSelectedDomains] = useState(['movies', 'books', 'games', 'music']);
+  const [curationIntensity, setCurationIntensity] = useState(65);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [toast, setToast] = useState({ message: '', type: 'success' });
-
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-  };
-
-  useEffect(() => {
-    if (!toast.message) return undefined;
-    const timeout = setTimeout(() => {
-      setToast({ message: '', type: 'success' });
-    }, 3000);
-    return () => clearTimeout(timeout);
-  }, [toast.message]);
 
   const loadPreferences = async () => {
     setLoading(true);
     setError('');
-    try {
-      const response = await endpoints.getProfile();
-      const serverPreferences = response.data?.preferences || EMPTY_PREFERENCES;
-      const normalized = {
-        movies: Array.isArray(serverPreferences.movies) ? serverPreferences.movies : [],
-        books: Array.isArray(serverPreferences.books) ? serverPreferences.books : [],
-        games: Array.isArray(serverPreferences.games) ? serverPreferences.games : [],
-        music: Array.isArray(serverPreferences.music) ? serverPreferences.music : [],
-      };
 
+    try {
+      const profileResponse = await endpoints.getProfile();
+      const profilePayload = profileResponse?.data && typeof profileResponse.data === 'object'
+        ? profileResponse.data
+        : profileResponse;
+      const normalized = toPreferenceData(profilePayload?.preferences || EMPTY_PREFERENCES);
       setPreferences(normalized);
-      setInitialPreferences(normalized);
+
+      const domainDefaults = Object.entries(normalized)
+        .filter(([, list]) => Array.isArray(list) && list.length > 0)
+        .map(([key]) => key);
+
+      setSelectedDomains(domainDefaults.length > 0 ? domainDefaults : ['movies', 'books', 'games', 'music']);
+
+      const storedIntensity = Number(localStorage.getItem(INTENSITY_STORAGE_KEY));
+      if (!Number.isNaN(storedIntensity)) {
+        setCurationIntensity(Math.min(100, Math.max(0, storedIntensity)));
+      }
     } catch (err) {
       setError(err?.response?.data?.message || 'Could not load preferences. Please try again.');
     } finally {
@@ -163,256 +198,209 @@ function PreferencesPage() {
     loadPreferences();
   }, []);
 
-  const toggleGenre = (type, genre) => {
-    setPreferences((current) => {
-      const selected = current[type] || [];
-      const exists = selected.includes(genre);
-      const next = exists ? selected.filter((item) => item !== genre) : [...selected, genre];
-      return { ...current, [type]: next };
-    });
-  };
-
-  const toggleMediaType = (type) => {
-    setPreferredMediaTypes((current) => {
-      if (current.includes(type)) {
-        return current.filter((item) => item !== type);
+  const toggleDomain = (domain) => {
+    setSelectedDomains((current) => {
+      if (current.includes(domain)) {
+        return current.filter((item) => item !== domain);
       }
-      return [...current, type];
+      return [...current, domain];
     });
   };
 
-  const toggleNotification = (key) => {
-    setNotifications((current) => ({ ...current, [key]: !current[key] }));
+  const toggleGenre = (domain, genre) => {
+    setPreferences((current) => {
+      const existing = current[domain] || [];
+      const next = existing.includes(genre)
+        ? existing.filter((item) => item !== genre)
+        : [...existing, genre];
+      return {
+        ...current,
+        [domain]: next,
+      };
+    });
   };
 
   const handleSave = async () => {
     setSaving(true);
+
     try {
       const payload = {
-        movies: preferences.movies,
-        books: preferences.books,
-        games: preferences.games,
-        music: preferences.music,
+        movies: selectedDomains.includes('movies') ? preferences.movies : [],
+        books: selectedDomains.includes('books') ? preferences.books : [],
+        games: selectedDomains.includes('games') ? preferences.games : [],
+        music: selectedDomains.includes('music') ? preferences.music : [],
       };
+
       const response = await endpoints.updatePreferences(payload);
-      const saved = response.data || payload;
-      const normalized = {
-        movies: Array.isArray(saved.movies) ? saved.movies : [],
-        books: Array.isArray(saved.books) ? saved.books : [],
-        games: Array.isArray(saved.games) ? saved.games : [],
-        music: Array.isArray(saved.music) ? saved.music : [],
-      };
+      const normalized = toPreferenceData(response);
       setPreferences(normalized);
-      setInitialPreferences(normalized);
-      showToast('Preferences saved successfully.', 'success');
+      localStorage.setItem(INTENSITY_STORAGE_KEY, String(curationIntensity));
     } catch (err) {
-      showToast(err?.response?.data?.message || 'Could not save preferences.', 'info');
+      setError(err?.response?.data?.message || 'Could not save preferences. Please try again.');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleCancel = () => {
-    setPreferences(initialPreferences);
-    showToast('Changes were discarded.', 'info');
+  const handleReset = () => {
+    setPreferences(EMPTY_PREFERENCES);
+    setSelectedDomains(['movies', 'books', 'games', 'music']);
+    setCurationIntensity(50);
+    localStorage.setItem(INTENSITY_STORAGE_KEY, '50');
   };
 
-  const handleComingSoon = () => {
-    showToast('Coming soon', 'info');
-  };
+  const intensityMeta = intensityLabel(curationIntensity);
 
   if (loading) {
-    return <PreferencesSkeleton />;
-  }
-
-  if (error) {
     return (
-      <div className="mx-auto max-w-4xl px-6 py-20 sm:px-8 lg:px-10">
-        <div className="rounded-3xl border border-red-400/30 bg-red-500/10 p-8 text-center backdrop-blur-md">
-          <p className="text-lg font-semibold text-red-200">Unable to load preferences</p>
-          <p className="mt-2 text-sm text-red-100/80">{error}</p>
-          <button
-            type="button"
-            onClick={loadPreferences}
-            className="mt-6 rounded-xl border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20"
-          >
-            Retry
-          </button>
-        </div>
+      <div className="mx-auto max-w-6xl px-6 py-16 md:px-12">
+        <div className="h-72 animate-pulse rounded-3xl bg-surface-container-low" />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 px-6 py-8 sm:px-8 lg:px-10">
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast({ message: '', type: 'success' })}
-      />
+    <div className="bg-background text-on-surface">
+      <main className="mx-auto max-w-6xl px-6 pb-24 pt-12 md:px-12">
+        <section className="mb-20 text-left">
+          <h1 className="mb-4 text-5xl font-bold tracking-tighter text-on-surface md:text-6xl">
+            Curate Your Vibe
+          </h1>
+          <p className="max-w-2xl text-xl leading-relaxed text-on-surface-variant">
+            Refine your digital ecosystem. Tell us what moves you, and we will architect recommendations that resonate with your frequency.
+          </p>
+          {error && (
+            <p className="mt-4 rounded-xl bg-error/10 px-4 py-2 text-sm text-error">
+              {error}
+            </p>
+          )}
+        </section>
 
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-        <div className="flex items-center gap-3 text-white">
-          <div className="rounded-xl border border-primary/30 bg-gradient-to-br from-primary/20 to-blue-500/20 p-2.5 text-primary">
-            <Settings size={18} />
+        <section className="mb-24">
+          <div className="mb-10 flex items-center gap-4">
+            <h2 className="text-2xl font-semibold tracking-tight">Primary Domains</h2>
+            <div className="h-px flex-grow bg-outline-variant/20" />
           </div>
-          <div>
-            <h1 className="text-3xl font-bold">Preferences</h1>
-            <p className="mt-1 text-sm text-muted">Customize your Lumina experience</p>
+
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {DOMAIN_CARDS.map((domain) => {
+              const selected = selectedDomains.includes(domain.key);
+              const Icon = domain.icon;
+              return (
+                <button
+                  key={domain.key}
+                  type="button"
+                  onClick={() => toggleDomain(domain.key)}
+                  className={`group relative rounded-xl bg-surface-container-low p-8 text-left shadow-[0_20px_40px_-10px_rgba(62,37,72,0.05)] transition-all duration-300 ${
+                    selected
+                      ? 'ring-2 ring-primary'
+                      : 'hover:scale-[1.02] hover:shadow-[0_20px_40px_-10px_rgba(62,37,72,0.12)]'
+                  }`}
+                >
+                  <Icon className="mb-6 h-9 w-9 text-primary" />
+                  <h3 className="mb-2 text-xl font-bold">{domain.title}</h3>
+                  <p className="text-sm leading-relaxed text-on-surface-variant">{domain.description}</p>
+                  {selected && (
+                    <span className="absolute right-5 top-5 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-on-primary">
+                      <Check className="h-4 w-4" />
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-        <h2 className="text-xl font-semibold text-white">Favorite Genres</h2>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {GENRE_SECTIONS.map((section) => {
-            const selectedCount = (preferences[section.key] || []).length;
-            return (
-              <button
-                key={section.key}
-                type="button"
-                onClick={() => setActiveTab(section.key)}
-                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                  activeTab === section.key
-                    ? 'border-primary/50 bg-gradient-to-r from-primary/30 to-blue-500/30 text-white'
-                    : 'border-white/15 bg-white/5 text-muted hover:text-white'
-                }`}
-              >
-                <section.icon size={16} />
-                {section.title}
-                <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs">
-                  {selectedCount}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {GENRE_SECTIONS.filter((section) => section.key === activeTab).map((section) => (
-          <div key={section.key} className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
-            <p className="mb-4 text-sm font-medium text-muted">Select {section.title} genres</p>
-            <div className="flex flex-wrap gap-2">
-              {section.genres.map((genre) => {
-                const selected = (preferences[section.key] || []).includes(genre);
-                return (
-                  <button
-                    key={genre}
-                    type="button"
-                    onClick={() => toggleGenre(section.key, genre)}
-                    className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
-                      selected
-                        ? 'border-primary/50 bg-gradient-to-r from-primary/30 to-blue-500/30 text-white shadow-lg shadow-primary/20'
-                        : 'border-white/20 bg-white/5 text-muted hover:border-white/35 hover:text-white'
-                    }`}
-                  >
-                    {genre}
-                  </button>
-                );
-              })}
-            </div>
+        <section className="mb-24">
+          <div className="mb-12 flex items-center gap-4">
+            <h2 className="text-2xl font-semibold tracking-tight">Favorite Genres</h2>
+            <div className="h-px flex-grow bg-outline-variant/20" />
           </div>
-        ))}
-      </section>
 
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-        <h2 className="text-xl font-semibold text-white">Preferred Media Types</h2>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {MEDIA_OPTIONS.map((option) => {
-            const selected = preferredMediaTypes.includes(option.key);
-            return (
-              <button
-                key={option.key}
-                type="button"
-                onClick={() => toggleMediaType(option.key)}
-                className={`rounded-2xl border p-4 text-left transition ${
-                  selected
-                    ? 'border-primary/50 bg-gradient-to-br from-primary/20 to-blue-500/20 text-white shadow-lg shadow-primary/20'
-                    : 'border-white/15 bg-white/5 text-muted hover:border-white/30 hover:text-white'
-                }`}
-              >
-                <div className="mb-2 inline-flex rounded-lg border border-white/20 bg-white/10 p-2">
-                  <option.icon size={16} />
+          <div className="grid grid-cols-1 gap-x-16 gap-y-12 md:grid-cols-2">
+            {GENRE_SECTIONS.map((section) => {
+              const Icon = section.icon;
+              const selectedGenres = preferences[section.key] || [];
+
+              return (
+                <div key={section.key} className="space-y-4">
+                  <div className="mb-2 flex items-center gap-2">
+                    <Icon className="h-5 w-5 text-primary" />
+                    <h4 className="text-lg font-semibold">{section.title}</h4>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {section.genres.map((genre) => {
+                      const selected = selectedGenres.includes(genre);
+                      return (
+                        <button
+                          key={`${section.key}-${genre}`}
+                          type="button"
+                          onClick={() => toggleGenre(section.key, genre)}
+                          className={`rounded-full px-5 py-2 text-sm font-medium transition-colors ${
+                            selected
+                              ? 'bg-primary text-on-primary'
+                              : 'bg-secondary-container text-on-secondary-container hover:bg-primary-container'
+                          }`}
+                        >
+                          {genre}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-                <p className="text-base font-semibold">{option.title}</p>
-                <p className="mt-1 text-sm">{option.description}</p>
-              </button>
-            );
-          })}
-        </div>
-      </section>
+              );
+            })}
+          </div>
+        </section>
 
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-        <div className="mb-4 flex items-center gap-2 text-white">
-          <Bell size={18} className="text-primary" />
-          <h2 className="text-xl font-semibold">Notification Settings</h2>
-        </div>
-        <div className="space-y-3">
-          {[
-            { key: 'matchingRecommendations', label: 'New recommendations matching my interests' },
-            { key: 'trendingGenres', label: 'Trending content in my favorite genres' },
-            { key: 'weeklyDigest', label: 'Weekly digest of new releases' },
-            { key: 'emailNotifications', label: 'Email notifications' },
-          ].map((item) => (
-            <label
-              key={item.key}
-              className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white"
-            >
-              <input
-                type="checkbox"
-                checked={notifications[item.key]}
-                onChange={() => toggleNotification(item.key)}
-                className="h-4 w-4 rounded border-white/30 bg-transparent text-primary focus:ring-primary"
-              />
-              {item.label}
-            </label>
-          ))}
-        </div>
-      </section>
+        <section className="mb-24 max-w-2xl">
+          <div className="mb-8 flex items-center gap-4">
+            <h2 className="text-2xl font-semibold tracking-tight">Curation Intensity</h2>
+            <div className="h-px flex-grow bg-outline-variant/20" />
+          </div>
 
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-        <div className="mb-4 flex items-center gap-2 text-white">
-          <Shield size={18} className="text-blue-300" />
-          <h2 className="text-xl font-semibold">Privacy & Security</h2>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-xl bg-surface-container-high p-8 shadow-[0_20px_40px_-10px_rgba(62,37,72,0.06)]">
+            <div className="mb-4 flex justify-between text-sm font-bold uppercase tracking-widest text-on-surface-variant">
+              <span>Safe &amp; Proven</span>
+              <span>Boldly Experimental</span>
+            </div>
+
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value={curationIntensity}
+              onChange={(event) => setCurationIntensity(Number(event.target.value))}
+              className="h-2 w-full cursor-pointer appearance-none rounded-full bg-surface-container-highest accent-primary"
+              aria-label="Curation intensity"
+            />
+
+            <p className="mt-6 text-sm italic text-on-surface-variant">
+              Current setting: <span className="font-bold text-primary">{intensityMeta.title}</span>. {intensityMeta.blurb}
+            </p>
+          </div>
+        </section>
+
+        <section className="flex flex-col items-center gap-6 pt-12 sm:flex-row">
           <button
             type="button"
-            onClick={handleComingSoon}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+            disabled={saving}
+            onClick={handleSave}
+            className="w-full rounded-lg bg-gradient-to-br from-primary to-primary-container px-10 py-4 text-lg font-bold text-on-primary shadow-[0_20px_40px_-10px_rgba(131,25,218,0.3)] transition-all hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
           >
-            <Lock size={16} />
-            Change Password
+            {saving ? 'Saving...' : 'Save Preferences'}
           </button>
+
           <button
             type="button"
-            onClick={handleComingSoon}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+            onClick={handleReset}
+            className="w-full rounded-lg border border-outline-variant/30 px-10 py-4 text-lg font-semibold text-primary transition-all hover:bg-primary/5 active:bg-primary/10 sm:w-auto"
           >
-            <Sparkles size={16} />
-            Data & Privacy
+            Reset All
           </button>
-        </div>
-      </section>
-
-      <section className="flex flex-col gap-3 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl sm:flex-row sm:justify-end">
-        <button
-          type="button"
-          onClick={handleCancel}
-          className="rounded-xl border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          disabled={saving}
-          onClick={handleSave}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-blue-500 px-5 py-2.5 text-sm font-semibold text-bg transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
-        >
-          {saving && <LoaderCircle size={16} className="animate-spin" />}
-          {saving ? 'Saving...' : 'Save Preferences'}
-        </button>
-      </section>
+        </section>
+      </main>
     </div>
   );
 }
