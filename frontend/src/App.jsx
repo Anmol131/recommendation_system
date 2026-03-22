@@ -9,8 +9,11 @@ import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
 import PreferencesPage from './pages/PreferencesPage';
 import MovieDetailPage from './pages/MovieDetailPage';
+import BooksPage from './pages/BooksPage';
 import BookDetailPage from './pages/BookDetailPage';
 import GameDetailPage from './pages/GameDetailPage';
+import GamesPage from './pages/GamesPage';
+import MusicPage from './pages/MusicPage';
 import MusicDetailPage from './pages/MusicDetailPage';
 import ExplorePage from './pages/ExplorePage';
 
@@ -41,8 +44,11 @@ function App() {
           <Route path="/search" element={<SearchPage />} />
           <Route path="/movies" element={<MovieDetailPage />} />
           <Route path="/movies/:id" element={<MovieDetailPage />} />
+          <Route path="/books" element={<BooksPage />} />
           <Route path="/books/:isbn" element={<BookDetailPage />} />
+          <Route path="/games" element={<GamesPage />} />
           <Route path="/games/:gameId" element={<GameDetailPage />} />
+          <Route path="/music" element={<MusicPage />} />
           <Route path="/music/:trackId" element={<MusicDetailPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
