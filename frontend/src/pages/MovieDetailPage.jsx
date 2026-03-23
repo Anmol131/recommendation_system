@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, ExternalLink, MapPin, Play, Search, Star } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ExternalLink, MapPin, Play, Star } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import * as endpoints from '../api/endpoints';
 import { useAuth } from '../context/AuthContext';
@@ -145,28 +145,6 @@ function MovieDetailPage() {
 
   return (
     <div className="min-h-screen bg-surface font-body text-on-surface">
-      <nav className="sticky top-0 z-50 w-full bg-white/60 backdrop-blur-md shadow-[0_20px_40px_-10px_rgba(62,37,72,0.08)]">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-8 text-sm font-medium tracking-wide">
-          <button
-            type="button"
-            onClick={() => navigate('/')}
-            className="text-2xl font-bold tracking-tight text-on-background"
-          >
-            Vibeify
-          </button>
-          <div className="hidden items-center gap-8 md:flex">
-            <button type="button" onClick={() => navigate('/')} className="text-on-surface-variant hover:text-primary">Home</button>
-            <button type="button" onClick={() => navigate('/explore')} className="text-on-surface-variant hover:text-primary">Explore</button>
-            <button type="button" onClick={() => navigate('/movies')} className="font-semibold text-primary">Movies</button>
-          </div>
-          <div className="flex items-center gap-4 text-on-surface-variant">
-            <button type="button" onClick={() => navigate('/search')} className="rounded-lg p-2 hover:bg-surface-container-highest">
-              <Search size={18} />
-            </button>
-          </div>
-        </div>
-      </nav>
-
       <main>
         <section className="relative h-[86vh] min-h-[680px] w-full overflow-hidden bg-surface-container-lowest">
           <div className="absolute inset-0 z-0">

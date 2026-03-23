@@ -1,68 +1,24 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { FiSearch, FiLogOut, FiUser, FiSettings } from 'react-icons/fi';
-import { MdClose } from 'react-icons/md';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { FiLogOut, FiSettings, FiUser } from 'react-icons/fi';
+import { Moon, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AvatarDisplay } from '../constants/avatars';
 
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
   const { user, isAuthenticated, logout } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const menuRef = useRef(null);
 
-  const isSearchPage = location.pathname === '/search';
-  const currentQuery = searchParams.get('q') || '';
-  const isActiveSearch = isSearchPage && currentQuery.trim();
-
-  const getActiveTab = () => {
-    if (isSearchPage) {
-      const type = searchParams.get('type') || 'all';
-      if (type === 'all') return 'Home';
-      return type.charAt(0).toUpperCase() + type.slice(1);
-    }
-
-    const path = location.pathname;
-    const typeParam = new URLSearchParams(location.search).get('type');
-
-    if (path.startsWith('/movies') || (path === '/browse' && typeParam === 'movies')) return 'Movies';
-    if (path.startsWith('/books') || (path === '/browse' && typeParam === 'books')) return 'Books';
-    if (path.startsWith('/games') || (path === '/browse' && typeParam === 'games')) return 'Games';
-    if (path.startsWith('/music') || (path === '/browse' && typeParam === 'music')) return 'Music';
-    if (path === '/' || path === '/browse') return 'Home';
-    return '';
-  };
-
-  const activeTab = getActiveTab();
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
-      setSearchQuery('');
-    }
-  };
-
-  const tabs = [
-    { id: 'all', label: 'Home', to: '/' },
-    { id: 'movies', label: 'Movies', to: '/browse?type=movies' },
-    { id: 'books', label: 'Books', to: '/browse?type=books' },
-    { id: 'games', label: 'Games', to: '/browse?type=games' },
-    { id: 'music', label: 'Music', to: '/browse?type=music' },
-  ];
-
-  const handleNavClick = (event, tabId) => {
-    if (!isActiveSearch) {
-      return;
-    }
-
-    event.preventDefault();
-    const searchType = tabId === 'all' ? 'all' : tabId;
-    navigate(`/search?q=${encodeURIComponent(currentQuery)}&type=${searchType}`);
-  };
+  const links = useMemo(() => [
+    { label: 'Home', to: '/' },
+    { label: 'Explore', to: '/explore' },
+    { label: 'About', to: '/about' },
+    { label: 'Contact', to: '/about' },
+  ], []);
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
@@ -77,6 +33,15 @@ const Navbar = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isDarkMode) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
   const handleLogout = () => {
     setIsMenuOpen(false);
     logout();
@@ -85,174 +50,129 @@ const Navbar = () => {
 
   const avatarId = user?.avatar || 'avatar-1';
 
-  return (
-    <nav className="sticky top-0 z-50 bg-surface border-b border-surface2">
-      {/* Top bar */}
-      <div className="px-6 py-4">
-        <div className="flex items-center justify-between gap-8">
-          {/* Logo */}
-          <Link
-            to="/"
-            className="text-2xl font-bold bg-gradient-to-r from-primary to-primaryDark bg-clip-text text-transparent cursor-pointer hover:opacity-80 transition whitespace-nowrap glow-purple"
-          >
-            Vibeify
-          </Link>
+  const isActiveLink = (to) => {
+    if (to === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(to);
+  };
 
-          {/* Search */}
-          <form
-            onSubmit={handleSearch}
-            className="flex-1 max-w-2xl relative hidden sm:flex"
+  return (
+    <nav className="sticky top-0 z-50 h-20 bg-white/60 backdrop-blur-md shadow-[0_20px_40px_-10px_rgba(62,37,72,0.08)]">
+      <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-8">
+        <Link to="/" className="text-2xl font-bold tracking-tighter text-purple-900">Vibeify</Link>
+
+        <div className="hidden items-center gap-8 md:flex">
+          {links.map((link) => (
+            <Link
+              key={link.label}
+              to={link.to}
+              className={[
+                'pb-1 text-sm transition-colors',
+                isActiveLink(link.to)
+                  ? 'border-b-2 border-purple-500 font-semibold text-purple-700'
+                  : 'text-[#3e2548]/70 hover:text-purple-600',
+              ].join(' ')}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+
+        <div className="relative flex items-center gap-3" ref={menuRef}>
+          <button
+            type="button"
+            onClick={() => navigate('/explore')}
+            className="rounded-lg p-2 text-[#3e2548]/75 transition-colors hover:bg-white/70 hover:text-purple-700"
+            aria-label="Explore search"
           >
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search movies, books, games, music..."
-              className="w-full px-4 py-3 pr-20 rounded-lg bg-surface2 text-white placeholder-muted focus:outline-none focus:ring-2 focus:ring-primary transition"
-            />
-            {searchQuery && (
+            <Search size={18} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsDarkMode((current) => !current)}
+            className="rounded-lg p-2 text-[#3e2548]/75 transition-colors hover:bg-white/70 hover:text-purple-700"
+            aria-label="Toggle dark mode"
+          >
+            <Moon size={18} />
+          </button>
+
+          {isAuthenticated ? (
+            <>
               <button
                 type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-10 top-1/2 -translate-y-1/2 text-muted hover:text-white transition"
-                aria-label="Clear search"
+                onClick={() => setIsMenuOpen((current) => !current)}
+                className="rounded-2xl border border-white/40 bg-white/50 p-1 transition hover:border-purple-300"
+                aria-label="Open profile menu"
               >
-                <MdClose size={18} />
+                <AvatarDisplay avatarId={avatarId} size={34} className="rounded-xl" />
               </button>
-            )}
-            <button
-              type="submit"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-primary transition"
-            >
-              <FiSearch size={20} />
-            </button>
-          </form>
 
-          {/* Right section */}
-          <div className="relative flex items-center gap-4" ref={menuRef}>
-            {isAuthenticated ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setIsMenuOpen((current) => !current)}
-                  className="rounded-2xl border border-white/15 bg-white/5 p-1 transition hover:border-primary/60"
-                  aria-label="Open profile menu"
-                >
-                  <AvatarDisplay avatarId={avatarId} size={36} className="rounded-xl" />
-                </button>
-
-                {isMenuOpen && (
-                  <div className="absolute right-0 top-14 z-50 min-w-[200px] rounded-2xl border border-white/10 bg-[#13131f] p-3 shadow-xl backdrop-blur-xl">
-                    <div className="flex items-center gap-3 p-2">
-                      <AvatarDisplay avatarId={avatarId} size={48} className="rounded-xl" />
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-white">{user?.name || 'User'}</p>
-                        <p className="truncate text-xs text-muted">{user?.email || 'No email'}</p>
-                      </div>
+              {isMenuOpen ? (
+                <div className="absolute right-0 top-14 z-50 min-w-[210px] rounded-2xl border border-outline-variant/20 bg-white p-3 shadow-xl">
+                  <div className="flex items-center gap-3 px-2 pb-2">
+                    <AvatarDisplay avatarId={avatarId} size={42} className="rounded-xl" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-[#3e2548]">{user?.name || 'User'}</p>
+                      <p className="truncate text-xs text-[#3e2548]/60">{user?.email || 'No email'}</p>
                     </div>
-
-                    <div className="my-2 border-t border-white/10" />
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        navigate('/profile');
-                      }}
-                      className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm text-white/80 transition hover:bg-white/5"
-                    >
-                      <FiUser size={16} />
-                      Profile
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        navigate('/preferences');
-                      }}
-                      className="mt-1 flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm text-white/80 transition hover:bg-white/5"
-                    >
-                      <FiSettings size={16} />
-                      Preferences
-                    </button>
-
-                    <div className="my-2 border-t border-white/10" />
-
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm text-red-400 transition hover:bg-white/5"
-                    >
-                      <FiLogOut size={16} />
-                      Logout
-                    </button>
                   </div>
-                )}
-              </>
-            ) : (
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      navigate('/profile');
+                    }}
+                    className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm text-[#3e2548]/85 transition hover:bg-surface-container-low"
+                  >
+                    <FiUser size={16} />
+                    Profile
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      navigate('/preferences');
+                    }}
+                    className="mt-1 flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm text-[#3e2548]/85 transition hover:bg-surface-container-low"
+                  >
+                    <FiSettings size={16} />
+                    Preferences
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="mt-1 flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm text-red-500 transition hover:bg-red-50"
+                  >
+                    <FiLogOut size={16} />
+                    Logout
+                  </button>
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <>
               <button
+                type="button"
                 onClick={() => navigate('/login')}
-                className="px-6 py-2 rounded-lg bg-primary text-bg font-semibold hover:bg-primaryDark transition"
+                className="rounded-lg px-4 py-2 text-sm font-medium text-purple-700 transition-opacity hover:opacity-80"
               >
                 Login
               </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Tab navigation */}
-      <div className="px-6 py-4 border-t border-surface2 flex justify-center gap-8 overflow-x-auto hide-scrollbar">
-        {tabs.map((tab) => (
-          <Link
-            key={tab.id}
-            to={tab.to}
-            onClick={(event) => handleNavClick(event, tab.id)}
-            className={`whitespace-nowrap text-sm font-medium pb-2 transition ${
-              activeTab === tab.label
-                ? 'text-primary border-b-2 border-primary'
-                : 'text-muted hover:text-primary'
-            }`}
-          >
-            {tab.label}
-          </Link>
-        ))}
-      </div>
-
-      {/* Mobile search bar */}
-      <form
-        onSubmit={handleSearch}
-        className="px-6 py-3 sm:hidden border-t border-surface2"
-      >
-        <div className="flex gap-2 items-center">
-          <div className="relative flex-1">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search..."
-              className="w-full px-3 py-2 pr-10 rounded-lg bg-surface2 text-white placeholder-muted focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            {searchQuery && (
               <button
                 type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-white transition"
-                aria-label="Clear search"
+                onClick={() => navigate('/register')}
+                className="rounded-lg bg-gradient-to-br from-primary to-primary-container px-4 py-2 text-sm font-semibold text-on-primary transition-all active:scale-95"
               >
-                <MdClose size={18} />
+                Get Started
               </button>
-            )}
-          </div>
-          <button
-            type="submit"
-            className="p-2 rounded-lg bg-primary text-bg font-semibold hover:bg-primaryDark transition"
-          >
-            <FiSearch size={20} />
-          </button>
+            </>
+          )}
         </div>
-      </form>
+      </div>
     </nav>
   );
 };

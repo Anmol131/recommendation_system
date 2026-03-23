@@ -1,17 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
-  Menu,
-  Moon,
   Search,
-  User,
-  X,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import * as endpoints from '../api/endpoints';
-import { useAuth } from '../context/AuthContext';
 
 const CATEGORY_CARDS = [
   {
@@ -141,29 +136,13 @@ const getSummary = (item, type) => {
 
 function HomePage() {
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useAuth();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [trendingItems, setTrendingItems] = useState([]);
   const [recommendedItems, setRecommendedItems] = useState([]);
   const [loadingTrending, setLoadingTrending] = useState(true);
   const [loadingRecommended, setLoadingRecommended] = useState(true);
-
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const trendingRef = useRef(null);
-  const userMenuRef = useRef(null);
-
-  useEffect(() => {
-    const handleOutsideClick = (event) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
-        setMenuOpen(false);
-      }
-    };
-
-    window.addEventListener('mousedown', handleOutsideClick);
-    return () => window.removeEventListener('mousedown', handleOutsideClick);
-  }, []);
 
   useEffect(() => {
     const loadTrending = async () => {
@@ -218,25 +197,13 @@ function HomePage() {
     loadRecommended();
   }, []);
 
-  const navItems = useMemo(
-    () => [
-      { label: 'Home', href: '/' },
-      { label: 'Explore', href: '/browse' },
-      { label: 'About', href: '/about' },
-      { label: 'Contact', href: '/contact' },
-    ],
-    []
-  );
-
-  const userInitial = (user?.name || 'U').charAt(0).toUpperCase();
-
   const handleSearchSubmit = (event) => {
     event.preventDefault();
     const trimmed = searchQuery.trim();
     if (!trimmed) {
       return;
     }
-    navigate(`/search?q=${encodeURIComponent(trimmed)}`);
+    navigate(`/explore?q=${encodeURIComponent(trimmed)}`);
   };
 
   const scrollTrending = (direction) => {
@@ -250,148 +217,8 @@ function HomePage() {
     });
   };
 
-  const handleUserAction = (href) => {
-    setMenuOpen(false);
-    setMobileMenuOpen(false);
-    navigate(href);
-  };
-
   return (
     <div className="min-h-screen bg-surface text-on-surface font-['Inter'] antialiased selection:bg-primary-container selection:text-on-primary">
-      <nav className="sticky top-0 z-50 w-full bg-white/60 backdrop-blur-md shadow-[0_20px_40px_-10px_rgba(62,37,72,0.08)]">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8">
-          <button
-            type="button"
-            onClick={() => navigate('/')}
-            className="text-2xl font-bold tracking-tight text-on-surface"
-          >
-            Vibeify
-          </button>
-
-          <div className="hidden items-center gap-8 text-sm font-medium tracking-wide md:flex">
-            {navItems.map((item) => {
-              const isHome = item.href === '/';
-              return (
-                <button
-                  key={item.href}
-                  type="button"
-                  onClick={() => navigate(item.href)}
-                  className={[
-                    'transition-colors',
-                    isHome
-                      ? 'border-b-2 border-primary pb-1 font-semibold text-primary'
-                      : 'text-on-surface/70 hover:text-primary',
-                  ].join(' ')}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="flex items-center gap-2" ref={userMenuRef}>
-            <button
-              type="button"
-              onClick={() => navigate('/search')}
-              className="rounded-lg p-2 transition-all duration-300 hover:bg-primary/10"
-              aria-label="Search"
-            >
-              <Search size={20} className="text-primary" />
-            </button>
-            <button
-              type="button"
-              className="rounded-lg p-2 transition-all duration-300 hover:bg-primary/10"
-              aria-label="Theme"
-            >
-              <Moon size={20} className="text-primary" />
-            </button>
-
-            {isAuthenticated ? (
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setMenuOpen((previous) => !previous)}
-                  className="flex items-center gap-2 rounded-lg p-2 transition-all duration-300 hover:bg-primary/10"
-                >
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-bold text-primary">
-                    {userInitial}
-                  </span>
-                  <span className="hidden max-w-24 truncate text-sm text-on-surface md:block">{user?.name || 'User'}</span>
-                </button>
-
-                {menuOpen ? (
-                  <div className="absolute right-0 mt-2 w-44 rounded-xl bg-surface-container-lowest p-2 shadow-[0_20px_40px_-10px_rgba(62,37,72,0.08)] outline outline-1 outline-outline-variant/15">
-                    <button
-                      type="button"
-                      onClick={() => handleUserAction('/profile')}
-                      className="w-full rounded-lg px-3 py-2 text-left text-sm text-on-surface transition-colors hover:bg-surface-container-low"
-                    >
-                      Profile
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleUserAction('/preferences')}
-                      className="w-full rounded-lg px-3 py-2 text-left text-sm text-on-surface transition-colors hover:bg-surface-container-low"
-                    >
-                      Preferences
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        logout();
-                        setMenuOpen(false);
-                        navigate('/');
-                      }}
-                      className="w-full rounded-lg px-3 py-2 text-left text-sm text-on-surface transition-colors hover:bg-surface-container-low"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => navigate('/login')}
-                className="rounded-lg p-2 transition-all duration-300 hover:bg-primary/10"
-                aria-label="Login"
-              >
-                <User size={20} className="text-primary" />
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen((previous) => !previous)}
-              className="rounded-lg p-2 text-primary transition-all duration-300 hover:bg-primary/10 md:hidden"
-              aria-label="Toggle menu"
-            >
-              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
-          </div>
-        </div>
-
-        {mobileMenuOpen ? (
-          <div className="bg-surface-container-low px-5 pb-5 pt-2 md:hidden">
-            <div className="space-y-1 rounded-xl bg-surface-container-lowest p-2 outline outline-1 outline-outline-variant/15">
-              {navItems.map((item) => (
-                <button
-                  key={item.href}
-                  type="button"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    navigate(item.href);
-                  }}
-                  className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-on-surface hover:bg-surface-container-low"
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
-      </nav>
-
       <main>
         <section className="relative flex h-[819px] flex-col items-center justify-center overflow-hidden px-8 text-center">
           <div className="absolute inset-0 z-0 bg-gradient-to-b from-surface-container-low/50 to-surface" />

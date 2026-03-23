@@ -146,6 +146,10 @@ function ProfilePage() {
   const [error, setError] = useState('');
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [avatarUpdating, setAvatarUpdating] = useState(false);
+  const [isEditingBio, setIsEditingBio] = useState(false);
+  const [bioDraft, setBioDraft] = useState('');
+  const [bioSaving, setBioSaving] = useState(false);
+  const [bioError, setBioError] = useState('');
 
   const loadProfile = async () => {
     setLoading(true);
@@ -167,6 +171,10 @@ function ProfilePage() {
     loadProfile();
   }, []);
 
+  useEffect(() => {
+    setBioDraft(profile?.bio || '');
+  }, [profile?.bio]);
+
   const safeProfile = profile || {};
   const history = useMemo(() => normalizeHistory(safeProfile.history), [safeProfile.history]);
   const likedHistory = useMemo(() => history.filter((item) => item?.action === 'liked'), [history]);
@@ -179,6 +187,7 @@ function ProfilePage() {
 
   const displayName = safeProfile?.name || user?.name || 'Curator';
   const displayEmail = safeProfile?.email || user?.email || 'No email available';
+  const displayBio = safeProfile?.bio || 'No bio yet. Add a short line about your vibe.';
   const avatarValue = safeProfile?.avatar || user?.avatar || '';
   const savedItemsCount = history.length;
   const curatedListsCount = likedHistory.length;
@@ -200,6 +209,27 @@ function ProfilePage() {
       setShowAvatarPicker(false);
     } finally {
       setAvatarUpdating(false);
+    }
+  };
+
+  const handleBioSave = async () => {
+    setBioSaving(true);
+    setBioError('');
+
+    try {
+      const trimmedBio = bioDraft.trim();
+      const response = await endpoints.updateBio(trimmedBio);
+      const data = toProfileData(response);
+
+      setProfile((current) => ({
+        ...(current || {}),
+        bio: data?.bio ?? trimmedBio,
+      }));
+      setIsEditingBio(false);
+    } catch (err) {
+      setBioError(err?.response?.data?.message || 'Failed to update bio. Please try again.');
+    } finally {
+      setBioSaving(false);
     }
   };
 
@@ -262,12 +292,54 @@ function ProfilePage() {
           <div className="flex-1 text-center md:text-left">
             <h1 className="mb-2 text-5xl font-extrabold tracking-tight text-on-surface">{displayName}</h1>
             <p className="mb-6 text-lg font-medium text-on-surface-variant opacity-80">{displayEmail}</p>
+            {isEditingBio ? (
+              <div className="mb-6 max-w-2xl">
+                <textarea
+                  value={bioDraft}
+                  onChange={(event) => setBioDraft(event.target.value)}
+                  rows={3}
+                  placeholder="Tell others about your taste..."
+                  className="w-full rounded-xl border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 text-sm text-on-surface focus:border-primary/40 focus:outline-none"
+                />
+                {bioError ? <p className="mt-2 text-xs font-semibold text-error">{bioError}</p> : null}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={handleBioSave}
+                    disabled={bioSaving}
+                    className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-on-primary transition hover:bg-primary-dim disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {bioSaving ? 'Saving...' : 'Save Bio'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditingBio(false);
+                      setBioDraft(safeProfile?.bio || '');
+                      setBioError('');
+                    }}
+                    disabled={bioSaving}
+                    className="rounded-lg border border-outline-variant/30 px-4 py-2 text-xs font-semibold text-on-surface transition hover:bg-surface-container-low disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="mb-6 max-w-2xl">
+                <p className="text-sm leading-relaxed text-on-surface-variant">{displayBio}</p>
+              </div>
+            )}
             <div className="flex flex-wrap justify-center gap-3 md:justify-start">
               <button
                 type="button"
+                onClick={() => {
+                  setIsEditingBio(true);
+                  setBioError('');
+                }}
                 className="rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold tracking-tight text-on-primary shadow-lg shadow-primary/20 transition-all hover:bg-primary-dim active:scale-95"
               >
-                Edit Profile
+                Edit Bio
               </button>
               <button
                 type="button"

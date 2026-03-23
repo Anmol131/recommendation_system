@@ -1,9 +1,7 @@
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import { useAuth } from './context/AuthContext';
 import HomePage from './pages/HomePage';
-import BrowsePage from './pages/BrowsePage';
-import SearchPage from './pages/SearchPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
@@ -20,13 +18,13 @@ import AboutPage from './pages/AboutPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
 
 function ProtectedRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth();
+  const { user, isLoading } = useAuth();
 
-  if (loading) {
-    return <div className="px-6 py-24 text-center text-muted">Loading profile...</div>;
+  if (isLoading) {
+    return <div className="px-6 py-24 text-center text-muted">Loading...</div>;
   }
 
-  if (!isAuthenticated) {
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 
@@ -34,16 +32,14 @@ function ProtectedRoute({ children }) {
 }
 
 function App() {
-  const location = useLocation();
-
   return (
     <div className="min-h-screen bg-bg text-white">
-      {location.pathname !== '/' ? <Navbar /> : null}
+      <Navbar />
       <main className="pt-2">
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/browse" element={<BrowsePage />} />
-          <Route path="/search" element={<SearchPage />} />
+          <Route path="/browse" element={<Navigate to="/explore" replace />} />
+          <Route path="/search" element={<Navigate to="/explore" replace />} />
           <Route path="/movies" element={<MovieDetailPage />} />
           <Route path="/movies/:id" element={<MovieDetailPage />} />
           <Route path="/books" element={<BooksPage />} />

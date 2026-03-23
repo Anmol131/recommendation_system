@@ -1,21 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ArrowRight,
-  Bookmark,
-  Calendar,
-  ChevronDown,
-  Compass,
-  Film,
-  Home,
-  Search,
-  SlidersHorizontal,
-  Star,
-  User,
-} from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Search, Star } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import * as endpoints from '../api/endpoints';
 
-const TABS = [
+const CATEGORY_TABS = [
   { key: 'all', label: 'All' },
   { key: 'movies', label: 'Movies' },
   { key: 'books', label: 'Books' },
@@ -23,12 +11,20 @@ const TABS = [
   { key: 'music', label: 'Music' },
 ];
 
-const TAB_TYPE = {
-  all: 'all',
-  movies: 'movie',
-  books: 'book',
-  games: 'game',
-  music: 'music',
+const YEAR_OPTIONS = ['2020 - Present', '2010 - 2019', 'Classic Era'];
+
+const LIST_REQUESTS = {
+  movies: (page, limit) => endpoints.getMovies({ page, limit, sort: 'rating' }),
+  books: (page, limit) => endpoints.getBooks({ page, limit, sort: 'rating' }),
+  games: (page, limit) => endpoints.getGames({ page, limit, sort: 'rating' }),
+  music: (page, limit) => endpoints.getMusic({ page, limit, sort: 'popularity' }),
+};
+
+const SEARCH_REQUESTS = {
+  movies: (query) => endpoints.searchMovies(query),
+  books: (query) => endpoints.searchBooks(query),
+  games: (query) => endpoints.searchGames(query),
+  music: (query) => endpoints.searchMusic(query),
 };
 
 const TYPE_LABEL = {
@@ -38,28 +34,7 @@ const TYPE_LABEL = {
   music: 'Music',
 };
 
-const getListRequest = {
-  movies: (page, limit) => endpoints.getMovies({ page, limit, sort: 'rating' }),
-  books: (page, limit) => endpoints.getBooks({ page, limit, sort: 'rating' }),
-  games: (page, limit) => endpoints.getGames({ page, limit, sort: 'rating' }),
-  music: (page, limit) => endpoints.getMusic({ page, limit, sort: 'popularity' }),
-};
-
-const getSearchRequest = {
-  movies: (query) => endpoints.searchMovies(query),
-  books: (query) => endpoints.searchBooks(query),
-  games: (query) => endpoints.searchGames(query),
-  music: (query) => endpoints.searchMusic(query),
-};
-
-const initialBuckets = {
-  movies: [],
-  books: [],
-  games: [],
-  music: [],
-};
-
-const imageFallback = 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=800';
+const IMAGE_FALLBACK = 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=800';
 
 const unwrapItems = (payload) => {
   if (!payload) return [];
@@ -71,262 +46,222 @@ const unwrapItems = (payload) => {
 
 const unwrapTotal = (payload, fallbackLength) => {
   const direct = payload?.data?.totalItems ?? payload?.totalItems;
-  if (typeof direct === 'number') {
-    return direct;
-  }
-  return fallbackLength;
+  return typeof direct === 'number' ? direct : fallbackLength;
 };
 
-const normalizeGenres = (item) => {
-  if (Array.isArray(item?.genres) && item.genres.length > 0) {
-    return item.genres.filter(Boolean).map((genre) => String(genre));
-  }
+const parseYear = (item) => {
+  const value = item?.year || item?.releaseYear || item?.releaseDate || item?.publishedDate;
+  if (!value) return null;
+  const text = String(value);
+  const match = text.match(/(19|20)\d{2}/);
+  return match ? Number(match[0]) : null;
+};
+
+const parseGenres = (item) => {
+  if (Array.isArray(item?.genres)) return item.genres.filter(Boolean).map((entry) => String(entry).trim());
   if (typeof item?.genres === 'string') {
-    return item.genres.split(',').map((genre) => genre.trim()).filter(Boolean);
+    return item.genres.split(',').map((entry) => entry.trim()).filter(Boolean);
   }
-  if (typeof item?.genre === 'string') {
-    return [item.genre];
-  }
+  if (typeof item?.genre === 'string') return [item.genre.trim()];
   return [];
 };
 
-const normalizeYear = (item) => {
-  const value = item?.year || item?.releaseYear || item?.releaseDate || item?.publishedDate;
-  if (!value) return 'N/A';
-  const text = String(value);
-  const match = text.match(/(19|20)\d{2}/);
-  return match ? match[0] : text.slice(0, 4);
-};
-
-const normalizeRating = (item) => {
+const parseRating = (item) => {
   const candidate = item?.avgRating ?? item?.rating ?? item?.voteAverage ?? item?.averageRating;
   const numeric = Number(candidate);
-  if (Number.isNaN(numeric)) return null;
-  return numeric.toFixed(1);
+  return Number.isFinite(numeric) ? Number(numeric.toFixed(1)) : null;
 };
 
-const normalizeDescription = (item) => item?.description || item?.overview || item?.summary || 'A fresh recommendation that fits your current vibe.';
+const parseTitle = (item) => item?.title || item?.name || 'Untitled';
 
-const getImage = (item) => item?.poster || item?.cover || item?.image || item?.posterPath || imageFallback;
+const parseMeta = (item, type) => {
+  if (type === 'movie') return item?.director ? `Director: ${item.director}` : `Genre: ${parseGenres(item)[0] || 'N/A'}`;
+  if (type === 'book') return item?.author ? `Author: ${item.author}` : `Genre: ${parseGenres(item)[0] || 'N/A'}`;
+  if (type === 'game') return item?.developer ? `Developer: ${item.developer}` : `Genre: ${parseGenres(item)[0] || 'N/A'}`;
+  return item?.artist ? `Artist: ${item.artist}` : `Genre: ${parseGenres(item)[0] || 'N/A'}`;
+};
 
-const getTitle = (item) => item?.title || item?.name || 'Untitled';
+const parseImage = (item) => item?.poster || item?.cover || item?.image || item?.posterPath || IMAGE_FALLBACK;
 
-const getItemId = (item, type) => {
+const parseId = (item, type) => {
   if (type === 'movie') return item?.movieId ?? item?.tmdbId ?? item?.id ?? item?._id;
   if (type === 'book') return item?.isbn ?? item?.id ?? item?._id;
   if (type === 'game') return item?.gameId ?? item?.id ?? item?._id;
   return item?.trackId ?? item?.id ?? item?._id;
 };
 
-const getDetailPath = (item, type) => {
-  const itemId = getItemId(item, type);
-  if (!itemId) return '/browse';
-  if (type === 'movie') return `/movies/${encodeURIComponent(itemId)}`;
-  if (type === 'book') return `/books/${encodeURIComponent(itemId)}`;
-  if (type === 'game') return `/games/${encodeURIComponent(itemId)}`;
-  return `/music/${encodeURIComponent(itemId)}`;
+const getDetailPath = (item) => {
+  const id = item.id;
+  if (!id) return '/explore';
+  if (item.type === 'movie') return `/movies/${encodeURIComponent(id)}`;
+  if (item.type === 'book') return `/books/${encodeURIComponent(id)}`;
+  if (item.type === 'game') return `/games/${encodeURIComponent(id)}`;
+  return `/music/${encodeURIComponent(id)}`;
 };
 
-const interleaveBuckets = (buckets) => {
-  const keys = ['movies', 'books', 'games', 'music'];
-  const max = Math.max(...keys.map((key) => buckets[key].length), 0);
-  const merged = [];
+const mapMedia = (rawItems, type) => rawItems.map((item, index) => ({
+  id: parseId(item, type) || `${type}-${index}`,
+  type,
+  typeLabel: TYPE_LABEL[type],
+  title: parseTitle(item),
+  rating: parseRating(item),
+  meta: parseMeta(item, type),
+  image: parseImage(item),
+  genres: parseGenres(item),
+  year: parseYear(item),
+  source: item,
+}));
 
-  for (let index = 0; index < max; index += 1) {
-    keys.forEach((key) => {
-      if (buckets[key][index]) {
-        merged.push(buckets[key][index]);
-      }
-    });
-  }
-
-  return merged;
+const matchesYearBucket = (itemYear, selectedYears) => {
+  if (selectedYears.length === 0) return true;
+  if (!itemYear) return false;
+  return selectedYears.some((bucket) => {
+    if (bucket === '2020 - Present') return itemYear >= 2020;
+    if (bucket === '2010 - 2019') return itemYear >= 2010 && itemYear <= 2019;
+    return itemYear < 2010;
+  });
 };
-
-function SkeletonCards() {
-  return (
-    <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {Array.from({ length: 8 }).map((_, index) => (
-        <div
-          key={index}
-          className="overflow-hidden rounded-2xl border border-outline-variant/5 bg-white/70 shadow-[0_20px_45px_-20px_rgba(62,37,72,0.18)] animate-pulse"
-        >
-          <div className="aspect-[4/5] bg-surface-container-high" />
-          <div className="space-y-3 p-5">
-            <div className="h-4 w-2/3 rounded bg-surface-container-high" />
-            <div className="h-3 w-1/3 rounded bg-surface-container-high" />
-            <div className="h-3 w-full rounded bg-surface-container-high" />
-            <div className="h-3 w-5/6 rounded bg-surface-container-high" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 function ExplorePage() {
   const navigate = useNavigate();
-  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeCategory, setActiveCategory] = useState('all');
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [activeGenre, setActiveGenre] = useState('All');
+  const [minRating, setMinRating] = useState(0);
+  const [selectedYears, setSelectedYears] = useState([]);
   const [page, setPage] = useState(1);
 
   const [items, setItems] = useState([]);
   const [totalItems, setTotalItems] = useState(0);
-
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState('');
 
   const fetchTokenRef = useRef(0);
-  const searchDebounceRef = useRef(null);
-  const allBucketsRef = useRef(initialBuckets);
 
   useEffect(() => {
-    if (searchDebounceRef.current) {
-      clearTimeout(searchDebounceRef.current);
+    const urlQuery = (searchParams.get('q') || '').trim();
+    const urlType = (searchParams.get('type') || '').trim().toLowerCase();
+
+    setQuery(urlQuery);
+    setDebouncedQuery(urlQuery);
+
+    if (['all', 'movies', 'books', 'games', 'music'].includes(urlType)) {
+      setActiveCategory(urlType);
     }
+  }, [searchParams]);
 
-    searchDebounceRef.current = setTimeout(() => {
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
       setDebouncedQuery(query.trim());
-    }, 400);
-
-    return () => {
-      if (searchDebounceRef.current) {
-        clearTimeout(searchDebounceRef.current);
-      }
-    };
+    }, 350);
+    return () => window.clearTimeout(timer);
   }, [query]);
 
   useEffect(() => {
     setPage(1);
-    setItems([]);
-    allBucketsRef.current = initialBuckets;
-    setTotalItems(0);
-  }, [activeTab, debouncedQuery]);
+  }, [activeCategory, debouncedQuery]);
 
   useEffect(() => {
     const token = Date.now();
     fetchTokenRef.current = token;
 
-    const load = async () => {
-      const initialLoad = page === 1;
-      if (initialLoad) {
+    const loadData = async () => {
+      const isFirstPage = page === 1;
+      if (isFirstPage) {
         setLoading(true);
       } else {
         setLoadingMore(true);
       }
+      setError('');
 
       try {
-        if (debouncedQuery) {
-          if (activeTab === 'all') {
+        let fetchedItems = [];
+        let fetchedTotal = 0;
+
+        if (activeCategory === 'all') {
+          if (debouncedQuery) {
             const [moviesRes, booksRes, gamesRes, musicRes] = await Promise.allSettled([
-              getSearchRequest.movies(debouncedQuery),
-              getSearchRequest.books(debouncedQuery),
-              getSearchRequest.games(debouncedQuery),
-              getSearchRequest.music(debouncedQuery),
+              SEARCH_REQUESTS.movies(debouncedQuery),
+              SEARCH_REQUESTS.books(debouncedQuery),
+              SEARCH_REQUESTS.games(debouncedQuery),
+              SEARCH_REQUESTS.music(debouncedQuery),
             ]);
 
             if (fetchTokenRef.current !== token) return;
 
-            const nextBuckets = {
-              movies: moviesRes.status === 'fulfilled'
-                ? unwrapItems(moviesRes.value).map((item) => ({ ...item, __type: 'movie' }))
-                : [],
-              books: booksRes.status === 'fulfilled'
-                ? unwrapItems(booksRes.value).map((item) => ({ ...item, __type: 'book' }))
-                : [],
-              games: gamesRes.status === 'fulfilled'
-                ? unwrapItems(gamesRes.value).map((item) => ({ ...item, __type: 'game' }))
-                : [],
-              music: musicRes.status === 'fulfilled'
-                ? unwrapItems(musicRes.value).map((item) => ({ ...item, __type: 'music' }))
-                : [],
-            };
+            const movies = moviesRes.status === 'fulfilled' ? mapMedia(unwrapItems(moviesRes.value), 'movie') : [];
+            const books = booksRes.status === 'fulfilled' ? mapMedia(unwrapItems(booksRes.value), 'book') : [];
+            const games = gamesRes.status === 'fulfilled' ? mapMedia(unwrapItems(gamesRes.value), 'game') : [];
+            const music = musicRes.status === 'fulfilled' ? mapMedia(unwrapItems(musicRes.value), 'music') : [];
 
-            const merged = interleaveBuckets(nextBuckets);
-            setItems(merged);
-            setTotalItems(merged.length);
-            return;
+            fetchedItems = [...movies, ...books, ...games, ...music];
+            fetchedTotal = fetchedItems.length;
+          } else {
+            const limitPerType = 4;
+            const [moviesRes, booksRes, gamesRes, musicRes] = await Promise.allSettled([
+              LIST_REQUESTS.movies(page, limitPerType),
+              LIST_REQUESTS.books(page, limitPerType),
+              LIST_REQUESTS.games(page, limitPerType),
+              LIST_REQUESTS.music(page, limitPerType),
+            ]);
+
+            if (fetchTokenRef.current !== token) return;
+
+            const moviesPayload = moviesRes.status === 'fulfilled' ? moviesRes.value : null;
+            const booksPayload = booksRes.status === 'fulfilled' ? booksRes.value : null;
+            const gamesPayload = gamesRes.status === 'fulfilled' ? gamesRes.value : null;
+            const musicPayload = musicRes.status === 'fulfilled' ? musicRes.value : null;
+
+            const movies = mapMedia(unwrapItems(moviesPayload), 'movie');
+            const books = mapMedia(unwrapItems(booksPayload), 'book');
+            const games = mapMedia(unwrapItems(gamesPayload), 'game');
+            const music = mapMedia(unwrapItems(musicPayload), 'music');
+
+            fetchedItems = [...movies, ...books, ...games, ...music];
+            fetchedTotal = [
+              unwrapTotal(moviesPayload, movies.length),
+              unwrapTotal(booksPayload, books.length),
+              unwrapTotal(gamesPayload, games.length),
+              unwrapTotal(musicPayload, music.length),
+            ].reduce((sum, value) => sum + value, 0);
           }
-
-          const response = await getSearchRequest[activeTab](debouncedQuery);
-          if (fetchTokenRef.current !== token) return;
-
-          const foundItems = unwrapItems(response).map((item) => ({
-            ...item,
-            __type: TAB_TYPE[activeTab],
-          }));
-
-          setItems(foundItems);
-          setTotalItems(unwrapTotal(response, foundItems.length));
-          return;
-        }
-
-        if (activeTab === 'all') {
-          const limitPerType = 3;
-          const [moviesRes, booksRes, gamesRes, musicRes] = await Promise.allSettled([
-            getListRequest.movies(page, limitPerType),
-            getListRequest.books(page, limitPerType),
-            getListRequest.games(page, limitPerType),
-            getListRequest.music(page, limitPerType),
-          ]);
-
-          if (fetchTokenRef.current !== token) return;
-
-          const incomingBuckets = {
-            movies: moviesRes.status === 'fulfilled'
-              ? unwrapItems(moviesRes.value).map((item) => ({ ...item, __type: 'movie' }))
-              : [],
-            books: booksRes.status === 'fulfilled'
-              ? unwrapItems(booksRes.value).map((item) => ({ ...item, __type: 'book' }))
-              : [],
-            games: gamesRes.status === 'fulfilled'
-              ? unwrapItems(gamesRes.value).map((item) => ({ ...item, __type: 'game' }))
-              : [],
-            music: musicRes.status === 'fulfilled'
-              ? unwrapItems(musicRes.value).map((item) => ({ ...item, __type: 'music' }))
-              : [],
+        } else {
+          const typeMap = {
+            movies: 'movie',
+            books: 'book',
+            games: 'game',
+            music: 'music',
           };
+          const resolvedType = typeMap[activeCategory];
 
-          const totals = [moviesRes, booksRes, gamesRes, musicRes].reduce((acc, result) => {
-            if (result.status !== 'fulfilled') return acc;
-            return acc + unwrapTotal(result.value, unwrapItems(result.value).length);
-          }, 0);
+          if (debouncedQuery) {
+            const payload = await SEARCH_REQUESTS[activeCategory](debouncedQuery);
+            if (fetchTokenRef.current !== token) return;
 
-          const nextBuckets = initialLoad
-            ? incomingBuckets
-            : {
-              movies: [...allBucketsRef.current.movies, ...incomingBuckets.movies],
-              books: [...allBucketsRef.current.books, ...incomingBuckets.books],
-              games: [...allBucketsRef.current.games, ...incomingBuckets.games],
-              music: [...allBucketsRef.current.music, ...incomingBuckets.music],
-            };
+            fetchedItems = mapMedia(unwrapItems(payload), resolvedType);
+            fetchedTotal = fetchedItems.length;
+          } else {
+            const payload = await LIST_REQUESTS[activeCategory](page, 16);
+            if (fetchTokenRef.current !== token) return;
 
-          allBucketsRef.current = nextBuckets;
-          setItems(interleaveBuckets(nextBuckets));
-          setTotalItems(totals);
-          return;
+            fetchedItems = mapMedia(unwrapItems(payload), resolvedType);
+            fetchedTotal = unwrapTotal(payload, fetchedItems.length);
+          }
         }
 
-        const response = await getListRequest[activeTab](page, 12);
+        setItems((current) => (isFirstPage ? fetchedItems : [...current, ...fetchedItems]));
+        setTotalItems(fetchedTotal);
+      } catch (fetchError) {
         if (fetchTokenRef.current !== token) return;
-
-        const fetched = unwrapItems(response).map((item) => ({
-          ...item,
-          __type: TAB_TYPE[activeTab],
-        }));
-
-        setItems((current) => (initialLoad ? fetched : [...current, ...fetched]));
-        setTotalItems(unwrapTotal(response, fetched.length));
-      } catch {
-        if (fetchTokenRef.current !== token) return;
-        if (initialLoad) {
+        if (page === 1) {
           setItems([]);
           setTotalItems(0);
-          allBucketsRef.current = initialBuckets;
         }
+        setError(fetchError?.response?.data?.message || 'Failed to load explore content.');
       } finally {
         if (fetchTokenRef.current === token) {
           setLoading(false);
@@ -335,229 +270,234 @@ function ExplorePage() {
       }
     };
 
-    load();
-  }, [activeTab, debouncedQuery, page]);
+    loadData();
+  }, [activeCategory, debouncedQuery, page]);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams();
+    if (debouncedQuery) {
+      nextParams.set('q', debouncedQuery);
+    }
+    if (activeCategory !== 'all') {
+      nextParams.set('type', activeCategory);
+    }
+    setSearchParams(nextParams, { replace: true });
+  }, [activeCategory, debouncedQuery, setSearchParams]);
+
+  const availableGenres = useMemo(() => {
+    const setOfGenres = new Set();
+    items.forEach((item) => {
+      item.genres.forEach((genre) => {
+        if (genre) setOfGenres.add(genre);
+      });
+    });
+    return ['All', ...Array.from(setOfGenres).sort((a, b) => a.localeCompare(b)).slice(0, 16)];
+  }, [items]);
+
+  const filteredItems = useMemo(() => items.filter((item) => {
+    const genreMatch = activeGenre === 'All' || item.genres.includes(activeGenre);
+    const ratingMatch = minRating <= 0 || (item.rating !== null && item.rating >= minRating);
+    const yearMatch = matchesYearBucket(item.year, selectedYears);
+    return genreMatch && ratingMatch && yearMatch;
+  }), [activeGenre, items, minRating, selectedYears]);
 
   const canLoadMore = useMemo(() => {
-    if (debouncedQuery) {
-      return false;
-    }
+    if (debouncedQuery) return false;
     return items.length < totalItems;
   }, [debouncedQuery, items.length, totalItems]);
 
-  const handleLoadMore = () => {
-    if (!canLoadMore || loadingMore) return;
-    setPage((current) => current + 1);
+  const toggleYear = (yearLabel) => {
+    setSelectedYears((current) => {
+      if (current.includes(yearLabel)) {
+        return current.filter((entry) => entry !== yearLabel);
+      }
+      return [...current, yearLabel];
+    });
   };
-
-  const handleCardClick = (item) => {
-    const cardType = item.__type || 'movie';
-    navigate(getDetailPath(item, cardType));
-  };
-
-  const bottomItems = [
-    { label: 'Home', href: '/', icon: Home },
-    { label: 'Explore', href: '/explore', icon: Compass },
-    { label: 'Movies', href: '/movies', icon: Film },
-    { label: 'Account', href: '/profile', icon: User },
-  ];
 
   return (
-    <div className="min-h-screen bg-[#fff3fd] pb-24 text-[#3e2548] font-['Inter'] antialiased selection:bg-primary-container selection:text-on-primary">
-      <main className="mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-8 lg:px-10">
-        <header className="space-y-8">
-          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-            <div>
-              <h1 className="mb-2 text-5xl font-bold leading-tight tracking-tight text-[#3e2548]">Explore</h1>
-              <p className="max-w-xl text-lg text-on-surface-variant">
-                Curated recommendations across every medium. Find your next favorite vibe.
-              </p>
-            </div>
+    <div className="min-h-screen bg-surface font-body text-on-surface antialiased">
+      <main className="mx-auto max-w-screen-2xl px-8 pb-24 pt-16">
+        <header className="mb-16 space-y-4 text-center">
+          <h1 className="text-5xl font-extrabold tracking-tight text-on-surface md:text-6xl">Explore Everything</h1>
+          <p className="mx-auto max-w-2xl text-lg font-medium text-on-surface-variant opacity-80">
+            A curated universe of movies, literature, soundscapes, and interactive worlds. Discover your next obsession through the lens of Vibeify.
+          </p>
+        </header>
 
-            <div className="group relative w-full md:w-96">
-              <input
-                type="text"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search vibes, titles, authors..."
-                className="h-14 w-full rounded-xl border border-outline-variant/10 bg-surface-container-high px-5 pr-12 text-on-surface placeholder:text-on-surface-variant/70 transition-all duration-300 focus:border-primary/20 focus:bg-surface-container-highest focus:outline-none focus:ring-2 focus:ring-primary/20 focus:shadow-[0_0_0_6px_rgba(131,25,218,0.12)]"
-              />
-              <Search size={20} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/70 transition-colors group-focus-within:text-primary" />
-            </div>
+        <div className="relative mx-auto mb-12 max-w-3xl">
+          <div className="flex items-center rounded-xl bg-surface-container-high px-6 py-4 shadow-sm ring-primary/20 transition-all focus-within:ring-2">
+            <Search size={18} className="mr-3 text-on-surface-variant" />
+            <input
+              type="text"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search across all categories..."
+              className="w-full border-none bg-transparent font-medium text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:ring-0"
+            />
           </div>
+        </div>
 
-          <div className="rounded-2xl bg-white/60 px-4 py-5 shadow-[0_14px_40px_-20px_rgba(62,37,72,0.15)] sm:px-5">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex flex-wrap gap-3">
-                {TABS.map((tab) => {
-                  const active = tab.key === activeTab;
+        <div className="mb-16 flex justify-center">
+          <div className="hide-scrollbar flex items-center gap-1 overflow-x-auto rounded-full bg-surface-container-low p-1.5">
+            {CATEGORY_TABS.map((tab) => {
+              const isActive = tab.key === activeCategory;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveCategory(tab.key)}
+                  className={[
+                    'rounded-full px-8 py-2.5 text-sm transition-all active:scale-95',
+                    isActive
+                      ? 'bg-primary font-semibold text-on-primary shadow-md'
+                      : 'font-medium text-on-surface-variant hover:bg-surface-container-highest',
+                  ].join(' ')}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-12 lg:flex-row">
+          <aside className="w-full space-y-10 lg:w-64">
+            <div className="space-y-6">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-on-surface/60">Genre</h3>
+              <div className="flex flex-wrap gap-2">
+                {availableGenres.map((chip) => {
+                  const active = chip === activeGenre;
                   return (
                     <button
-                      key={tab.key}
+                      key={chip}
                       type="button"
-                      onClick={() => setActiveTab(tab.key)}
+                      onClick={() => setActiveGenre(chip)}
                       className={[
-                        'rounded-full px-6 py-2.5 text-sm font-semibold transition-all duration-500',
+                        'rounded-full px-3 py-1.5 text-xs font-semibold transition-all',
                         active
-                          ? 'bg-primary text-on-primary shadow-[0_14px_30px_-16px_rgba(131,25,218,0.45)]'
-                          : 'border border-outline-variant/20 bg-white text-on-surface-variant hover:bg-primary/5 hover:text-primary',
+                          ? 'bg-secondary-container text-on-secondary-container'
+                          : 'bg-surface-container-highest text-on-surface-variant hover:bg-secondary-container hover:text-on-secondary-container',
                       ].join(' ')}
                     >
-                      {tab.label}
+                      {chip}
                     </button>
                   );
                 })}
               </div>
+            </div>
 
-              <div className="hidden items-center gap-2 text-on-surface-variant sm:flex">
-                <button type="button" className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-widest transition-colors hover:bg-surface-container-low hover:text-primary">
-                  <SlidersHorizontal size={16} />
-                  Genre
-                </button>
-                <button type="button" className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-widest transition-colors hover:bg-surface-container-low hover:text-primary">
-                  <Star size={16} />
-                  Rating
-                </button>
-                <button type="button" className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-widest transition-colors hover:bg-surface-container-low hover:text-primary">
-                  <Calendar size={16} />
-                  Year
-                </button>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold uppercase tracking-widest text-on-surface/60">Min. Rating</h3>
+                <span className="font-bold text-primary">{minRating.toFixed(1)}+</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="5"
+                step="0.1"
+                value={minRating}
+                onChange={(event) => setMinRating(Number(event.target.value))}
+                className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-surface-container-highest accent-primary"
+              />
+            </div>
+
+            <div className="space-y-6">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-on-surface/60">Year</h3>
+              <div className="space-y-3">
+                {YEAR_OPTIONS.map((year) => {
+                  const checked = selectedYears.includes(year);
+                  return (
+                    <label key={year} className="group flex cursor-pointer items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleYear(year)}
+                        className="sr-only"
+                      />
+                      <div className={[
+                        'flex h-5 w-5 items-center justify-center rounded border-2 transition-colors',
+                        checked ? 'border-primary bg-primary/10' : 'border-outline-variant group-hover:border-primary',
+                      ].join(' ')}>
+                        {checked ? <span className="text-xs font-bold text-primary">✓</span> : null}
+                      </div>
+                      <span className="text-sm font-medium text-on-surface-variant">{year}</span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
-          </div>
-        </header>
+          </aside>
 
-        <section className="mt-10">
-          {loading ? (
-            <SkeletonCards />
-          ) : (
-            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {items.map((item, index) => {
-                const type = item.__type || 'movie';
-                const genres = normalizeGenres(item);
-                const rating = normalizeRating(item);
-
-                return (
-                  <article
-                    key={`${type}-${getItemId(item, type) || index}`}
-                    className="group relative flex flex-col overflow-hidden rounded-2xl border border-outline-variant/5 bg-white/75 shadow-[0_14px_35px_-18px_rgba(62,37,72,0.2)] transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_28px_55px_-25px_rgba(62,37,72,0.26)]"
-                  >
-                    <div className="relative aspect-[4/5] overflow-hidden">
-                      <img
-                        src={getImage(item)}
-                        alt={getTitle(item)}
-                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                        loading="lazy"
-                      />
-
-                      <div className="absolute left-4 top-4">
-                        <span className="rounded-full bg-white/35 px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-md">
-                          {TYPE_LABEL[type]}
-                        </span>
-                      </div>
-
-                      <div className="absolute right-4 top-4 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
-                        <button
-                          type="button"
-                          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-outline-variant/10 bg-white text-primary shadow-[0_12px_30px_-16px_rgba(62,37,72,0.35)]"
-                          aria-label="Save recommendation"
-                        >
-                          <Bookmark size={18} />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex h-full flex-col p-5">
-                      <div className="mb-2 flex items-start justify-between gap-2">
-                        <h3 className="line-clamp-1 text-xl font-bold text-on-surface">{getTitle(item)}</h3>
-                        <div className="inline-flex items-center gap-1 text-[#a03648]">
-                          <Star size={14} fill="#a03648" />
-                          <span className="text-xs font-bold">{rating || 'N/A'}</span>
-                        </div>
-                      </div>
-
-                      <p
-                        className="mb-6 text-sm text-on-surface-variant"
-                        style={{
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        {normalizeDescription(item)}
-                      </p>
-
-                      <div className="mt-auto flex items-center justify-between rounded-xl bg-surface-container-highest/45 px-3 py-2">
-                        <span className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-on-surface-variant/80">
-                          {(genres[0] || 'Curated')} • {normalizeYear(item)}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleCardClick(item)}
-                          className="group/btn inline-flex items-center gap-1 text-xs font-bold text-primary"
-                        >
-                          View Details
-                          <ArrowRight size={14} className="transition-transform duration-300 group-hover/btn:translate-x-1" />
-                        </button>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          )}
-
-          {!loading && items.length === 0 ? (
-            <div className="rounded-2xl border border-outline-variant/10 bg-white/70 px-6 py-14 text-center shadow-[0_14px_40px_-24px_rgba(62,37,72,0.2)]">
-              <p className="text-lg font-semibold text-on-surface">No recommendations match that vibe yet.</p>
-              <p className="mt-2 text-sm text-on-surface-variant">Try another keyword or switch category.</p>
-            </div>
-          ) : null}
-        </section>
-
-        {!loading && items.length > 0 ? (
-          <div className="mt-16 flex flex-col items-center gap-3">
-            {canLoadMore ? (
-              <button
-                type="button"
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-                className="group inline-flex items-center gap-2 rounded-full bg-surface-container-highest px-9 py-3 font-bold text-on-surface shadow-[0_14px_35px_-20px_rgba(62,37,72,0.2)] transition-all duration-300 hover:bg-primary hover:text-on-primary disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {loadingMore ? 'Loading more vibes...' : 'Show more vibes'}
-                <ChevronDown size={18} className="transition-transform duration-300 group-hover:translate-y-1" />
-              </button>
+          <div className="flex-1">
+            {error ? (
+              <div className="rounded-lg border border-error/20 bg-error/5 px-5 py-4 text-sm font-medium text-error">
+                {error}
+              </div>
             ) : null}
 
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-on-surface-variant/70">
-              Viewing {items.length} of {totalItems} recommendations
-            </p>
+            {!loading && filteredItems.length === 0 ? (
+              <div className="rounded-lg border border-outline-variant/20 bg-surface-container-lowest px-6 py-16 text-center text-on-surface-variant">
+                No results found for the selected filters.
+              </div>
+            ) : null}
+
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-4">
+              {filteredItems.map((item) => (
+                <article
+                  key={`${item.type}-${item.id}`}
+                  className="group overflow-hidden rounded-lg bg-surface-container-lowest shadow-[0_20px_40px_-10px_rgba(62,37,72,0.08)] transition-all duration-300 hover:scale-[1.02]"
+                >
+                  <button type="button" onClick={() => navigate(getDetailPath(item))} className="w-full text-left">
+                    <div className="relative aspect-[2/3]">
+                      <img src={item.image} alt={item.title} className="h-full w-full object-cover" />
+                      <div className="absolute right-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-tighter text-primary backdrop-blur">
+                        {item.typeLabel}
+                      </div>
+                    </div>
+                    <div className="space-y-2 p-5">
+                      <div className="flex items-start justify-between">
+                        <h4 className="truncate pr-2 font-bold text-on-surface">{item.title}</h4>
+                        <div className="flex items-center gap-1">
+                          <Star size={12} className="fill-primary text-primary" />
+                          <span className="text-xs font-bold text-on-surface">{item.rating?.toFixed(1) || 'N/A'}</span>
+                        </div>
+                      </div>
+                      <p className="text-xs font-medium text-on-surface-variant">{item.meta}</p>
+                    </div>
+                  </button>
+                </article>
+              ))}
+            </div>
+
+            <div className="mt-20 text-center">
+              <button
+                type="button"
+                disabled={!canLoadMore || loadingMore}
+                onClick={() => setPage((current) => current + 1)}
+                className="rounded-lg border border-primary/10 bg-surface-container-low px-10 py-4 font-bold text-primary transition-all hover:bg-surface-container-high active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loadingMore ? 'Loading...' : 'Show More Discoveries'}
+              </button>
+            </div>
           </div>
-        ) : null}
+        </div>
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center justify-around border-t border-outline-variant/10 bg-white/85 backdrop-blur-lg md:hidden">
-        {bottomItems.map((item) => {
-          const active = location.pathname === item.href;
-          const Icon = item.icon;
-
-          return (
-            <button
-              key={item.href}
-              type="button"
-              onClick={() => navigate(item.href)}
-              className={[
-                'inline-flex flex-col items-center gap-1 text-[10px] font-bold uppercase tracking-tight transition-colors',
-                active ? 'text-primary' : 'text-on-surface-variant/75',
-              ].join(' ')}
-            >
-              <Icon size={18} />
-              {item.label}
-            </button>
-          );
-        })}
-      </nav>
+      <footer className="w-full bg-slate-50 py-12">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-8 px-8 md:flex-row">
+          <div className="text-center md:text-left">
+            <div className="mb-2 text-lg font-bold text-purple-600">Vibeify</div>
+            <div className="text-sm text-slate-500">© 2024 Vibeify. Curated with intention.</div>
+          </div>
+          <div className="flex flex-wrap justify-center gap-8">
+            <button type="button" className="text-sm text-slate-500 underline-offset-4 transition-colors hover:text-purple-600 hover:underline">Privacy Policy</button>
+            <button type="button" className="text-sm text-slate-500 underline-offset-4 transition-colors hover:text-purple-600 hover:underline">Terms of Service</button>
+            <button type="button" className="text-sm text-slate-500 underline-offset-4 transition-colors hover:text-purple-600 hover:underline">Cookie Policy</button>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
