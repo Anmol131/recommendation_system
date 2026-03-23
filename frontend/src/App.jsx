@@ -16,6 +16,7 @@ import MusicDetailPage from './pages/MusicDetailPage';
 import ExplorePage from './pages/ExplorePage';
 import AboutPage from './pages/AboutPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
+import MoviesPage from './pages/MoviesPage';
 
 function ProtectedRoute({ children }) {
   const { user, isLoading } = useAuth();
@@ -40,25 +41,18 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/browse" element={<Navigate to="/explore" replace />} />
           <Route path="/search" element={<Navigate to="/explore" replace />} />
-          <Route path="/movies" element={<MovieDetailPage />} />
+          <Route path="/movies" element={<MoviesPage />} />
           <Route path="/movies/:id" element={<MovieDetailPage />} />
           <Route path="/books" element={<BooksPage />} />
           <Route path="/books/:isbn" element={<BookDetailPage />} />
           <Route path="/games" element={<GamesPage />} />
-          <Route path="/games/:gameId" element={<GameDetailPage />} />
+          <Route path="/games/:id" element={<GameDetailPage />} />
           <Route path="/music" element={<MusicPage />} />
           <Route path="/music/:trackId" element={<MusicDetailPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route
-            path="/explore"
-            element={(
-              <ProtectedRoute>
-                <ExplorePage />
-              </ProtectedRoute>
-            )}
-          />
+          <Route path="/explore" element={<ExplorePage />} />
           <Route
             path="/profile"
             element={(
