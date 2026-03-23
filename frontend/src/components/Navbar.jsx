@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FiLogOut, FiSettings, FiUser } from 'react-icons/fi';
 import { Moon, Search } from 'lucide-react';
@@ -11,14 +11,8 @@ const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [activeSection, setActiveSection] = useState('home');
   const menuRef = useRef(null);
-
-  const links = useMemo(() => [
-    { label: 'Home', to: '/' },
-    { label: 'Explore', to: '/explore' },
-    { label: 'About', to: '/about' },
-    { label: 'Contact', to: '/about' },
-  ], []);
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
@@ -42,6 +36,42 @@ const Navbar = () => {
     }
   }, [isDarkMode]);
 
+  useEffect(() => {
+    if (location.pathname !== '/about') {
+      if (location.pathname === '/') {
+        setActiveSection('home');
+      } else if (location.pathname === '/explore') {
+        setActiveSection('explore');
+      }
+      return;
+    }
+
+    const handleScroll = () => {
+      const contactSection = document.getElementById('contact');
+      if (!contactSection) return;
+
+      const contactTop = contactSection.getBoundingClientRect().top;
+      if (contactTop <= 120) {
+        setActiveSection('contact');
+      } else {
+        setActiveSection('about');
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+
+    // Check hash on load
+    if (location.hash === '#contact') {
+      setActiveSection('contact');
+    } else {
+      setActiveSection('about');
+    }
+
+    handleScroll();
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [location]);
+
   const handleLogout = () => {
     setIsMenuOpen(false);
     logout();
@@ -50,12 +80,8 @@ const Navbar = () => {
 
   const avatarId = user?.avatar || 'avatar-1';
 
-  const isActiveLink = (to) => {
-    if (to === '/') {
-      return location.pathname === '/';
-    }
-    return location.pathname.startsWith(to);
-  };
+  const activeLinkClass = 'text-purple-700 font-semibold border-b-2 border-purple-500 pb-1';
+  const inactiveLinkClass = 'text-[#3e2548]/70 hover:text-purple-600 transition-colors';
 
   return (
     <nav className="sticky top-0 z-50 h-20 bg-white/60 backdrop-blur-md shadow-[0_20px_40px_-10px_rgba(62,37,72,0.08)]">
@@ -63,20 +89,49 @@ const Navbar = () => {
         <Link to="/" className="text-2xl font-bold tracking-tighter text-purple-900">Vibeify</Link>
 
         <div className="hidden items-center gap-8 md:flex">
-          {links.map((link) => (
-            <Link
-              key={link.label}
-              to={link.to}
-              className={[
-                'pb-1 text-sm transition-colors',
-                isActiveLink(link.to)
-                  ? 'border-b-2 border-purple-500 font-semibold text-purple-700'
-                  : 'text-[#3e2548]/70 hover:text-purple-600',
-              ].join(' ')}
-            >
-              {link.label}
-            </Link>
-          ))}
+          <Link
+            to="/"
+            className={location.pathname === '/' ? activeLinkClass : inactiveLinkClass}
+          >
+            Home
+          </Link>
+
+          <Link
+            to="/explore"
+            className={location.pathname === '/explore' ? activeLinkClass : inactiveLinkClass}
+          >
+            Explore
+          </Link>
+
+          <Link
+            to="/about"
+            onClick={() => {
+              setActiveSection('about');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className={location.pathname === '/about' && activeSection === 'about' ? activeLinkClass : inactiveLinkClass}
+          >
+            About
+          </Link>
+
+          <Link
+            to="/about#contact"
+            onClick={(e) => {
+              e.preventDefault();
+              setActiveSection('contact');
+              if (location.pathname === '/about') {
+                document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+              } else {
+                navigate('/about');
+                setTimeout(() => {
+                  document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+                }, 300);
+              }
+            }}
+            className={location.pathname === '/about' && activeSection === 'contact' ? activeLinkClass : inactiveLinkClass}
+          >
+            Contact
+          </Link>
         </div>
 
         <div className="relative flex items-center gap-3" ref={menuRef}>

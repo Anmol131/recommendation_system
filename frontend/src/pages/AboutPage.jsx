@@ -14,7 +14,7 @@ function AboutPage() {
   return (
     <div className="min-h-screen bg-background text-on-background">
       <main className="mx-auto max-w-7xl overflow-hidden px-6 pb-24 pt-24 md:px-12">
-        <section className="mb-32">
+        <section id="about" className="mb-32">
           <div className="editorial-grid grid grid-cols-12 gap-6">
             <div className="col-span-12 mb-12 lg:col-span-7 lg:mb-0">
               <span className="mb-4 block text-xs font-bold uppercase tracking-widest text-primary">Our Philosophy</span>
@@ -103,7 +103,7 @@ function AboutPage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-3xl">
+        <section id="contact" className="mx-auto max-w-3xl">
           <div className="mb-16 text-center">
             <span className="mb-4 block text-xs font-bold uppercase tracking-widest text-primary">Get in touch</span>
             <h2 className="mb-4 text-4xl font-bold">Let&apos;s start a conversation.</h2>
