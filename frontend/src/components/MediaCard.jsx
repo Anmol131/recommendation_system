@@ -80,14 +80,10 @@ const MediaCard = ({ item, type = 'movie' }) => {
   return (
     <div
       onClick={handleCardClick}
-      className={`bg-surface rounded-xl overflow-hidden hover:scale-105 transition-transform cursor-pointer group ${accentBorder}`}
-      style={{
-        boxShadow:
-          'rgba(184, 169, 245, 0.1) 0px 0px 0px 1px inset, rgba(0, 0, 0, 0.3) 0px 4px 12px',
-      }}
+      className={`bg-white dark:bg-slate-900 rounded-lg overflow-hidden hover:scale-105 transition-transform cursor-pointer group border border-surface-container dark:border-slate-800 shadow-md dark:shadow-dark-md`}
     >
       {/* Image container */}
-      <div className="relative h-56 bg-surface2 overflow-hidden group-hover:glow-purple">
+      <div className="relative h-56 bg-slate-200 dark:bg-slate-800 overflow-hidden group-hover:brightness-110 transition-brightness">
         {image ? (
           <img
             src={image}
@@ -95,9 +91,9 @@ const MediaCard = ({ item, type = 'movie' }) => {
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
           />
         ) : (
-          <div className="w-full h-full gradient-placeholder flex items-center justify-center">
+          <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-400 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center">
             {type === 'music' ? (
-              <span className="text-5xl text-white">🎵</span>
+              <span className="text-5xl">🎵</span>
             ) : (
               <span className="text-4xl font-bold text-white opacity-80">{getInitials()}</span>
             )}
@@ -118,15 +114,15 @@ const MediaCard = ({ item, type = 'movie' }) => {
       {/* Content */}
       <div className="p-4 space-y-3">
         {/* Title */}
-        <h3 className="text-lg text-white font-semibold truncate-1 group-hover:text-primary transition">
+        <h3 className="text-lg text-on-surface dark:text-white font-semibold truncate-1 group-hover:text-primary transition">
           {item.title || item.name}
         </h3>
 
-        {type === 'book' && item.author && <p className="text-sm text-muted truncate-1">{item.author}</p>}
-        {type === 'music' && item.artist && <p className="text-sm text-muted truncate-1">{item.artist}</p>}
+        {type === 'book' && item.author && <p className="text-sm text-on-surface/70 dark:text-white/70 truncate-1">{item.author}</p>}
+        {type === 'music' && item.artist && <p className="text-sm text-on-surface/70 dark:text-white/70 truncate-1">{item.artist}</p>}
 
         {/* Year and Type badge */}
-        <div className="flex items-center gap-2 text-xs text-muted">
+        <div className="flex items-center gap-2 text-xs text-on-surface/60 dark:text-white/60">
           {year && <span>{year}</span>}
           <span className={`${typeBadge.bg} text-white px-2 py-0.5 rounded-full font-medium`}>
             {typeBadge.label}
@@ -142,7 +138,7 @@ const MediaCard = ({ item, type = 'movie' }) => {
         </div>
 
         {/* Additional info based on type */}
-        <div className="text-xs text-muted truncate-1">
+        <div className="text-xs text-on-surface/60 dark:text-white/60 truncate-1">
           {type === 'game' && item.genres?.length > 0 && <span>{item.genres.join(', ')}</span>}
         </div>
       </div>

@@ -1,8 +1,8 @@
 import { CheckCircle2, Info, X } from 'lucide-react';
 
 const toneStyles = {
-  success: 'border-emerald-400/30 bg-emerald-500/15 text-emerald-100',
-  info: 'border-blue-400/30 bg-blue-500/15 text-blue-100',
+  success: 'border-emerald-400/30 bg-emerald-500/15 text-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-500/20 dark:text-emerald-300',
+  info: 'border-blue-400/30 bg-blue-500/15 text-blue-100 dark:border-blue-500/40 dark:bg-blue-500/20 dark:text-blue-300',
 };
 
 function Toast({ message, type = 'success', onClose }) {

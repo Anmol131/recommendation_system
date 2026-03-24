@@ -100,29 +100,29 @@ function ChangePasswordPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-background px-6 pb-20 pt-14 text-on-background md:px-10 lg:px-12">
+    <div className="min-h-[calc(100vh-64px)] bg-light-bg dark:bg-dark-bg px-6 pb-20 pt-14 text-light-text dark:text-dark-text md:px-10 lg:px-12 transition-colors duration-300">
       {successToast && (
-        <div className="fixed right-6 top-24 z-[80] rounded-xl bg-surface-container-lowest px-4 py-3 text-sm font-semibold text-primary ambient-shadow">
+        <div className="fixed right-6 top-24 z-[80] rounded-xl bg-light-surface dark:bg-dark-surface px-4 py-3 text-sm font-semibold text-primary dark:text-primary-light ambient-shadow">
           {successToast}
         </div>
       )}
 
       <main className="mx-auto w-full max-w-2xl">
         <section className="mb-10">
-          <h1 className="text-5xl font-bold tracking-tight text-on-background md:text-6xl">Security</h1>
-          <p className="mt-3 max-w-xl text-base text-on-surface-variant md:text-lg">
+          <h1 className="text-5xl font-bold tracking-tight text-light-text dark:text-dark-text md:text-6xl">Security</h1>
+          <p className="mt-3 max-w-xl text-base text-light-text-secondary dark:text-dark-text-secondary md:text-lg">
             Update your password to keep your curated collections secure.
           </p>
         </section>
 
-        <section className="relative overflow-hidden rounded-xl bg-surface-container-lowest p-8 ambient-shadow">
+        <section className="relative overflow-hidden rounded-lg border border-light-surface-alt dark:border-dark-surface-alt bg-light-surface dark:bg-dark-surface p-8 shadow-md dark:shadow-2xl">
           <div className="absolute left-0 top-0 h-full w-1 bg-primary" />
 
           <form className="space-y-8" onSubmit={handleSubmit}>
             <div>
               <label
                 htmlFor="current-password"
-                className="mb-3 ml-1 block text-[0.75rem] font-semibold uppercase tracking-widest text-on-surface-variant"
+                className="mb-3 ml-1 block text-[0.75rem] font-semibold uppercase tracking-widest text-light-text-secondary/60 dark:text-dark-text-secondary/60"
               >
                 Current Password
               </label>
@@ -133,12 +133,12 @@ function ChangePasswordPage() {
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-lg bg-surface-container-high px-5 py-4 pr-14 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-highest focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-lg border border-light-surface-alt dark:border-dark-surface-alt bg-light-surface dark:bg-dark-surface px-5 py-4 pr-14 text-light-text dark:text-dark-text placeholder:text-light-text-secondary/40 dark:placeholder:text-dark-text-secondary/40 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all duration-300"
                 />
                 <button
                   type="button"
                   onClick={() => setShowCurrentPassword((value) => !value)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 text-on-surface-variant transition hover:bg-surface-container-highest hover:text-primary"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 text-light-text-secondary/60 dark:text-dark-text-secondary/60 transition-all duration-200 hover:bg-light-surface-alt dark:hover:bg-dark-surface-alt hover:text-primary"
                   aria-label={showCurrentPassword ? 'Hide current password' : 'Show current password'}
                 >
                   {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -149,7 +149,7 @@ function ChangePasswordPage() {
             <div>
               <label
                 htmlFor="new-password"
-                className="mb-3 ml-1 block text-[0.75rem] font-semibold uppercase tracking-widest text-on-surface-variant"
+                className="mb-3 ml-1 block text-[0.75rem] font-semibold uppercase tracking-widest text-light-text-secondary/60 dark:text-dark-text-secondary/60"
               >
                 New Password
               </label>
@@ -160,12 +160,12 @@ function ChangePasswordPage() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Enter at least 8 characters"
-                  className="w-full rounded-lg bg-surface-container-high px-5 py-4 pr-14 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-highest focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-lg border border-light-surface-alt dark:border-dark-surface-alt bg-light-surface dark:bg-dark-surface px-5 py-4 pr-14 text-light-text dark:text-dark-text placeholder:text-light-text-secondary/40 dark:placeholder:text-dark-text-secondary/40 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all duration-300"
                 />
                 <button
                   type="button"
                   onClick={() => setShowNewPassword((value) => !value)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 text-on-surface-variant transition hover:bg-surface-container-highest hover:text-primary"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 text-light-text-secondary/60 dark:text-dark-text-secondary/60 transition-all duration-200 hover:bg-light-surface-alt dark:hover:bg-dark-surface-alt hover:text-primary"
                   aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
                 >
                   {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -178,12 +178,12 @@ function ChangePasswordPage() {
                   return (
                     <div
                       key={`strength-${index + 1}`}
-                      className={`h-1.5 rounded-full ${isFilled ? strengthMeta.color : 'bg-surface-container-high'}`}
+                      className={`h-1.5 rounded-full ${isFilled ? strengthMeta.color : 'bg-light-surface-alt dark:bg-dark-surface-alt'}`}
                     />
                   );
                 })}
               </div>
-              <p className="mt-2 px-1 text-xs text-on-surface-variant">
+              <p className="mt-2 px-1 text-xs text-light-text-secondary/60 dark:text-dark-text-secondary/60">
                 Strength: {strengthMeta.label}
               </p>
             </div>
@@ -191,7 +191,7 @@ function ChangePasswordPage() {
             <div>
               <label
                 htmlFor="confirm-password"
-                className="mb-3 ml-1 block text-[0.75rem] font-semibold uppercase tracking-widest text-on-surface-variant"
+                className="mb-3 ml-1 block text-[0.75rem] font-semibold uppercase tracking-widest text-light-text-secondary/60 dark:text-dark-text-secondary/60"
               >
                 Confirm Password
               </label>
@@ -201,12 +201,12 @@ function ChangePasswordPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full rounded-lg bg-surface-container-high px-5 py-4 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-highest focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="w-full rounded-lg border border-light-surface-alt dark:border-dark-surface-alt bg-light-surface dark:bg-dark-surface px-5 py-4 text-light-text dark:text-dark-text placeholder:text-light-text-secondary/40 dark:placeholder:text-dark-text-secondary/40 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all duration-300"
               />
             </div>
 
             {error && (
-              <p className="rounded-lg bg-error/15 px-4 py-3 text-sm font-medium text-error">
+              <p className="rounded-lg bg-red-100 dark:bg-red-950/50 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400">
                 {error}
               </p>
             )}
@@ -215,7 +215,7 @@ function ChangePasswordPage() {
               <button
                 type="button"
                 onClick={() => navigate('/login')}
-                className="text-left text-sm font-semibold uppercase tracking-widest text-primary transition hover:underline"
+                className="text-left text-sm font-semibold uppercase tracking-widest text-primary transition-colors duration-200 hover:text-primary-light dark:hover:text-primary-light"
               >
                 Forgot Password?
               </button>
@@ -223,7 +223,7 @@ function ChangePasswordPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-primary to-primary-container px-8 py-4 font-bold text-on-primary transition duration-300 hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-70"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary to-secondary hover:shadow-xl px-8 py-4 font-bold text-white shadow-lg transition-all duration-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:shadow-lg"
               >
                 {submitting ? 'Updating...' : 'Update Password'}
                 <ArrowRight size={18} />
@@ -232,11 +232,11 @@ function ChangePasswordPage() {
           </form>
         </section>
 
-        <section className="mt-10 flex items-start gap-4 rounded-xl bg-surface-container-low p-6 ambient-shadow">
+        <section className="mt-10 flex items-start gap-4 rounded-xl bg-light-surface-alt dark:bg-dark-surface-alt p-6 ambient-shadow">
           <ShieldCheck size={20} className="mt-0.5 text-primary" />
           <div>
-            <h2 className="text-sm font-bold text-on-surface">Two-Factor Authentication</h2>
-            <p className="mt-1 text-xs leading-relaxed text-on-surface-variant">
+            <h2 className="text-sm font-bold text-light-text dark:text-dark-text">Two-Factor Authentication</h2>
+            <p className="mt-1 text-xs leading-relaxed text-light-text-secondary dark:text-dark-text-secondary">
               For extra protection, we recommend enabling 2FA in your account settings after updating your password.
             </p>
           </div>

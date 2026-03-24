@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import {
   BookOpen,
   Check,
@@ -260,13 +260,13 @@ function PreferencesPage() {
   }
 
   return (
-    <div className="bg-background text-on-surface">
+    <div className="bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text transition-colors duration-300">
       <main className="mx-auto max-w-6xl px-6 pb-24 pt-12 md:px-12">
         <section className="mb-20 text-left">
-          <h1 className="mb-4 text-5xl font-bold tracking-tighter text-on-surface md:text-6xl">
+          <h1 className="mb-4 text-5xl font-bold tracking-tighter text-on-surface dark:text-white md:text-6xl">
             Curate Your Vibe
           </h1>
-          <p className="max-w-2xl text-xl leading-relaxed text-on-surface-variant">
+          <p className="max-w-2xl text-xl leading-relaxed text-light-text dark:text-dark-text/95 dark:text-white/60">
             Refine your digital ecosystem. Tell us what moves you, and we will architect recommendations that resonate with your frequency.
           </p>
           {error && (
@@ -299,7 +299,7 @@ function PreferencesPage() {
                 >
                   <Icon className="mb-6 h-9 w-9 text-primary" />
                   <h3 className="mb-2 text-xl font-bold">{domain.title}</h3>
-                  <p className="text-sm leading-relaxed text-on-surface-variant">{domain.description}</p>
+                  <p className="text-sm leading-relaxed text-light-text dark:text-dark-text/95">{domain.description}</p>
                   {selected && (
                     <span className="absolute right-5 top-5 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-on-primary">
                       <Check className="h-4 w-4" />
@@ -360,7 +360,7 @@ function PreferencesPage() {
           </div>
 
           <div className="rounded-xl bg-surface-container-high p-8 shadow-[0_20px_40px_-10px_rgba(62,37,72,0.06)]">
-            <div className="mb-4 flex justify-between text-sm font-bold uppercase tracking-widest text-on-surface-variant">
+            <div className="mb-4 flex justify-between text-sm font-bold uppercase tracking-widest text-light-text dark:text-dark-text/95">
               <span>Safe &amp; Proven</span>
               <span>Boldly Experimental</span>
             </div>
@@ -376,7 +376,7 @@ function PreferencesPage() {
               aria-label="Curation intensity"
             />
 
-            <p className="mt-6 text-sm italic text-on-surface-variant">
+            <p className="mt-6 text-sm italic text-light-text dark:text-dark-text/95">
               Current setting: <span className="font-bold text-primary">{intensityMeta.title}</span>. {intensityMeta.blurb}
             </p>
           </div>
@@ -406,3 +406,4 @@ function PreferencesPage() {
 }
 
 export default PreferencesPage;
+

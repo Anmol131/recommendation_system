@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   BookOpen,
@@ -131,7 +131,7 @@ function insightFromHistoryCount(count) {
 
 function EmptyImage({ label = 'No cover' }) {
   return (
-    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-surface-container-high to-surface-container text-xs font-semibold uppercase tracking-widest text-on-surface-variant/70">
+    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-surface-container-high to-surface-container text-xs font-semibold uppercase tracking-widest text-light-text/70 dark:text-dark-text/70">
       {label}
     </div>
   );
@@ -246,7 +246,7 @@ function ProfilePage() {
       <div className="mx-auto max-w-4xl px-6 py-20 md:px-12">
         <div className="rounded-3xl bg-surface-container-low p-8 shadow-[0_20px_40px_-10px_rgba(62,37,72,0.08)]">
           <p className="text-lg font-semibold text-on-surface">Unable to load profile</p>
-          <p className="mt-2 text-sm text-on-surface-variant">{error}</p>
+          <p className="mt-2 text-sm text-light-text dark:text-dark-text/95">{error}</p>
           <button
             type="button"
             onClick={loadProfile}
@@ -260,7 +260,7 @@ function ProfilePage() {
   }
 
   return (
-    <div className="bg-background text-on-surface">
+    <div className="bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text transition-colors duration-300">
       <main className="mx-auto max-w-7xl px-6 pb-20 pt-12 md:px-12">
         <section className="mb-16 flex flex-col items-center gap-10 md:flex-row md:items-end">
           <div className="group relative">
@@ -291,7 +291,7 @@ function ProfilePage() {
 
           <div className="flex-1 text-center md:text-left">
             <h1 className="mb-2 text-5xl font-extrabold tracking-tight text-on-surface">{displayName}</h1>
-            <p className="mb-6 text-lg font-medium text-on-surface-variant opacity-80">{displayEmail}</p>
+            <p className="mb-6 text-lg font-medium text-light-text dark:text-dark-text/95 opacity-80">{displayEmail}</p>
             {isEditingBio ? (
               <div className="mb-6 max-w-2xl">
                 <textarea
@@ -327,7 +327,7 @@ function ProfilePage() {
               </div>
             ) : (
               <div className="mb-6 max-w-2xl">
-                <p className="text-sm leading-relaxed text-on-surface-variant">{displayBio}</p>
+                <p className="text-sm leading-relaxed text-light-text dark:text-dark-text/95">{displayBio}</p>
               </div>
             )}
             <div className="flex flex-wrap justify-center gap-3 md:justify-start">
@@ -355,12 +355,12 @@ function ProfilePage() {
           <div className="hidden self-start rounded-2xl border border-white/50 bg-white/40 p-6 shadow-[0_20px_40px_-10px_rgba(62,37,72,0.08)] backdrop-blur-sm lg:flex lg:gap-10">
             <div className="text-center">
               <span className="block text-3xl font-black text-primary">{savedItemsCount}</span>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60">Saved Items</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-light-text/60 dark:text-dark-text/60">Saved Items</span>
             </div>
             <div className="h-10 w-px self-center bg-outline-variant/20" />
             <div className="text-center">
               <span className="block text-3xl font-black text-primary">{curatedListsCount}</span>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60">Curated Lists</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-light-text/60 dark:text-dark-text/60">Curated Lists</span>
             </div>
           </div>
         </section>
@@ -381,7 +381,7 @@ function ProfilePage() {
               </header>
 
               {displayedLiked.length === 0 ? (
-                <div className="rounded-3xl bg-surface-container-low p-8 text-sm text-on-surface-variant shadow-[0_20px_40px_-10px_rgba(62,37,72,0.06)]">
+                <div className="rounded-3xl bg-surface-container-low p-8 text-sm text-light-text dark:text-dark-text/95 shadow-[0_20px_40px_-10px_rgba(62,37,72,0.06)]">
                   No liked items yet. Start exploring and like content to build your recommendation board.
                 </div>
               ) : (
@@ -409,13 +409,13 @@ function ProfilePage() {
                         </div>
                         <div className="p-6">
                           <h3 className="mb-2 text-xl font-bold text-on-surface">{readItemTitle(item)}</h3>
-                          <p className="mb-6 line-clamp-2 text-sm leading-relaxed text-on-surface-variant">{readItemDescription(item)}</p>
+                          <p className="mb-6 line-clamp-2 text-sm leading-relaxed text-light-text dark:text-dark-text/95">{readItemDescription(item)}</p>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-xs font-bold text-primary">
                               <Star className="h-4 w-4 fill-current" />
                               Recommended
                             </div>
-                            <span className="text-[10px] font-bold uppercase tracking-tighter text-on-surface-variant/50">
+                            <span className="text-[10px] font-bold uppercase tracking-tighter text-light-text/50 dark:text-dark-text/50">
                               {formatAddedLabel(item?.date)}
                             </span>
                           </div>
@@ -430,13 +430,13 @@ function ProfilePage() {
             <section>
               <header className="mb-8 flex items-center justify-between">
                 <h2 className="text-3xl font-bold tracking-tight text-on-surface">Book Wishlist</h2>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-light-text/40 dark:text-dark-text/40">
                   {bookWishlist.length} ITEMS
                 </span>
               </header>
 
               {bookWishlist.length === 0 ? (
-                <div className="rounded-3xl bg-surface-container-low p-8 text-sm text-on-surface-variant shadow-[0_20px_40px_-10px_rgba(62,37,72,0.06)]">
+                <div className="rounded-3xl bg-surface-container-low p-8 text-sm text-light-text dark:text-dark-text/95 shadow-[0_20px_40px_-10px_rgba(62,37,72,0.06)]">
                   No books in your wishlist yet.
                 </div>
               ) : (
@@ -456,7 +456,7 @@ function ProfilePage() {
                           )}
                         </div>
                         <h4 className="mb-1 text-lg font-bold text-on-surface">{readItemTitle(item)}</h4>
-                        <p className="text-xs font-medium text-on-surface-variant">{readItemAuthor(item)}</p>
+                        <p className="text-xs font-medium text-light-text dark:text-dark-text/95">{readItemAuthor(item)}</p>
                       </article>
                     );
                   })}
@@ -470,7 +470,7 @@ function ProfilePage() {
               <h2 className="mb-8 text-2xl font-bold tracking-tight text-on-surface">Recently Played</h2>
               <div className="space-y-4">
                 {recentGames.length === 0 ? (
-                  <div className="rounded-2xl bg-surface-container-low p-4 text-sm text-on-surface-variant shadow-[0_20px_40px_-10px_rgba(62,37,72,0.06)]">
+                  <div className="rounded-2xl bg-surface-container-low p-4 text-sm text-light-text dark:text-dark-text/95 shadow-[0_20px_40px_-10px_rgba(62,37,72,0.06)]">
                     No recent game activity found.
                   </div>
                 ) : (
@@ -490,7 +490,7 @@ function ProfilePage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <h5 className="truncate text-sm font-bold text-on-surface">{readItemTitle(item)}</h5>
-                          <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60">{readItemGenre(item)}</p>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-light-text/60 dark:text-dark-text/60">{readItemGenre(item)}</p>
                         </div>
                         <ChevronRight className="h-4 w-4 text-primary opacity-0 transition-opacity group-hover:opacity-100" />
                       </article>
@@ -528,7 +528,7 @@ function ProfilePage() {
               <button
                 type="button"
                 onClick={() => setShowAvatarPicker(false)}
-                className="rounded-full bg-surface-container p-1.5 text-on-surface-variant transition hover:text-on-surface"
+                className="rounded-full bg-surface-container p-1.5 text-light-text dark:text-dark-text/95 transition hover:text-on-surface"
                 aria-label="Close avatar picker"
               >
                 <X className="h-4 w-4" />
@@ -561,3 +561,4 @@ function ProfilePage() {
 }
 
 export default ProfilePage;
+

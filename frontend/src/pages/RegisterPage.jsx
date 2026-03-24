@@ -64,27 +64,27 @@ function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-on-background flex flex-col">
+    <div className="min-h-screen bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text flex flex-col transition-colors duration-300">
       <main className="flex flex-1 items-center justify-center px-6 py-20">
         <div className="relative w-full max-w-[480px]">
-          <div className="pointer-events-none absolute -left-12 -top-12 h-32 w-32 rounded-full bg-secondary-container/30 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-12 -right-12 h-48 w-48 rounded-full bg-primary-container/20 blur-3xl" />
+          <div className="pointer-events-none absolute -left-12 -top-12 h-32 w-32 rounded-full bg-secondary-container/20 blur-3xl dark:bg-secondary-container/10" />
+          <div className="pointer-events-none absolute -bottom-12 -right-12 h-48 w-48 rounded-full bg-primary-container/15 blur-3xl dark:bg-primary-container/10" />
 
-          <div className="relative rounded-xl border border-outline-variant/15 bg-surface-container-lowest p-8 shadow-[0_20px_40px_-10px_rgba(62,37,72,0.08)] md:p-12">
+          <div className="relative rounded-lg border border-light-surface-alt dark:border-dark-surface-alt bg-light-surface dark:bg-dark-surface p-8 shadow-lg dark:shadow-2xl md:p-12">
             <header className="mb-10 text-center">
               <h1 className="mb-2 text-2xl font-bold tracking-tighter text-primary">Vibeify</h1>
-              <h2 className="text-[1.75rem] font-semibold leading-tight tracking-tight text-on-surface">Join the Curated World.</h2>
-              <p className="mt-2 text-sm text-on-surface-variant">Start your journey as a digital curator today.</p>
+              <h2 className="text-[1.75rem] font-semibold leading-tight tracking-tight text-light-text dark:text-dark-text">Join the Curated World.</h2>
+              <p className="mt-2 text-sm text-light-text-secondary dark:text-dark-text-secondary">Start your journey as a digital curator today.</p>
             </header>
 
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="ml-1 block text-xs font-semibold uppercase tracking-widest text-on-surface-variant" htmlFor="name">
+                  <label className="ml-1 block text-xs font-semibold uppercase tracking-widest text-light-text-secondary/60 dark:text-dark-text-secondary/60" htmlFor="name">
                     Full Name
                   </label>
                   <div className="relative">
-                    <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant" />
+                    <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-light-text-secondary/50 dark:text-dark-text-secondary/50" />
                     <input
                       id="name"
                       name="name"
@@ -92,18 +92,18 @@ function RegisterPage() {
                       value={name}
                       onChange={(event) => setName(event.target.value)}
                       placeholder="Alex Rivers"
-                      className="w-full rounded-lg bg-surface-container-high py-3 pl-11 pr-4 text-sm text-on-surface placeholder:text-on-surface-variant/40 outline-none transition-all duration-300 focus:bg-surface-container-highest focus:ring-2 focus:ring-primary/20"
+                      className="w-full rounded-lg border border-light-surface-alt dark:border-dark-surface-alt bg-light-surface dark:bg-dark-surface py-3 pl-11 pr-4 text-sm text-light-text dark:text-dark-text placeholder:text-light-text-secondary/40 dark:placeholder:text-dark-text-secondary/40 outline-none transition-all duration-300 focus:ring-2 focus:ring-primary/30"
                       required
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="ml-1 block text-xs font-semibold uppercase tracking-widest text-on-surface-variant" htmlFor="email">
+                  <label className="ml-1 block text-xs font-semibold uppercase tracking-widest text-light-text-secondary/60 dark:text-dark-text-secondary/60" htmlFor="email">
                     Email Address
                   </label>
                   <div className="relative">
-                    <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant" />
+                    <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-light-text-secondary/50 dark:text-dark-text-secondary/50" />
                     <input
                       id="email"
                       name="email"
@@ -111,18 +111,18 @@ function RegisterPage() {
                       value={email}
                       onChange={(event) => setEmail(event.target.value)}
                       placeholder="curator@vibeify.com"
-                      className="w-full rounded-lg bg-surface-container-high py-3 pl-11 pr-4 text-sm text-on-surface placeholder:text-on-surface-variant/40 outline-none transition-all duration-300 focus:bg-surface-container-highest focus:ring-2 focus:ring-primary/20"
+                      className="w-full rounded-lg border border-light-surface-alt dark:border-dark-surface-alt bg-light-surface dark:bg-dark-surface py-3 pl-11 pr-4 text-sm text-light-text dark:text-dark-text placeholder:text-light-text-secondary/40 dark:placeholder:text-dark-text-secondary/40 outline-none transition-all duration-300 focus:ring-2 focus:ring-primary/30"
                       required
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="ml-1 block text-xs font-semibold uppercase tracking-widest text-on-surface-variant" htmlFor="password">
+                  <label className="ml-1 block text-xs font-semibold uppercase tracking-widest text-light-text-secondary/60 dark:text-dark-text-secondary/60" htmlFor="password">
                     Password
                   </label>
                   <div className="relative">
-                    <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant" />
+                    <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-light-text-secondary/50 dark:text-dark-text-secondary/50" />
                     <input
                       id="password"
                       name="password"
@@ -130,18 +130,18 @@ function RegisterPage() {
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
                       placeholder="••••••••"
-                      className="w-full rounded-lg bg-surface-container-high py-3 pl-11 pr-4 text-sm text-on-surface placeholder:text-on-surface-variant/40 outline-none transition-all duration-300 focus:bg-surface-container-highest focus:ring-2 focus:ring-primary/20"
+                      className="w-full rounded-lg border border-light-surface-alt dark:border-dark-surface-alt bg-light-surface dark:bg-dark-surface py-3 pl-11 pr-4 text-sm text-light-text dark:text-dark-text placeholder:text-light-text-secondary/40 dark:placeholder:text-dark-text-secondary/40 outline-none transition-all duration-300 focus:ring-2 focus:ring-primary/30"
                       required
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="ml-1 block text-xs font-semibold uppercase tracking-widest text-on-surface-variant" htmlFor="confirm-password">
+                  <label className="ml-1 block text-xs font-semibold uppercase tracking-widest text-light-text-secondary/60 dark:text-dark-text-secondary/60" htmlFor="confirm-password">
                     Confirm Password
                   </label>
                   <div className="relative">
-                    <ShieldCheck className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant" />
+                    <ShieldCheck className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-light-text-secondary/50 dark:text-dark-text-secondary/50" />
                     <input
                       id="confirm-password"
                       name="confirm-password"
@@ -149,7 +149,7 @@ function RegisterPage() {
                       value={confirmPassword}
                       onChange={(event) => setConfirmPassword(event.target.value)}
                       placeholder="••••••••"
-                      className="w-full rounded-lg bg-surface-container-high py-3 pl-11 pr-4 text-sm text-on-surface placeholder:text-on-surface-variant/40 outline-none transition-all duration-300 focus:bg-surface-container-highest focus:ring-2 focus:ring-primary/20"
+                      className="w-full rounded-lg border border-light-surface-alt dark:border-dark-surface-alt bg-light-surface dark:bg-dark-surface py-3 pl-11 pr-4 text-sm text-light-text dark:text-dark-text placeholder:text-light-text-secondary/40 dark:placeholder:text-dark-text-secondary/40 outline-none transition-all duration-300 focus:ring-2 focus:ring-primary/30"
                       required
                     />
                   </div>
@@ -162,15 +162,15 @@ function RegisterPage() {
                   type="checkbox"
                   checked={terms}
                   onChange={(event) => setTerms(event.target.checked)}
-                  className="mt-1 h-4 w-4 rounded bg-surface-container-high text-primary focus:ring-primary/30"
+                  className="mt-1 h-4 w-4 rounded border border-light-surface-alt dark:border-dark-surface-alt bg-light-surface dark:bg-dark-surface text-primary focus:ring-2 focus:ring-primary/30 transition-all duration-200"
                 />
-                <label className="text-xs leading-relaxed text-on-surface-variant" htmlFor="terms">
+                <label className="text-xs leading-relaxed text-light-text-secondary dark:text-dark-text-secondary" htmlFor="terms">
                   I agree to the{' '}
-                  <Link to="/terms" className="text-primary underline-offset-4 hover:underline">
+                  <Link to="/terms" className="text-primary underline-offset-4 hover:underline transition-colors duration-200">
                     Terms of Service
                   </Link>{' '}
                   and{' '}
-                  <Link to="/privacy" className="text-primary underline-offset-4 hover:underline">
+                  <Link to="/privacy" className="text-primary underline-offset-4 hover:underline transition-colors duration-200">
                     Privacy Policy
                   </Link>
                   .
@@ -178,7 +178,7 @@ function RegisterPage() {
               </div>
 
               {error && (
-                <p className="rounded-lg bg-error/10 px-3 py-2 text-sm text-error" role="alert">
+                <p className="rounded-lg bg-red-100 dark:bg-red-950/50 px-3 py-2 text-sm text-red-600 dark:text-red-400" role="alert">
                   {error}
                 </p>
               )}
@@ -186,7 +186,7 @@ function RegisterPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="group flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-primary to-primary-dim py-4 font-semibold text-on-primary shadow-lg shadow-primary/20 transition-all duration-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+                className="group flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary to-secondary hover:shadow-xl py-4 font-semibold text-white shadow-lg transition-all duration-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:shadow-lg"
               >
                 {submitting ? (
                   <>
@@ -202,12 +202,12 @@ function RegisterPage() {
               </button>
 
               <div className="mt-8 text-center">
-                <p className="text-sm text-on-surface-variant">
+                <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
                   Already have an account?
                   <button
                     type="button"
                     onClick={() => navigate('/login')}
-                    className="ml-1 font-semibold text-primary underline-offset-4 transition-all hover:underline"
+                    className="ml-1 font-semibold text-primary underline-offset-4 transition-all duration-200 hover:underline"
                   >
                     Login
                   </button>
@@ -217,7 +217,7 @@ function RegisterPage() {
           </div>
 
           <div className="mt-12 text-center">
-            <p className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-on-surface-variant/40">
+            <p className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-light-text-secondary/40 dark:text-dark-text-secondary/40">
               Trusted by 2M+ Curators Worldwide
             </p>
             <div className="mt-4 flex justify-center gap-6 opacity-30 grayscale transition-all duration-500 hover:grayscale-0">
@@ -230,24 +230,24 @@ function RegisterPage() {
         </div>
       </main>
 
-      <footer className="mt-auto w-full bg-purple-50 px-8 py-12 text-xs font-semibold uppercase tracking-widest">
+      <footer className="mt-auto w-full bg-light-surface-alt dark:bg-dark-surface px-8 py-12 text-xs font-semibold uppercase tracking-widest">
         <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-6 md:flex-row">
-          <div className="text-lg font-bold text-purple-700">Vibeify</div>
-          <div className="flex items-center gap-8 text-purple-900/40">
-            <Link className="opacity-80 transition-colors duration-200 hover:text-purple-700 hover:opacity-100" to="/privacy">
+          <div className="text-lg font-bold text-primary dark:text-primary-light">Vibeify</div>
+          <div className="flex items-center gap-8 text-light-text-secondary/40 dark:text-dark-text-secondary/60">
+            <Link className="opacity-80 transition-colors duration-200 hover:text-primary dark:hover:text-primary-light hover:opacity-100" to="/privacy">
               Privacy
             </Link>
-            <Link className="opacity-80 transition-colors duration-200 hover:text-purple-700 hover:opacity-100" to="/terms">
+            <Link className="opacity-80 transition-colors duration-200 hover:text-primary dark:hover:text-primary-light hover:opacity-100" to="/terms">
               Terms
             </Link>
-            <a className="opacity-80 transition-colors duration-200 hover:text-purple-700 hover:opacity-100" href="#" aria-label="Twitter">
+            <a className="opacity-80 transition-colors duration-200 hover:text-primary dark:hover:text-primary-light hover:opacity-100" href="#" aria-label="Twitter">
               Twitter
             </a>
-            <a className="opacity-80 transition-colors duration-200 hover:text-purple-700 hover:opacity-100" href="#" aria-label="Instagram">
+            <a className="opacity-80 transition-colors duration-200 hover:text-primary dark:hover:text-primary-light hover:opacity-100" href="#" aria-label="Instagram">
               Instagram
             </a>
           </div>
-          <div className="text-purple-900/40">© 2024 Vibeify. The Digital Curator.</div>
+          <div className="text-light-text-secondary/40 dark:text-dark-text-secondary/60">© 2024 Vibeify. The Digital Curator.</div>
         </div>
       </footer>
     </div>

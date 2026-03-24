@@ -1,4 +1,4 @@
-import {
+﻿import {
   Eye,
   Mail,
   MapPin,
@@ -12,8 +12,8 @@ import {
 
 function AboutPage() {
   return (
-    <div className="min-h-screen bg-background text-on-background">
-      <main className="mx-auto max-w-7xl overflow-hidden px-6 pb-24 pt-24 md:px-12">
+    <div className="min-h-screen bg-light-bg dark:bg-dark-bg py-16 px-8 transition-colors duration-300">
+      <main className="mx-auto max-w-4xl space-y-32">
         <section id="about" className="mb-32">
           <div className="editorial-grid grid grid-cols-12 gap-6">
             <div className="col-span-12 mb-12 lg:col-span-7 lg:mb-0">
@@ -21,7 +21,7 @@ function AboutPage() {
               <h1 className="mb-8 text-4xl font-bold leading-tight tracking-tight md:text-6xl">
                 The art of discovery, refined for <span className="italic text-primary">your soul.</span>
               </h1>
-              <div className="max-w-2xl space-y-6 text-lg leading-relaxed text-on-surface-variant">
+              <div className="max-w-2xl space-y-6 text-lg leading-relaxed text-light-text dark:text-dark-text/95">
                 <p>
                   In a world flooded by infinite feeds, Vibeify believes discovery should feel human,
                   precise, and deeply personal. We design recommendation experiences that respect your
@@ -62,7 +62,7 @@ function AboutPage() {
             <article className="md:col-span-2 flex min-h-[300px] flex-col justify-end rounded-xl bg-surface-container-low p-10 shadow-[0_14px_38px_-24px_rgba(62,37,72,0.45)] transition-all hover:shadow-lg">
               <Sparkles className="mb-6 text-primary" size={38} />
               <h3 className="mb-3 text-2xl font-bold">Intentional Curation</h3>
-              <p className="max-w-lg text-on-surface-variant">
+              <p className="max-w-lg text-light-text dark:text-dark-text/95">
                 We map content to feeling, context, and taste so your next recommendation feels aligned,
                 not random.
               </p>
@@ -72,7 +72,7 @@ function AboutPage() {
               <Eye className="text-primary" size={38} />
               <div>
                 <h3 className="mb-3 text-2xl font-bold">Pure Interface</h3>
-                <p className="text-on-surface-variant">
+                <p className="text-light-text dark:text-dark-text/95">
                   Clean, immersive, and distraction-free surfaces that keep focus on what matters: discovery.
                 </p>
               </div>
@@ -94,7 +94,7 @@ function AboutPage() {
               </div>
               <div>
                 <h3 className="mb-3 text-2xl font-bold">Designed for Humans</h3>
-                <p className="text-on-surface-variant">
+                <p className="text-light-text dark:text-dark-text/95">
                   Every interaction is crafted to feel natural, warm, and intuitive so technology supports
                   your flow instead of interrupting it.
                 </p>
@@ -106,55 +106,55 @@ function AboutPage() {
         <section id="contact" className="mx-auto max-w-3xl">
           <div className="mb-16 text-center">
             <span className="mb-4 block text-xs font-bold uppercase tracking-widest text-primary">Get in touch</span>
-            <h2 className="mb-4 text-4xl font-bold">Let&apos;s start a conversation.</h2>
-            <p className="text-on-surface-variant">
+            <h2 className="mb-4 text-4xl font-bold text-on-surface dark:text-white">Let&apos;s start a conversation.</h2>
+            <p className="text-on-surface/70 dark:text-white/70">
               Questions, partnerships, or ideas worth building together. We would love to hear from you.
             </p>
           </div>
 
-          <div className="rounded-2xl bg-surface-container-low p-8 shadow-[0_20px_46px_-32px_rgba(62,37,72,0.5)] md:p-12">
+          <div className="rounded-lg border border-surface-container bg-white dark:bg-slate-900 p-8 shadow-md dark:shadow-dark-md md:p-12">
             <form className="space-y-8" onSubmit={(event) => event.preventDefault()}>
               <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                 <div className="space-y-2">
-                  <label htmlFor="about-name" className="ml-1 block text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+                  <label htmlFor="about-name" className="ml-1 block text-xs font-bold uppercase tracking-wider text-on-surface/60 dark:text-white/60">
                     Name
                   </label>
                   <input
                     id="about-name"
                     type="text"
                     placeholder="Alex Rivera"
-                    className="w-full rounded-lg bg-surface-container-highest p-4 placeholder:text-on-surface-variant/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    className="w-full rounded-lg border border-surface-container bg-white dark:bg-slate-900 p-4 text-on-surface dark:text-white placeholder:text-on-surface/40 dark:placeholder:text-white/40 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="about-email" className="ml-1 block text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+                  <label htmlFor="about-email" className="ml-1 block text-xs font-bold uppercase tracking-wider text-on-surface/60 dark:text-white/60">
                     Email
                   </label>
                   <input
                     id="about-email"
                     type="email"
                     placeholder="alex@curated.com"
-                    className="w-full rounded-lg bg-surface-container-highest p-4 placeholder:text-on-surface-variant/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    className="w-full rounded-lg border border-surface-container bg-white dark:bg-slate-900 p-4 text-on-surface dark:text-white placeholder:text-on-surface/40 dark:placeholder:text-white/40 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="about-message" className="ml-1 block text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+                <label htmlFor="about-message" className="ml-1 block text-xs font-bold uppercase tracking-wider text-on-surface/60 dark:text-white/60">
                   Message
                 </label>
                 <textarea
                   id="about-message"
                   rows={5}
                   placeholder="Tell us what is on your mind..."
-                  className="w-full resize-none rounded-lg bg-surface-container-highest p-4 placeholder:text-on-surface-variant/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="w-full resize-none rounded-lg border border-surface-container bg-white dark:bg-slate-900 p-4 text-on-surface dark:text-white placeholder:text-on-surface/40 dark:placeholder:text-white/40 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
 
               <div className="flex justify-center pt-2">
                 <button
                   type="submit"
-                  className="flex items-center gap-3 rounded-lg bg-primary px-12 py-4 font-bold text-on-primary shadow-[0_18px_36px_-20px_rgba(62,37,72,0.6)] transition-all hover:scale-105 hover:bg-primary-dim"
+                  className="flex items-center gap-3 rounded-lg bg-primary hover:bg-primary/90 px-12 py-4 font-bold text-white shadow-md dark:shadow-dark-md transition-all duration-300 active:scale-[0.98]"
                 >
                   Send Message
                   <Send size={18} />
@@ -163,7 +163,7 @@ function AboutPage() {
             </form>
           </div>
 
-          <div className="mt-16 flex flex-wrap justify-center gap-10 text-sm font-medium text-on-surface-variant">
+          <div className="mt-16 flex flex-wrap justify-center gap-10 text-sm font-medium text-on-surface/70 dark:text-white/70">
             <div className="flex items-center gap-2">
               <Mail className="text-primary" size={18} />
               hello@vibeify.com
@@ -181,7 +181,7 @@ function AboutPage() {
       </main>
 
       <footer className="bg-surface-container-lowest py-10">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-8 px-6 text-xs font-semibold uppercase tracking-widest text-on-surface-variant">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-8 px-6 text-xs font-semibold uppercase tracking-widest text-light-text dark:text-dark-text/95">
           <a href="#" className="transition-colors hover:text-primary">Privacy</a>
           <a href="#" className="transition-colors hover:text-primary">Terms</a>
           <a href="#" className="transition-colors hover:text-primary">Twitter</a>

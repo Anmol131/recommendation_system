@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, Star } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import * as endpoints from '../api/endpoints';
@@ -315,33 +315,33 @@ function ExplorePage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface font-body text-on-surface antialiased">
+    <div className="min-h-screen bg-light-bg dark:bg-dark-bg font-body text-light-text dark:text-dark-text antialiased transition-colors duration-300">
       <main className="mx-auto max-w-screen-2xl px-8 pb-24 pt-16">
         <header className="mb-16 space-y-4 text-center">
-          <h1 className="text-5xl font-extrabold tracking-tight text-on-surface md:text-6xl">Explore Everything</h1>
-          <p className="mx-auto max-w-2xl text-lg font-medium text-on-surface-variant opacity-80">
+          <h1 className="text-5xl font-extrabold tracking-tight text-on-surface dark:text-white md:text-6xl">Explore Everything</h1>
+          <p className="mx-auto max-w-2xl text-lg font-medium text-light-text dark:text-dark-text/95 dark:text-white/70 opacity-90">
             A curated universe of movies, literature, soundscapes, and interactive worlds. Discover your next obsession through the lens of Vibeify.
           </p>
         </header>
 
         <div className="relative mx-auto mb-12 max-w-3xl">
-          <div className="flex items-center rounded-xl bg-surface-container-high px-6 py-4 shadow-sm ring-primary/20 transition-all focus-within:ring-2">
-            <Search size={18} className="mr-3 text-on-surface-variant" />
+          <div className="flex items-center rounded-lg border border-surface-container bg-white dark:bg-slate-900 px-6 py-4 shadow-md dark:shadow-dark-md transition-all focus-within:ring-2 focus-within:ring-primary/20">
+            <Search size={18} className="mr-3 text-on-surface/60 dark:text-white/60" />
             <input
               type="text"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search across all categories..."
-              className="w-full border-none bg-transparent font-medium text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:ring-0"
+              className="w-full border-none bg-transparent font-medium text-on-surface dark:text-white placeholder:text-on-surface/50 dark:placeholder:text-white/50 focus:outline-none focus:ring-0"
             />
             {query && (
               <button
                 type="button"
                 onClick={() => setQuery('')}
-                className="ml-2 text-on-surface-variant hover:text-on-surface transition-colors"
+                className="ml-2 text-on-surface/50 hover:text-on-surface dark:text-white/60 dark:hover:text-white transition-colors duration-200"
                 aria-label="Clear search"
               >
-                ✕
+                âœ•
               </button>
             )}
           </div>
@@ -360,7 +360,7 @@ function ExplorePage() {
                     'rounded-full px-8 py-2.5 text-sm transition-all active:scale-95',
                     isActive
                       ? 'bg-primary font-semibold text-on-primary shadow-md'
-                      : 'font-medium text-on-surface-variant hover:bg-surface-container-highest',
+                      : 'font-medium text-light-text dark:text-dark-text/95 hover:bg-surface-container-highest',
                   ].join(' ')}
                 >
                   {tab.label}
@@ -386,7 +386,7 @@ function ExplorePage() {
                         'rounded-full px-3 py-1.5 text-xs font-semibold transition-all',
                         active
                           ? 'bg-secondary-container text-on-secondary-container'
-                          : 'bg-surface-container-highest text-on-surface-variant hover:bg-secondary-container hover:text-on-secondary-container',
+                          : 'bg-surface-container-highest text-light-text dark:text-dark-text/95 hover:bg-secondary-container hover:text-on-secondary-container',
                       ].join(' ')}
                     >
                       {chip}
@@ -429,9 +429,9 @@ function ExplorePage() {
                         'flex h-5 w-5 items-center justify-center rounded border-2 transition-colors',
                         checked ? 'border-primary bg-primary/10' : 'border-outline-variant group-hover:border-primary',
                       ].join(' ')}>
-                        {checked ? <span className="text-xs font-bold text-primary">✓</span> : null}
+                        {checked ? <span className="text-xs font-bold text-primary">âœ“</span> : null}
                       </div>
-                      <span className="text-sm font-medium text-on-surface-variant">{year}</span>
+                      <span className="text-sm font-medium text-light-text dark:text-dark-text/95">{year}</span>
                     </label>
                   );
                 })}
@@ -447,7 +447,7 @@ function ExplorePage() {
             ) : null}
 
             {!loading && filteredItems.length === 0 ? (
-              <div className="rounded-lg border border-outline-variant/20 bg-surface-container-lowest px-6 py-16 text-center text-on-surface-variant">
+              <div className="rounded-lg border border-outline-variant/20 bg-surface-container-lowest px-6 py-16 text-center text-light-text dark:text-dark-text/95">
                 No results found for the selected filters.
               </div>
             ) : null}
@@ -473,7 +473,7 @@ function ExplorePage() {
                           <span className="text-xs font-bold text-on-surface">{item.rating?.toFixed(1) || 'N/A'}</span>
                         </div>
                       </div>
-                      <p className="text-xs font-medium text-on-surface-variant">{item.meta}</p>
+                      <p className="text-xs font-medium text-light-text dark:text-dark-text/95">{item.meta}</p>
                     </div>
                   </button>
                 </article>
@@ -498,7 +498,7 @@ function ExplorePage() {
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-8 px-8 md:flex-row">
           <div className="text-center md:text-left">
             <div className="mb-2 text-lg font-bold text-purple-600">Vibeify</div>
-            <div className="text-sm text-slate-500">© 2024 Vibeify. Curated with intention.</div>
+            <div className="text-sm text-slate-500">Â© 2024 Vibeify. Curated with intention.</div>
           </div>
           <div className="flex flex-wrap justify-center gap-8">
             <button type="button" className="text-sm text-slate-500 underline-offset-4 transition-colors hover:text-purple-600 hover:underline">Privacy Policy</button>
@@ -512,3 +512,4 @@ function ExplorePage() {
 }
 
 export default ExplorePage;
+

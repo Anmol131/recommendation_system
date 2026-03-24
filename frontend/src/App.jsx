@@ -26,9 +26,9 @@ function ProtectedRoute({ children }) {
 
 function App() {
   return (
-    <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-white transition-colors duration-500">
+    <div className="min-h-screen bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text transition-colors duration-300">
       <Navbar />
-      <main className="pt-2">
+      <main className="pt-0">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/search" element={<Navigate to="/explore" replace />} />

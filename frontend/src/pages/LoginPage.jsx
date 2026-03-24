@@ -34,25 +34,25 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-on-background flex flex-col">
+    <div className="min-h-screen bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text flex flex-col transition-colors duration-300">
       <main className="relative flex flex-1 items-center justify-center overflow-hidden px-6 py-8 sm:p-12">
         <div className="pointer-events-none absolute -left-[10%] -top-[10%] h-[40%] w-[40%] rounded-full bg-primary/5 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-[10%] -right-[10%] h-[40%] w-[40%] rounded-full bg-secondary/5 blur-3xl" />
 
         <div className="relative z-10 w-full max-w-[440px]">
-          <div className="rounded-xl border border-outline-variant/10 bg-surface-container-lowest p-8 shadow-[0_20px_40px_-10px_rgba(62,37,72,0.08)] md:p-10">
+          <div className="rounded-lg border border-light-surface-alt dark:border-dark-surface-alt bg-light-surface dark:bg-dark-surface p-8 shadow-lg dark:shadow-2xl md:p-10">
             <header className="mb-10 text-center">
               <h1 className="mb-2 text-3xl font-bold tracking-tighter text-primary">Vibeify</h1>
-              <p className="text-sm font-medium text-on-surface-variant">The Digital Curator awaits you.</p>
+              <p className="text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary">The Digital Curator awaits you.</p>
             </header>
 
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-2">
-                <label className="ml-1 block text-xs font-semibold uppercase tracking-widest text-on-surface-variant" htmlFor="email">
+                <label className="ml-1 block text-xs font-semibold uppercase tracking-widest text-light-text-secondary/60 dark:text-dark-text-secondary/60" htmlFor="email">
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant" />
+                  <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-light-text-secondary/50 dark:text-dark-text-secondary/50" />
                   <input
                     id="email"
                     name="email"
@@ -60,7 +60,7 @@ function LoginPage() {
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     placeholder="curator@vibeify.com"
-                    className="w-full rounded-lg bg-surface-container-high py-3.5 pl-11 pr-4 text-sm text-on-surface placeholder:text-on-surface-variant/50 outline-none transition-all duration-300 focus:bg-surface-container-highest focus:ring-2 focus:ring-primary/20"
+                    className="w-full rounded-lg border border-light-surface-alt dark:border-dark-surface-alt bg-light-surface dark:bg-dark-surface py-3.5 pl-11 pr-4 text-sm text-light-text dark:text-dark-text placeholder:text-light-text-secondary/40 dark:placeholder:text-dark-text-secondary/40 outline-none transition-all duration-300 focus:ring-2 focus:ring-primary/30"
                     required
                   />
                 </div>
@@ -68,19 +68,19 @@ function LoginPage() {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between px-1">
-                  <label className="block text-xs font-semibold uppercase tracking-widest text-on-surface-variant" htmlFor="password">
+                  <label className="block text-xs font-semibold uppercase tracking-widest text-light-text-secondary/60 dark:text-dark-text-secondary/60" htmlFor="password">
                     Password
                   </label>
                   <button
                     type="button"
                     onClick={() => navigate('/change-password')}
-                    className="text-[10px] font-bold uppercase tracking-wider text-primary transition-colors hover:text-primary-dim"
+                    className="text-[10px] font-bold uppercase tracking-wider text-primary transition-colors duration-200 hover:text-primary-light dark:hover:text-primary-light"
                   >
                     Forgot Password?
                   </button>
                 </div>
                 <div className="relative">
-                  <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant" />
+                  <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-light-text-secondary/50 dark:text-dark-text-secondary/50" />
                   <input
                     id="password"
                     name="password"
@@ -88,14 +88,14 @@ function LoginPage() {
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     placeholder="••••••••"
-                    className="w-full rounded-lg bg-surface-container-high py-3.5 pl-11 pr-4 text-sm text-on-surface placeholder:text-on-surface-variant/50 outline-none transition-all duration-300 focus:bg-surface-container-highest focus:ring-2 focus:ring-primary/20"
+                    className="w-full rounded-lg border border-light-surface-alt dark:border-dark-surface-alt bg-light-surface dark:bg-dark-surface py-3.5 pl-11 pr-4 text-sm text-light-text dark:text-dark-text placeholder:text-light-text-secondary/40 dark:placeholder:text-dark-text-secondary/40 outline-none transition-all duration-300 focus:ring-2 focus:ring-primary/30"
                     required
                   />
                 </div>
               </div>
 
               {error && (
-                <p className="rounded-lg bg-error/10 px-3 py-2 text-sm text-error" role="alert">
+                <p className="rounded-lg bg-red-100 dark:bg-red-950/50 px-3 py-2 text-sm text-red-600 dark:text-red-400" role="alert">
                   {error}
                 </p>
               )}
@@ -103,37 +103,37 @@ function LoginPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full rounded-lg bg-gradient-to-br from-primary to-primary-container px-6 py-4 text-sm font-bold tracking-wide text-on-primary shadow-lg shadow-primary/20 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+                className="w-full rounded-lg bg-gradient-to-r from-primary to-secondary hover:shadow-xl px-6 py-4 text-sm font-bold tracking-wide text-white shadow-lg transition-all duration-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:shadow-lg"
               >
                 {submitting ? 'LOGGING IN...' : 'LOGIN'}
               </button>
             </form>
 
             <div className="relative my-8 flex items-center">
-              <div className="h-px flex-grow bg-outline-variant/20" />
-              <span className="mx-4 shrink-0 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/40">or continue with</span>
-              <div className="h-px flex-grow bg-outline-variant/20" />
+              <div className="h-px flex-grow bg-light-surface-alt dark:bg-dark-surface-alt" />
+              <span className="mx-4 shrink-0 text-[10px] font-bold uppercase tracking-widest text-light-text-secondary/40 dark:text-dark-text-secondary/40">or continue with</span>
+              <div className="h-px flex-grow bg-light-surface-alt dark:bg-dark-surface-alt" />
             </div>
 
             <div className="mb-10 grid grid-cols-2 gap-4">
               <button
                 type="button"
-                className="group flex items-center justify-center gap-2 rounded-lg bg-surface-container-low px-4 py-3 transition-colors hover:bg-surface-container-high"
+                className="group flex items-center justify-center gap-2 rounded-lg border border-light-surface-alt dark:border-dark-surface-alt bg-light-surface dark:bg-dark-surface px-4 py-3 transition-all duration-200 hover:bg-light-surface-alt dark:hover:bg-dark-surface-alt shadow-sm"
               >
-                <Chrome className="h-5 w-5 text-on-surface-variant transition-colors group-hover:text-primary" />
-                <span className="text-xs font-semibold text-on-surface-variant">Google</span>
+                <Chrome className="h-5 w-5 text-light-text-secondary/60 dark:text-dark-text-secondary/60 transition-colors group-hover:text-primary" />
+                <span className="text-xs font-semibold text-light-text-secondary/60 dark:text-dark-text-secondary/60">Google</span>
               </button>
               <button
                 type="button"
-                className="group flex items-center justify-center gap-2 rounded-lg bg-surface-container-low px-4 py-3 transition-colors hover:bg-surface-container-high"
+                className="group flex items-center justify-center gap-2 rounded-lg border border-light-surface-alt dark:border-dark-surface-alt bg-light-surface dark:bg-dark-surface px-4 py-3 transition-all duration-200 hover:bg-light-surface-alt dark:hover:bg-dark-surface-alt shadow-sm"
               >
-                <span className="text-sm font-bold text-on-surface-variant transition-colors group-hover:text-primary">A</span>
-                <span className="text-xs font-semibold text-on-surface-variant">Apple</span>
+                <span className="text-sm font-bold text-light-text-secondary/60 dark:text-dark-text-secondary/60 transition-colors group-hover:text-primary">A</span>
+                <span className="text-xs font-semibold text-light-text-secondary/60 dark:text-dark-text-secondary/60">Apple</span>
               </button>
             </div>
 
             <div className="text-center">
-              <p className="text-xs font-medium text-on-surface-variant">
+              <p className="text-xs font-medium text-light-text-secondary dark:text-dark-text-secondary">
                 Don't have an account?
                 <button
                   type="button"
@@ -147,37 +147,37 @@ function LoginPage() {
           </div>
 
           <div className="mt-8 flex justify-center gap-8">
-            <Link className="text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/40 transition-colors hover:text-primary" to="/privacy">
+            <Link className="text-[10px] font-bold uppercase tracking-[0.2em] text-light-text-secondary/40 dark:text-dark-text-secondary/40 transition-colors hover:text-primary" to="/privacy">
               Privacy
             </Link>
-            <Link className="text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/40 transition-colors hover:text-primary" to="/terms">
+            <Link className="text-[10px] font-bold uppercase tracking-[0.2em] text-light-text-secondary/40 dark:text-dark-text-secondary/40 transition-colors hover:text-primary" to="/terms">
               Terms
             </Link>
-            <Link className="text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/40 transition-colors hover:text-primary" to="/support">
+            <Link className="text-[10px] font-bold uppercase tracking-[0.2em] text-light-text-secondary/40 dark:text-dark-text-secondary/40 transition-colors hover:text-primary" to="/support">
               Support
             </Link>
           </div>
         </div>
       </main>
 
-      <footer className="mt-auto w-full bg-purple-50 px-8 py-12 text-xs font-semibold uppercase tracking-widest">
+      <footer className="mt-auto w-full bg-light-surface-alt dark:bg-dark-surface px-8 py-12 text-xs font-semibold uppercase tracking-widest">
         <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-6 md:flex-row">
-          <div className="text-lg font-bold text-purple-700">Vibeify</div>
-          <div className="flex items-center gap-8 text-purple-900/40">
-            <Link className="opacity-80 transition-colors duration-200 hover:text-purple-700 hover:opacity-100" to="/privacy">
+          <div className="text-lg font-bold text-primary dark:text-primary-light">Vibeify</div>
+          <div className="flex items-center gap-8 text-light-text-secondary/40 dark:text-dark-text-secondary/60">
+            <Link className="opacity-80 transition-colors duration-200 hover:text-primary dark:hover:text-primary-light hover:opacity-100" to="/privacy">
               Privacy
             </Link>
-            <Link className="opacity-80 transition-colors duration-200 hover:text-purple-700 hover:opacity-100" to="/terms">
+            <Link className="opacity-80 transition-colors duration-200 hover:text-primary dark:hover:text-primary-light hover:opacity-100" to="/terms">
               Terms
             </Link>
-            <a className="opacity-80 transition-colors duration-200 hover:text-purple-700 hover:opacity-100" href="#" aria-label="Twitter">
+            <a className="opacity-80 transition-colors duration-200 hover:text-primary dark:hover:text-primary-light hover:opacity-100" href="#" aria-label="Twitter">
               Twitter
             </a>
-            <a className="opacity-80 transition-colors duration-200 hover:text-purple-700 hover:opacity-100" href="#" aria-label="Instagram">
+            <a className="opacity-80 transition-colors duration-200 hover:text-primary dark:hover:text-primary-light hover:opacity-100" href="#" aria-label="Instagram">
               Instagram
             </a>
           </div>
-          <div className="text-purple-900/40">© 2024 Vibeify. The Digital Curator.</div>
+          <div className="text-light-text-secondary/40 dark:text-dark-text-secondary/60">© 2024 Vibeify. The Digital Curator.</div>
         </div>
       </footer>
     </div>

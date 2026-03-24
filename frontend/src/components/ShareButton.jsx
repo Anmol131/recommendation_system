@@ -18,7 +18,7 @@ function ShareButton() {
     <button
       type="button"
       onClick={handleCopy}
-      className="inline-flex items-center gap-2 rounded-lg border border-primary/60 bg-surface2 px-4 py-2 text-sm font-medium text-primary transition hover:brightness-110"
+      className="inline-flex items-center gap-2 rounded-lg border border-primary/60 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-primary transition hover:bg-slate-50 dark:hover:bg-slate-800 duration-200"
     >
       <FiLink />
       {copied ? 'Copied!' : 'Copy Link'}

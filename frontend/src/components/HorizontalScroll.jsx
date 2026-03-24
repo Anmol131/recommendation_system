@@ -4,12 +4,12 @@ import { Link } from 'react-router-dom';
 import MediaCard from './MediaCard';
 
 const SkeletonCard = () => (
-  <div className="bg-surface rounded-xl overflow-hidden animate-pulse flex-shrink-0">
-    <div className="h-56 bg-surface2" />
+  <div className="bg-white dark:bg-slate-900 rounded-lg overflow-hidden animate-pulse flex-shrink-0 border border-surface-container dark:border-slate-800">
+    <div className="h-56 bg-slate-200 dark:bg-slate-800" />
     <div className="p-4 space-y-3">
-      <div className="h-4 bg-surface2 rounded w-3/4" />
-      <div className="h-3 bg-surface2 rounded w-1/2" />
-      <div className="h-3 bg-surface2 rounded w-2/3" />
+      <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-3/4" />
+      <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-1/2" />
+      <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-2/3" />
     </div>
   </div>
 );
@@ -51,11 +51,11 @@ const HorizontalScroll = ({
     <section className="px-6 py-8 space-y-6">
       {/* Title */}
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-2xl font-bold text-white">{title}</h2>
+        <h2 className="text-2xl font-bold text-on-surface dark:text-white">{title}</h2>
         {viewAllHref && (
           <Link
             to={viewAllHref}
-            className="text-sm font-semibold text-primary transition hover:text-white"
+            className="text-sm font-semibold text-primary transition hover:text-primary/80 duration-200"
           >
             View All →
           </Link>
@@ -68,7 +68,7 @@ const HorizontalScroll = ({
         {showLeftArrow && (
           <button
             onClick={() => scroll('left')}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-primaryDark hover:bg-primary text-white p-2 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-primary hover:bg-primary/90 text-white p-2 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-md"
           >
             <FiChevronLeft size={24} />
           </button>
@@ -97,7 +97,7 @@ const HorizontalScroll = ({
         {showRightArrow && (
           <button
             onClick={() => scroll('right')}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-primaryDark hover:bg-primary text-white p-2 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-primary hover:bg-primary/90 text-white p-2 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-md"
           >
             <FiChevronRight size={24} />
           </button>

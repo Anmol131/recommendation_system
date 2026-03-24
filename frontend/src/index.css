@@ -12,8 +12,42 @@ html {
   scroll-behavior: smooth;
 }
 
+html.dark {
+  color-scheme: dark;
+}
+
 body {
-  @apply bg-bg text-white font-sans;
+  @apply font-sans transition-colors duration-300;
+}
+
+/* Normalize legacy utility colors in dark mode for consistent readability. */
+html.dark [class*="text-on-background"],
+html.dark [class*="text-on-surface"] {
+  color: #f8fafc;
+}
+
+html.dark [class*="text-on-surface-variant"] {
+  color: #cbd5e1;
+}
+
+html.dark [class*="bg-surface-container-lowest"] {
+  background-color: #0f172a;
+}
+
+html.dark [class*="bg-surface-container-low"] {
+  background-color: #1e293b;
+}
+
+html.dark [class*="bg-surface-container"] {
+  background-color: #1e293b;
+}
+
+html.dark [class*="bg-surface-container-high"] {
+  background-color: #334155;
+}
+
+html.dark [class*="bg-surface-container-highest"] {
+  background-color: #475569;
 }
 
 /* Scrollbar styling */
@@ -26,6 +60,10 @@ body {
   background: #0F0E17;
 }
 
+html.dark ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
 ::-webkit-scrollbar-thumb {
   background: #8B7CF6;
   border-radius: 4px;
@@ -33,6 +71,14 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #B8A9F5;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #a78bfa;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #c4b5fd;
 }
 
 /* Purple glow effect */

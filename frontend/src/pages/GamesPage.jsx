@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
   Bookmark,
@@ -290,13 +290,13 @@ function GamesPage() {
   const totalLabel = totalGames || games.length;
 
   return (
-    <div className="min-h-screen bg-[#fff3fd] pb-20 text-[#3e2548] font-['Inter'] antialiased">
+    <div className="min-h-screen bg-light-bg dark:bg-dark-bg pb-20 text-light-text dark:text-dark-text font-['Inter'] antialiased transition-colors duration-300">
       <main className="mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-8 lg:px-10">
         <header className="mb-12 space-y-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div>
               <h1 className="mb-2 text-5xl font-bold leading-tight tracking-tight text-on-background">Games</h1>
-              <p className="max-w-xl text-lg text-on-surface-variant">
+              <p className="max-w-xl text-lg text-light-text dark:text-dark-text/95">
                 Immersive worlds and competitive challenges curated for your style.
               </p>
             </div>
@@ -307,9 +307,9 @@ function GamesPage() {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Search for your next game..."
-                className="h-14 w-full rounded-xl bg-surface-container-high px-5 pr-12 text-on-surface placeholder:text-on-surface-variant/70 transition-all duration-300 focus:bg-surface-container-highest focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="h-14 w-full rounded-lg border border-surface-container bg-white dark:bg-slate-900 px-5 pr-12 text-on-surface dark:text-white placeholder:text-on-surface/50 dark:placeholder:text-white/50 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/30 shadow-sm"
               />
-              <Search size={18} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/70 transition-colors group-focus-within:text-primary" />
+              <Search size={18} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-on-surface/50 dark:text-white/50 transition-colors duration-200 group-focus-within:text-primary" />
             </div>
           </div>
 
@@ -322,7 +322,7 @@ function GamesPage() {
                   'relative whitespace-nowrap px-1 pb-4 text-sm font-bold uppercase tracking-[0.2em] transition-colors duration-300',
                   item.active
                     ? "text-primary after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:bg-primary after:content-['']"
-                    : 'text-on-surface-variant/50 hover:text-primary',
+                    : 'text-light-text/50 dark:text-dark-text/50 hover:text-primary',
                 ].join(' ')}
               >
                 {item.label}
@@ -335,7 +335,7 @@ function GamesPage() {
           <aside className="w-full lg:w-72 lg:flex-shrink-0">
             <div className="space-y-7 rounded-2xl bg-surface-container-lowest p-6 shadow-[0_18px_45px_-26px_rgba(62,37,72,0.22)] lg:sticky lg:top-24">
               <div className="flex items-center justify-between">
-                <h2 className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-on-surface-variant/80">
+                <h2 className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-light-text/80 dark:text-dark-text/80">
                   <SlidersHorizontal size={16} />
                   Filters
                 </h2>
@@ -349,7 +349,7 @@ function GamesPage() {
               </div>
 
               <div className="space-y-3">
-                <h3 className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-on-surface-variant/70">Genre</h3>
+                <h3 className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-light-text/70 dark:text-dark-text/70">Genre</h3>
                 <div className="flex flex-wrap gap-2">
                   {GENRES.map((genre) => {
                     const active = selectedGenres.includes(genre);
@@ -362,7 +362,7 @@ function GamesPage() {
                           'rounded-lg px-3 py-2 text-xs font-semibold transition-colors',
                           active
                             ? 'bg-primary text-on-primary'
-                            : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high',
+                            : 'bg-surface-container-low text-light-text dark:text-dark-text/95 hover:bg-surface-container-high',
                         ].join(' ')}
                       >
                         {genre}
@@ -373,7 +373,7 @@ function GamesPage() {
               </div>
 
               <div className="space-y-3">
-                <h3 className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-on-surface-variant/70">Platform</h3>
+                <h3 className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-light-text/70 dark:text-dark-text/70">Platform</h3>
                 <div className="space-y-2.5">
                   {PLATFORM_OPTIONS.map((option) => (
                     <label key={option.value} className="flex cursor-pointer items-center gap-3">
@@ -383,14 +383,14 @@ function GamesPage() {
                         onChange={() => handlePlatformToggle(option.value)}
                         className="h-4 w-4 accent-primary"
                       />
-                      <span className="text-sm text-on-surface-variant transition-colors hover:text-primary">{option.label}</span>
+                      <span className="text-sm text-light-text dark:text-dark-text/95 transition-colors hover:text-primary">{option.label}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
               <div className="space-y-3">
-                <h3 className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-on-surface-variant/70">Mode</h3>
+                <h3 className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-light-text/70 dark:text-dark-text/70">Mode</h3>
                 <div className="flex flex-wrap gap-2">
                   {MODE_OPTIONS.map((mode) => {
                     const active = selectedModes.includes(mode);
@@ -403,7 +403,7 @@ function GamesPage() {
                           'rounded-md border px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.13em] transition-colors',
                           active
                             ? 'border-primary text-primary'
-                            : 'border-outline-variant/40 text-on-surface-variant hover:border-primary hover:text-primary',
+                            : 'border-outline-variant/40 text-light-text dark:text-dark-text/95 hover:border-primary hover:text-primary',
                         ].join(' ')}
                       >
                         {mode}
@@ -414,7 +414,7 @@ function GamesPage() {
               </div>
 
               <div className="space-y-3">
-                <h3 className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-on-surface-variant/70">Min. Rating</h3>
+                <h3 className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-light-text/70 dark:text-dark-text/70">Min. Rating</h3>
                 <div className="flex items-center gap-2">
                   <Star size={16} className="text-[#a03648]" fill="#a03648" />
                   <input
@@ -426,7 +426,7 @@ function GamesPage() {
                     onChange={(event) => setMinRating(Number(event.target.value))}
                     className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-surface-container-high accent-primary"
                   />
-                  <span className="min-w-12 text-right text-xs font-bold text-on-surface-variant">{minRating.toFixed(1)}+</span>
+                  <span className="min-w-12 text-right text-xs font-bold text-light-text dark:text-dark-text/95">{minRating.toFixed(1)}+</span>
                 </div>
               </div>
             </div>
@@ -482,13 +482,13 @@ function GamesPage() {
                           </div>
                         </div>
 
-                        <p className="mb-5 line-clamp-2 text-sm text-on-surface-variant/80">
+                        <p className="mb-5 line-clamp-2 text-sm text-light-text/80 dark:text-dark-text/80">
                           {item?.description || 'Step into an expertly curated game recommendation designed around your vibe.'}
                         </p>
 
                         <div className="mt-auto flex items-center justify-between gap-3 rounded-xl bg-surface-container-highest/45 px-3 py-2">
-                          <span className="line-clamp-1 text-[0.65rem] font-bold uppercase tracking-[0.16em] text-on-surface-variant/80">
-                            {normalizePlatformLabel(item)} • {item?.developer || 'Unknown Studio'}
+                          <span className="line-clamp-1 text-[0.65rem] font-bold uppercase tracking-[0.16em] text-light-text/80 dark:text-dark-text/80">
+                            {normalizePlatformLabel(item)} â€¢ {item?.developer || 'Unknown Studio'}
                           </span>
                           <button
                             type="button"
@@ -509,7 +509,7 @@ function GamesPage() {
             {!loading && filteredGames.length === 0 ? (
               <div className="rounded-2xl bg-white/70 px-6 py-14 text-center shadow-[0_14px_40px_-24px_rgba(62,37,72,0.2)]">
                 <p className="text-lg font-semibold text-on-surface">No games matched your filters.</p>
-                <p className="mt-2 text-sm text-on-surface-variant">Try adjusting genres, platform, search, or minimum rating.</p>
+                <p className="mt-2 text-sm text-light-text dark:text-dark-text/95">Try adjusting genres, platform, search, or minimum rating.</p>
               </div>
             ) : null}
 
@@ -527,7 +527,7 @@ function GamesPage() {
                   </button>
                 ) : null}
 
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-on-surface-variant/70">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-light-text/70 dark:text-dark-text/70">
                   Viewing {visibleCount} of {totalLabel} titles
                 </p>
               </div>
@@ -536,11 +536,11 @@ function GamesPage() {
         </div>
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around bg-white/85 backdrop-blur-md md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around bg-white/85 dark:bg-slate-900/85 backdrop-blur-md md:hidden">
         <button
           type="button"
           onClick={() => navigate('/')}
-          className="flex flex-col items-center gap-1 text-on-background/40"
+          className="flex flex-col items-center gap-1 text-on-background/40 dark:text-white/40"
         >
           <Home size={18} />
           <span className="text-[10px] font-bold uppercase tracking-tight">Home</span>
@@ -549,7 +549,7 @@ function GamesPage() {
         <button
           type="button"
           onClick={() => navigate('/explore?type=games')}
-          className="flex flex-col items-center gap-1 text-primary"
+          className="flex flex-col items-center gap-1 text-primary dark:text-purple-400"
         >
           <Gamepad2 size={18} />
           <span className="text-[10px] font-bold uppercase tracking-tight">Games</span>
@@ -558,7 +558,7 @@ function GamesPage() {
         <button
           type="button"
           onClick={() => navigate('/explore')}
-          className="flex flex-col items-center gap-1 text-on-background/40"
+          className="flex flex-col items-center gap-1 text-on-background/40 dark:text-white/40"
         >
           <Compass size={18} />
           <span className="text-[10px] font-bold uppercase tracking-tight">Explore</span>
@@ -578,3 +578,4 @@ function GamesPage() {
 }
 
 export default GamesPage;
+

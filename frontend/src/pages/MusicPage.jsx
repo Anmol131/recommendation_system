@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, ChevronDown, Search, SlidersHorizontal, Star } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import * as endpoints from '../api/endpoints';
@@ -204,19 +204,19 @@ function MusicPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20 text-on-background font-['Inter'] antialiased">
+    <div className="min-h-screen bg-light-bg dark:bg-dark-bg pb-20 text-light-text dark:text-dark-text font-['Inter'] antialiased transition-colors duration-300">
       <main className="mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-8 lg:px-10">
         <div className="mb-12 flex justify-center">
-          <nav className="flex items-center gap-1 p-1.5 rounded-2xl bg-surface-container-low shadow-[0_14px_35px_-24px_rgba(62,37,72,0.24)]">
+          <nav className="flex items-center gap-1 p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-surface-container shadow-md dark:shadow-dark-md">
             {CATEGORY_LINKS.map((item) => (
               <Link
                 key={item.label}
                 to={item.path}
                 className={[
-                  'rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-300',
+                  'rounded-md px-6 py-2.5 text-sm font-semibold transition-all duration-300',
                   item.active
-                    ? 'bg-primary text-on-primary shadow-lg shadow-primary/25'
-                    : 'text-on-surface-variant hover:bg-surface-container-high',
+                    ? 'bg-primary text-white shadow-md'
+                    : 'text-on-surface/70 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-on-surface dark:hover:text-white',
                 ].join(' ')}
               >
                 {item.label}
@@ -228,8 +228,8 @@ function MusicPage() {
         <header className="mb-12 space-y-4">
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div>
-              <h1 className="mb-2 text-5xl font-bold leading-tight tracking-tight text-on-background">Music Hub</h1>
-              <p className="max-w-lg text-lg text-on-surface-variant">
+              <h1 className="mb-2 text-5xl font-bold leading-tight tracking-tight text-on-surface dark:text-white">Music Hub</h1>
+              <p className="max-w-lg text-lg text-on-surface/70 dark:text-white/70">
                 Sonic landscapes and rhythmic journeys tailored to your mood.
               </p>
             </div>
@@ -240,11 +240,11 @@ function MusicPage() {
                 value={artistQuery}
                 onChange={(event) => setArtistQuery(event.target.value)}
                 placeholder="Search albums, artists, moods..."
-                className="w-full rounded-xl bg-surface-container-high px-6 py-4 pr-12 text-on-surface placeholder:text-on-surface-variant/60 transition-all duration-300 focus:bg-surface-container-highest focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="w-full rounded-lg border border-surface-container bg-white dark:bg-slate-900 px-6 py-4 pr-12 text-on-surface dark:text-white placeholder:text-on-surface/50 dark:placeholder:text-white/50 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/30 shadow-sm"
               />
               <Search
                 size={18}
-                className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/60 transition-colors group-focus-within:text-primary"
+                className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-on-surface/50 dark:text-white/50 transition-colors duration-200 group-focus-within:text-primary"
               />
             </div>
           </div>
@@ -252,14 +252,14 @@ function MusicPage() {
 
         <div className="flex flex-col gap-8 lg:flex-row">
           <aside className="w-full lg:w-72 lg:flex-shrink-0">
-            <div className="space-y-6 rounded-2xl bg-surface-container-lowest p-6 shadow-[0_20px_45px_-28px_rgba(62,37,72,0.24)] lg:sticky lg:top-24">
+            <div className="space-y-6 rounded-lg border border-surface-container bg-white dark:bg-slate-900 p-6 shadow-md dark:shadow-dark-md lg:sticky lg:top-24">
               <h2 className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-[0.2em] text-primary">
                 <SlidersHorizontal size={16} />
                 Filters
               </h2>
 
               <section>
-                <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-on-surface-variant/70">Genre</h3>
+                <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-light-text/70 dark:text-dark-text/70">Genre</h3>
                 <div className="space-y-2.5">
                   {GENRES.map((genre) => (
                     <label key={genre} className="flex cursor-pointer items-center gap-3">
@@ -276,18 +276,18 @@ function MusicPage() {
               </section>
 
               <section>
-                <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-on-surface-variant/70">Artist</h3>
+                <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-light-text/70 dark:text-dark-text/70">Artist</h3>
                 <input
                   type="text"
                   value={artistQuery}
                   onChange={(event) => setArtistQuery(event.target.value)}
                   placeholder="Search artist..."
-                  className="w-full rounded-lg bg-surface-container-low px-3 py-2 text-xs text-on-surface placeholder:text-on-surface-variant/65 focus:outline-none focus:ring-1 focus:ring-primary/20"
+                  className="w-full rounded-lg bg-surface-container-low px-3 py-2 text-xs text-on-surface placeholder:text-light-text/65 dark:text-dark-text/65 focus:outline-none focus:ring-1 focus:ring-primary/20"
                 />
               </section>
 
               <section>
-                <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-on-surface-variant/70">Mood</h3>
+                <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-light-text/70 dark:text-dark-text/70">Mood</h3>
                 <div className="flex flex-wrap gap-2">
                   {MOODS.map((mood) => {
                     const active = activeMood === mood;
@@ -300,7 +300,7 @@ function MusicPage() {
                           'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
                           active
                             ? 'bg-primary/10 text-primary'
-                            : 'bg-surface-container-low text-on-surface-variant hover:bg-primary/10 hover:text-primary',
+                            : 'bg-surface-container-low text-light-text dark:text-dark-text/95 hover:bg-primary/10 hover:text-primary',
                         ].join(' ')}
                       >
                         {mood}
@@ -311,7 +311,7 @@ function MusicPage() {
               </section>
 
               <section>
-                <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-on-surface-variant/70">Year</h3>
+                <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-light-text/70 dark:text-dark-text/70">Year</h3>
                 <div className="relative">
                   <select
                     value={selectedYear}
@@ -324,7 +324,7 @@ function MusicPage() {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
+                  <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-light-text dark:text-dark-text/95" />
                 </div>
               </section>
 
@@ -378,11 +378,11 @@ function MusicPage() {
                           </div>
                         </div>
 
-                        <p className="mb-6 text-sm text-on-surface-variant">{item?.artist || 'Unknown Artist'}</p>
+                        <p className="mb-6 text-sm text-light-text dark:text-dark-text/95">{item?.artist || 'Unknown Artist'}</p>
 
                         <div className="mt-auto flex items-center justify-between gap-3 rounded-xl bg-surface-container-highest/55 px-3 py-2">
-                          <span className="line-clamp-1 text-[0.65rem] font-bold uppercase tracking-[0.16em] text-on-surface-variant/80">
-                            {item?.album || 'Unknown Album'} • {year || 'N/A'}
+                          <span className="line-clamp-1 text-[0.65rem] font-bold uppercase tracking-[0.16em] text-light-text/80 dark:text-dark-text/80">
+                            {item?.album || 'Unknown Album'} â€¢ {year || 'N/A'}
                           </span>
                           <button
                             type="button"
@@ -403,7 +403,7 @@ function MusicPage() {
             {!loading && visibleItems.length === 0 ? (
               <div className="rounded-2xl bg-surface-container-lowest px-6 py-14 text-center shadow-[0_16px_40px_-24px_rgba(62,37,72,0.2)]">
                 <p className="text-lg font-semibold text-on-surface">No tracks matched your filters.</p>
-                <p className="mt-2 text-sm text-on-surface-variant">Try changing genre, artist search, or year.</p>
+                <p className="mt-2 text-sm text-light-text dark:text-dark-text/95">Try changing genre, artist search, or year.</p>
               </div>
             ) : null}
 
@@ -421,7 +421,7 @@ function MusicPage() {
                   </button>
                 ) : null}
 
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-on-surface-variant/70">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-light-text/70 dark:text-dark-text/70">
                   Viewing {visibleItems.length} of {totalItems || items.length} recommendations
                 </p>
               </div>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import {
   ArrowRight,
   ChevronLeft,
@@ -216,36 +216,36 @@ function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface font-['Inter'] antialiased selection:bg-primary-container selection:text-on-primary">
+    <div className="min-h-screen bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text font-['Inter'] antialiased selection:bg-primary selection:text-white transition-colors duration-300">
       <main>
-        <section className="relative flex h-[819px] flex-col items-center justify-center overflow-hidden px-8 text-center">
-          <div className="absolute inset-0 z-0 bg-gradient-to-b from-surface-container-low/50 to-surface" />
-          <div className="absolute -left-24 -top-24 h-96 w-96 rounded-full bg-primary/10 blur-[120px]" />
-          <div className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-secondary-container/40 blur-[120px]" />
+        <section className="relative flex h-screen max-h-[900px] flex-col items-center justify-center overflow-hidden px-8 text-center">
+          {/* Gradient background - more refined */}
+          <div className="absolute inset-0 z-0 bg-gradient-to-b from-light-surface dark:from-dark-surface via-light-bg dark:via-dark-bg to-light-bg dark:to-dark-bg" />
+          <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-primary/5 dark:bg-primary/10 blur-[160px]" />
+          <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-secondary/5 dark:bg-secondary/8 blur-[160px]" />
+          <div className="absolute top-1/3 left-1/4 h-64 w-64 rounded-full bg-accent/3 dark:bg-accent/5 blur-[120px]" />
 
-          <div className="relative z-10 mx-auto max-w-4xl space-y-8">
-            <h1 className="text-5xl font-bold leading-tight tracking-tight text-on-surface md:text-[3.5rem]">
-              Discover What <span className="italic text-primary">You&apos;ll Love</span>
+          <div className="relative z-10 mx-auto max-w-5xl space-y-8">
+            <h1 className="text-6xl font-extrabold leading-tight tracking-tight text-light-text dark:text-dark-text md:text-7xl">
+              Discover What<br /><span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">You&apos;ll Love</span>
             </h1>
-            <p className="mx-auto max-w-xl text-lg text-on-surface-variant">
-              A curated universe of cinema, literature, and gaming tailored to your unique digital pulse. Explore
-              recommendations hand-picked for your vibe.
+            <p className="mx-auto max-w-2xl text-xl text-light-text-secondary dark:text-dark-text-secondary leading-relaxed">
+              Dive into a curated universe of movies, books, games, and music tailored to your unique taste.
             </p>
 
-            <form onSubmit={handleSearchSubmit} className="group relative mx-auto mt-12 w-full max-w-2xl">
-              <div className="absolute inset-0 blur-xl transition-all group-focus-within:bg-primary/10" />
-              <div className="relative flex items-center rounded-full bg-surface-container-high px-6 py-4 shadow-[0_20px_40px_-10px_rgba(62,37,72,0.08)] outline outline-1 outline-outline-variant/15">
-                <Search size={20} className="mr-3 text-on-surface-variant" />
+            <form onSubmit={handleSearchSubmit} className="group relative mx-auto mt-12 w-full max-w-3xl">
+              <div className="relative flex items-center rounded-2xl bg-light-surface dark:bg-dark-surface px-8 py-4 shadow-lg dark:shadow-lg border border-light-surface-alt dark:border-dark-surface-alt transition-all group-focus-within:shadow-xl group-focus-within:border-primary">
+                <Search size={22} className="mr-4 text-light-text-secondary dark:text-dark-text-secondary flex-shrink-0" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Search for your next vibe..."
-                  className="w-full border-none bg-transparent text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:ring-0"
+                  placeholder="Search for your next discovery..."
+                  className="w-full border-none bg-transparent text-light-text dark:text-dark-text placeholder:text-light-text-secondary dark:placeholder:text-dark-text-secondary focus:outline-none focus:ring-0 text-lg"
                 />
                 <button
                   type="submit"
-                  className="ml-2 rounded-full bg-gradient-to-br from-[#8319da] to-[#c285ff] px-6 py-2 font-medium text-on-primary transition-transform hover:scale-105"
+                  className="ml-4 flex-shrink-0 rounded-lg bg-gradient-to-r from-primary to-secondary px-8 py-2 font-semibold text-white shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95"
                 >
                   Find
                 </button>
@@ -254,7 +254,7 @@ function HomePage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-[1440px] px-8 py-20">
+        <section className="mx-auto max-w-7xl px-8 py-24">
           <div className="grid h-auto grid-cols-1 gap-6 md:h-[600px] md:grid-cols-4">
             {CATEGORY_CARDS.map((card) => (
               <button
@@ -262,30 +262,30 @@ function HomePage() {
                 type="button"
                 onClick={() => navigate(card.href)}
                 className={[
-                  'group relative overflow-hidden rounded-xl bg-surface-container-low text-left transition-all duration-300 hover:scale-[1.02]',
+                  'group relative overflow-hidden rounded-2xl bg-light-surface-alt dark:bg-dark-surface text-left transition-all duration-500 hover:scale-[1.03] hover:shadow-2xl',
                   card.className,
                 ].join(' ')}
               >
                 <img
                   src={card.image}
                   alt={`${card.title} category`}
-                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-125"
                 />
                 <div className={`absolute inset-0 ${card.overlay}`} />
 
                 {card.key === 'music' ? (
                   <div className="absolute inset-y-0 left-0 flex flex-col justify-center p-12">
-                    <h3 className="mb-2 text-4xl font-bold text-on-primary">{card.title}</h3>
-                    <p className="max-w-md text-on-primary/70">{card.description}</p>
+                    <h3 className="mb-2 text-5xl font-bold text-white group-hover:text-accent transition-colors">{card.title}</h3>
+                    <p className="max-w-md text-white/80 group-hover:text-white transition-colors">{card.description}</p>
                   </div>
                 ) : (
                   <div className="absolute bottom-0 left-0 p-8">
                     {card.subtitle ? (
-                      <span className="mb-2 block text-xs font-semibold uppercase tracking-widest text-on-primary/80">
+                      <span className="mb-2 block text-xs font-bold uppercase tracking-widest text-white/80 group-hover:text-accent transition-colors">
                         {card.subtitle}
                       </span>
                     ) : null}
-                    <h3 className="text-2xl font-bold text-on-primary">{card.title}</h3>
+                    <h3 className="text-3xl font-bold text-white group-hover:text-accent transition-colors">{card.title}</h3>
                   </div>
                 )}
               </button>
@@ -293,12 +293,12 @@ function HomePage() {
           </div>
         </section>
 
-        <section className="overflow-hidden bg-surface-container-low/30 py-20">
-          <div className="mx-auto max-w-[1440px] px-8">
-            <div className="mb-12 flex items-end justify-between">
+        <section className="overflow-hidden bg-light-surface-alt dark:bg-dark-surface py-24">
+          <div className="mx-auto max-w-7xl px-8">
+            <div className="mb-16 flex items-end justify-between">
               <div>
-                <span className="mb-2 block text-xs font-bold uppercase tracking-widest text-primary">The Pulse</span>
-                <h2 className="text-[1.75rem] font-bold tracking-tight text-on-surface">Trending Now</h2>
+                <span className="mb-2 block text-xs font-bold uppercase tracking-widest text-primary">Trending</span>
+                <h2 className="text-4xl font-bold tracking-tight text-light-text dark:text-dark-text">Popular Right Now</h2>
               </div>
               <div className="flex gap-2">
                 <button
@@ -349,7 +349,7 @@ function HomePage() {
                           </div>
                         </div>
                         <h4 className="text-lg font-bold text-on-surface transition-colors group-hover:text-primary">{item.title || 'Untitled'}</h4>
-                        <p className="text-sm text-on-surface-variant">{tags.length ? tags.join(' • ') : 'Featured • Curated'}</p>
+                        <p className="text-sm text-light-text dark:text-dark-text/95">{tags.length ? tags.join(' • ') : 'Featured • Curated'}</p>
                       </button>
                     );
                   })}
@@ -364,7 +364,7 @@ function HomePage() {
                 Hand-Picked <br />
                 <span className="text-primary">For Your Vibe.</span>
               </h2>
-              <p className="mb-8 text-on-surface-variant">
+              <p className="mb-8 text-light-text dark:text-dark-text/95 leading-relaxed">
                 Our curators spent hours analyzing your taste. These aren&apos;t just algorithms; they&apos;re emotions
                 captured in media. No filler, just pure resonance.
               </p>
@@ -420,7 +420,7 @@ function HomePage() {
                         </div>
 
                         <h4 className="mb-2 text-xl font-bold text-on-surface">{item.title || 'Untitled'}</h4>
-                        <p className="truncate-2 mb-4 text-sm text-on-surface-variant">{getSummary(item, item.type)}</p>
+                        <p className="truncate-2 mb-4 text-sm text-light-text dark:text-dark-text/95">{getSummary(item, item.type)}</p>
                         <button
                           type="button"
                           onClick={() => navigate(detailPath)}
@@ -436,29 +436,29 @@ function HomePage() {
         </section>
       </main>
 
-      <footer className="w-full bg-[#f5f0f7] py-12">
+      <footer className="w-full bg-[#f5f0f7] dark:bg-slate-800/50 py-12">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-8 md:flex-row">
-          <div className="text-lg font-semibold text-on-surface">Vibeify</div>
-          <div className="text-xs font-normal text-on-surface/60">© 2024 Vibeify. The Digital Curator.</div>
+          <div className="text-lg font-semibold text-on-surface dark:text-white">Vibeify</div>
+          <div className="text-xs font-normal text-on-surface/60 dark:text-white/60">© 2024 Vibeify. The Digital Curator.</div>
           <div className="flex gap-8 text-xs font-semibold uppercase tracking-widest">
             <button
               type="button"
               onClick={() => navigate('/privacy')}
-              className="text-on-surface/60 transition-colors hover:text-primary"
+              className="text-on-surface/60 dark:text-white/60 transition-colors hover:text-primary dark:hover:text-purple-400"
             >
               Privacy
             </button>
             <button
               type="button"
               onClick={() => navigate('/terms')}
-              className="text-on-surface/60 transition-colors hover:text-primary"
+              className="text-on-surface/60 dark:text-white/60 transition-colors hover:text-primary dark:hover:text-purple-400"
             >
               Terms
             </button>
             <button
               type="button"
               onClick={() => navigate('/contact')}
-              className="text-on-surface/60 transition-colors hover:text-primary"
+              className="text-on-surface/60 dark:text-white/60 transition-colors hover:text-primary dark:hover:text-purple-400"
             >
               Feedback
             </button>

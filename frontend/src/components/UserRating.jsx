@@ -64,7 +64,7 @@ function UserRating({ itemId, itemType }) {
   };
 
   return (
-    <div className="relative inline-flex items-center gap-2 rounded-lg border border-primary/50 bg-surface2 px-4 py-2">
+    <div className="relative inline-flex items-center gap-2 rounded-lg border border-primary/50 bg-white dark:bg-slate-900 px-4 py-2">
       <div className="inline-flex items-center gap-1">
         {Array.from({ length: 5 }).map((_, index) => {
           const ratingValue = index + 1;

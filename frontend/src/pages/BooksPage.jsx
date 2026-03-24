@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, ChevronDown, Search, Star } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import * as endpoints from '../api/endpoints';
@@ -227,7 +227,7 @@ function BooksPage() {
   const totalLabel = useMemo(() => totalBooks || visibleCount, [totalBooks, visibleCount]);
 
   return (
-    <div className="min-h-screen bg-[#fff3fd] pb-16 text-[#3e2548] font-['Inter'] antialiased">
+    <div className="min-h-screen bg-light-bg dark:bg-dark-bg pb-16 text-light-text dark:text-dark-text font-['Inter'] antialiased transition-colors duration-300">
       <main className="mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-8 lg:px-10">
         <nav className="mb-12 flex items-center justify-center gap-6 sm:gap-8">
           {CATEGORY_LINKS.map((item) => (
@@ -238,7 +238,7 @@ function BooksPage() {
                 'relative px-1 pb-4 text-sm font-bold uppercase tracking-[0.2em] transition-colors duration-300',
                 item.active
                   ? "text-primary after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:bg-primary after:content-['']"
-                  : 'text-on-surface-variant/50 hover:text-primary',
+                  : 'text-light-text/50 dark:text-dark-text/50 hover:text-primary',
               ].join(' ')}
             >
               {item.label}
@@ -250,7 +250,7 @@ function BooksPage() {
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div>
               <h1 className="mb-2 text-5xl font-bold leading-tight tracking-tight text-on-background">Books</h1>
-              <p className="max-w-xl text-lg text-on-surface-variant">
+              <p className="max-w-xl text-lg text-light-text dark:text-dark-text/95">
                 From literary classics to modern thought-leadership, find your next great read.
               </p>
             </div>
@@ -261,18 +261,18 @@ function BooksPage() {
                 value={author}
                 onChange={(event) => setAuthor(event.target.value)}
                 placeholder="Search by author name..."
-                className="h-14 w-full rounded-xl bg-surface-container-high px-5 pr-12 text-on-surface placeholder:text-on-surface-variant/70 transition-all duration-300 focus:bg-surface-container-highest focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="h-14 w-full rounded-lg border border-surface-container bg-white dark:bg-slate-900 px-5 pr-12 text-on-surface dark:text-white placeholder:text-on-surface/50 dark:placeholder:text-white/50 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/30 shadow-sm"
               />
-              <Search size={18} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/70 transition-colors group-focus-within:text-primary" />
+              <Search size={18} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-on-surface/50 dark:text-white/50 transition-colors duration-200 group-focus-within:text-primary" />
             </div>
           </div>
         </header>
 
         <div className="flex flex-col gap-10 lg:flex-row">
           <aside className="w-full lg:w-64 lg:flex-shrink-0">
-            <div className="space-y-7 rounded-2xl bg-surface-container-lowest p-6 shadow-[0_18px_45px_-26px_rgba(62,37,72,0.22)] lg:sticky lg:top-24">
+            <div className="space-y-7 rounded-lg border border-surface-container bg-white dark:bg-slate-900 p-6 shadow-md dark:shadow-dark-md lg:sticky lg:top-24">
               <div className="space-y-3">
-                <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-on-surface-variant/70">Genre</h2>
+                <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-on-surface/60 dark:text-white/60">Genre</h2>
                 <div className="space-y-2.5">
                   {GENRES.map((genre) => (
                     <label key={genre} className="flex cursor-pointer items-center gap-3">
@@ -280,27 +280,27 @@ function BooksPage() {
                         type="checkbox"
                         checked={selectedGenres.includes(genre)}
                         onChange={() => handleGenreToggle(genre)}
-                        className="h-4 w-4 accent-primary"
+                        className="h-4 w-4 accent-primary rounded border border-surface-container bg-white dark:bg-slate-900 transition-colors"
                       />
-                      <span className="text-sm text-on-surface-variant transition-colors hover:text-primary">{genre}</span>
+                      <span className="text-sm text-on-surface/70 dark:text-white/70 transition-colors duration-200 hover:text-primary">{genre}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
               <div className="space-y-3">
-                <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-on-surface-variant/70">Author</h2>
+                <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-light-text/70 dark:text-dark-text/70">Author</h2>
                 <input
                   type="text"
                   value={author}
                   onChange={(event) => setAuthor(event.target.value)}
                   placeholder="Filter by author..."
-                  className="w-full rounded-lg bg-surface-container px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-lg bg-surface-container px-3 py-2.5 text-sm text-on-surface placeholder:text-light-text/70 dark:text-dark-text/70 focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
 
               <div className="space-y-3">
-                <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-on-surface-variant/70">Year</h2>
+                <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-light-text/70 dark:text-dark-text/70">Year</h2>
                 <div className="relative">
                   <select
                     value={selectedYear}
@@ -313,7 +313,7 @@ function BooksPage() {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant/70" />
+                  <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-light-text/70 dark:text-dark-text/70" />
                 </div>
               </div>
 
@@ -369,10 +369,10 @@ function BooksPage() {
                           </div>
                         </div>
 
-                        <p className="mb-5 line-clamp-1 text-sm text-on-surface-variant/80">{book?.author || 'Unknown author'}</p>
+                        <p className="mb-5 line-clamp-1 text-sm text-light-text/80 dark:text-dark-text/80">{book?.author || 'Unknown author'}</p>
 
                         <div className="mt-auto flex items-center justify-between rounded-xl bg-surface-container-highest/45 px-3 py-2">
-                          <span className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-on-surface-variant/80">
+                          <span className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-light-text/80 dark:text-dark-text/80">
                             {bottomGenre}
                           </span>
                           <button
@@ -394,7 +394,7 @@ function BooksPage() {
             {!loading && books.length === 0 ? (
               <div className="rounded-2xl bg-white/70 px-6 py-14 text-center shadow-[0_14px_40px_-24px_rgba(62,37,72,0.2)]">
                 <p className="text-lg font-semibold text-on-surface">No books matched your filters.</p>
-                <p className="mt-2 text-sm text-on-surface-variant">Try broadening genre, year, or author.</p>
+                <p className="mt-2 text-sm text-light-text dark:text-dark-text/95">Try broadening genre, year, or author.</p>
               </div>
             ) : null}
 
@@ -412,7 +412,7 @@ function BooksPage() {
                   </button>
                 ) : null}
 
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-on-surface-variant/70">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-light-text/70 dark:text-dark-text/70">
                   Viewing {visibleCount} of {totalLabel} curations
                 </p>
               </div>
