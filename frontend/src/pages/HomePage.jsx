@@ -14,7 +14,7 @@ const CATEGORY_CARDS = [
     title: 'Movies',
     subtitle: 'Cinephile Dream',
     description: '',
-    href: '/movies',
+    href: '/explore?type=movies',
     image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800',
     className: 'md:col-span-2',
     overlay: 'bg-gradient-to-t from-black/80 via-black/20 to-transparent',
@@ -24,7 +24,7 @@ const CATEGORY_CARDS = [
     title: 'Books',
     subtitle: '',
     description: '',
-    href: '/books',
+    href: '/explore?type=books',
     image: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800',
     className: '',
     overlay: 'bg-gradient-to-t from-black/80 via-black/20 to-transparent',
@@ -34,7 +34,7 @@ const CATEGORY_CARDS = [
     title: 'Games',
     subtitle: '',
     description: '',
-    href: '/games',
+    href: '/explore?type=games',
     image: 'https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=800',
     className: '',
     overlay: 'bg-gradient-to-t from-black/80 via-black/20 to-transparent',
@@ -44,7 +44,7 @@ const CATEGORY_CARDS = [
     title: 'Music',
     subtitle: '',
     description: 'Find the rhythm of your life through our curated sonic landscapes.',
-    href: '/music',
+    href: '/explore?type=music',
     image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800',
     className: 'md:col-span-4 h-64',
     overlay: 'bg-gradient-to-r from-black/70 via-black/20 to-transparent',
@@ -107,21 +107,19 @@ const getItemId = (item, type) => {
 };
 
 const getDetailPath = (item, type) => {
-  const id = getItemId(item, type);
-  if (!id) {
-    return '/browse';
-  }
-
   if (type === 'movie') {
-    return `/movies/${encodeURIComponent(id)}`;
+    return '/explore?type=movies';
   }
   if (type === 'book') {
-    return `/books/${encodeURIComponent(id)}`;
+    return '/explore?type=books';
   }
   if (type === 'game') {
-    return `/games/${encodeURIComponent(id)}`;
+    return '/explore?type=games';
   }
-  return `/music/${encodeURIComponent(id)}`;
+  if (type === 'music') {
+    return '/explore?type=music';
+  }
+  return '/explore';
 };
 
 const getSummary = (item, type) => {

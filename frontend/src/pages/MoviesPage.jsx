@@ -5,10 +5,10 @@ import * as endpoints from '../api/endpoints';
 
 const CATEGORY_LINKS = [
   { label: 'All', path: '/explore', active: false },
-  { label: 'Movies', path: '/movies', active: true },
-  { label: 'Books', path: '/books', active: false },
-  { label: 'Games', path: '/games', active: false },
-  { label: 'Music', path: '/music', active: false },
+  { label: 'Movies', path: '/explore?type=movies', active: true },
+  { label: 'Books', path: '/explore?type=books', active: false },
+  { label: 'Games', path: '/explore?type=games', active: false },
+  { label: 'Music', path: '/explore?type=music', active: false },
 ];
 
 const unwrapItems = (payload) => {
@@ -155,7 +155,7 @@ function MoviesPage() {
                       type="button"
                       onClick={() => {
                         if (!detailId) return;
-                        navigate(`/movies/${detailId}`);
+                        navigate('/explore?type=movies');
                       }}
                       className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary shadow-[0_15px_30px_-18px_rgba(131,25,218,0.8)] transition-all hover:gap-3"
                     >

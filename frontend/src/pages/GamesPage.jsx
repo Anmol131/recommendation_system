@@ -18,10 +18,10 @@ const LIMIT = 12;
 
 const CATEGORY_LINKS = [
   { label: 'All', path: '/explore', active: false },
-  { label: 'Movies', path: '/movies', active: false },
-  { label: 'Books', path: '/books', active: false },
-  { label: 'Games', path: '/games', active: true },
-  { label: 'Music', path: '/music', active: false },
+  { label: 'Movies', path: '/explore?type=movies', active: false },
+  { label: 'Books', path: '/explore?type=books', active: false },
+  { label: 'Games', path: '/explore?type=games', active: true },
+  { label: 'Music', path: '/explore?type=music', active: false },
 ];
 
 const GENRES = ['Action RPG', 'Strategy', 'Simulation', 'Indie', 'FPS', 'Adventure', 'Sports', 'Puzzle'];
@@ -492,7 +492,7 @@ function GamesPage() {
                           </span>
                           <button
                             type="button"
-                            onClick={() => navigate(`/games/${encodeURIComponent(String(item?._id || item?.gameId || item?.id || ''))}`)}
+                            onClick={() => navigate('/explore?type=games')}
                             className="group/btn inline-flex shrink-0 items-center gap-1 text-xs font-bold text-primary"
                           >
                             View Details
@@ -548,7 +548,7 @@ function GamesPage() {
 
         <button
           type="button"
-          onClick={() => navigate('/games')}
+          onClick={() => navigate('/explore?type=games')}
           className="flex flex-col items-center gap-1 text-primary"
         >
           <Gamepad2 size={18} />

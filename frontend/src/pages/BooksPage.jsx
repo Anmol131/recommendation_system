@@ -17,10 +17,10 @@ const YEAR_OPTIONS = [
 
 const CATEGORY_LINKS = [
   { label: 'All', path: '/explore', active: false },
-  { label: 'Movies', path: '/movies', active: false },
-  { label: 'Books', path: '/books', active: true },
-  { label: 'Games', path: '/games', active: false },
-  { label: 'Music', path: '/music', active: false },
+  { label: 'Movies', path: '/explore?type=movies', active: false },
+  { label: 'Books', path: '/explore?type=books', active: true },
+  { label: 'Games', path: '/explore?type=games', active: false },
+  { label: 'Music', path: '/explore?type=music', active: false },
 ];
 
 const unwrapItems = (payload) => {
@@ -377,7 +377,7 @@ function BooksPage() {
                           </span>
                           <button
                             type="button"
-                            onClick={() => id && navigate(`/books/${encodeURIComponent(String(id))}`)}
+                            onClick={() => navigate('/explore?type=books')}
                             className="group/btn inline-flex items-center gap-1 text-xs font-bold text-primary"
                           >
                             View Details

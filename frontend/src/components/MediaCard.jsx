@@ -34,21 +34,16 @@ const MediaCard = ({ item, type = 'movie' }) => {
   const handleCardClick = () => {
     switch (type) {
       case 'movie':
-        navigate(`/movies/${item.movieId || item.id}`);
+        navigate('/explore?type=movies');
         break;
       case 'book':
-        navigate(`/books/${item.isbn}`);
+        navigate('/explore?type=books');
         break;
       case 'game':
-        navigate(`/games/${item.gameId || item.id}`);
+        navigate('/explore?type=games');
         break;
       case 'music':
-        {
-          const musicId = item._id || item.trackId || item.lastfmId;
-          if (musicId) {
-            navigate(`/music/${musicId}`);
-          }
-        }
+        navigate('/explore?type=music');
         break;
       default:
         break;

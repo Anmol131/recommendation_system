@@ -91,12 +91,11 @@ const parseId = (item, type) => {
 };
 
 const getDetailPath = (item) => {
-  const id = item.id;
-  if (!id) return '/explore';
-  if (item.type === 'movie') return `/movies/${encodeURIComponent(id)}`;
-  if (item.type === 'book') return `/books/${encodeURIComponent(id)}`;
-  if (item.type === 'game') return `/games/${encodeURIComponent(id)}`;
-  return `/music/${encodeURIComponent(id)}`;
+  if (item.type === 'movie') return '/explore?type=movies';
+  if (item.type === 'book') return '/explore?type=books';
+  if (item.type === 'game') return '/explore?type=games';
+  if (item.type === 'music') return '/explore?type=music';
+  return '/explore';
 };
 
 const mapMedia = (rawItems, type) => rawItems.map((item, index) => ({

@@ -7,10 +7,10 @@ const LIMIT = 12;
 
 const CATEGORY_LINKS = [
   { label: 'All', path: '/explore', active: false },
-  { label: 'Movies', path: '/movies', active: false },
-  { label: 'Books', path: '/books', active: false },
-  { label: 'Games', path: '/games', active: false },
-  { label: 'Music', path: '/music', active: true },
+  { label: 'Movies', path: '/explore?type=movies', active: false },
+  { label: 'Books', path: '/explore?type=books', active: false },
+  { label: 'Games', path: '/explore?type=games', active: false },
+  { label: 'Music', path: '/explore?type=music', active: true },
 ];
 
 const GENRES = [
@@ -386,7 +386,7 @@ function MusicPage() {
                           </span>
                           <button
                             type="button"
-                            onClick={() => navigate(`/music/${encodeURIComponent(String(id || ''))}`)}
+                            onClick={() => navigate('/explore?type=music')}
                             className="group/btn inline-flex shrink-0 items-center gap-1 text-xs font-bold text-primary"
                           >
                             View Details
