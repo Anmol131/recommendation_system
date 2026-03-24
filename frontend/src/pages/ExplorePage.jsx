@@ -334,6 +334,16 @@ function ExplorePage() {
               placeholder="Search across all categories..."
               className="w-full border-none bg-transparent font-medium text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:ring-0"
             />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                className="ml-2 text-on-surface-variant hover:text-on-surface transition-colors"
+                aria-label="Clear search"
+              >
+                ✕
+              </button>
+            )}
           </div>
         </div>
 

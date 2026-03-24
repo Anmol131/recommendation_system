@@ -26,7 +26,7 @@ function ProtectedRoute({ children }) {
 
 function App() {
   return (
-    <div className="min-h-screen bg-bg text-white">
+    <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-white transition-colors duration-500">
       <Navbar />
       <main className="pt-2">
         <Routes>
