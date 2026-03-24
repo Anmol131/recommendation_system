@@ -435,36 +435,6 @@ function HomePage() {
           </div>
         </section>
       </main>
-
-      <footer className="w-full bg-[#f5f0f7] dark:bg-slate-800/50 py-12">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-8 md:flex-row">
-          <div className="text-lg font-semibold text-on-surface dark:text-white">Vibeify</div>
-          <div className="text-xs font-normal text-on-surface/60 dark:text-white/60">© 2024 Vibeify. The Digital Curator.</div>
-          <div className="flex gap-8 text-xs font-semibold uppercase tracking-widest">
-            <button
-              type="button"
-              onClick={() => navigate('/privacy')}
-              className="text-on-surface/60 dark:text-white/60 transition-colors hover:text-primary dark:hover:text-purple-400"
-            >
-              Privacy
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/terms')}
-              className="text-on-surface/60 dark:text-white/60 transition-colors hover:text-primary dark:hover:text-purple-400"
-            >
-              Terms
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/contact')}
-              className="text-on-surface/60 dark:text-white/60 transition-colors hover:text-primary dark:hover:text-purple-400"
-            >
-              Feedback
-            </button>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

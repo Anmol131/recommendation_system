@@ -103,7 +103,7 @@ function AboutPage() {
           </div>
         </section>
 
-        <section id="contact" className="mx-auto max-w-3xl">
+        <section id="contact" className="mx-auto max-w-3xl scroll-mt-32">
           <div className="mb-16 text-center">
             <span className="mb-4 block text-xs font-bold uppercase tracking-widest text-primary">Get in touch</span>
             <h2 className="mb-4 text-4xl font-bold text-on-surface dark:text-white">Let&apos;s start a conversation.</h2>
@@ -179,15 +179,6 @@ function AboutPage() {
           </div>
         </section>
       </main>
-
-      <footer className="bg-surface-container-lowest py-10">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-8 px-6 text-xs font-semibold uppercase tracking-widest text-light-text dark:text-dark-text/95">
-          <a href="#" className="transition-colors hover:text-primary">Privacy</a>
-          <a href="#" className="transition-colors hover:text-primary">Terms</a>
-          <a href="#" className="transition-colors hover:text-primary">Twitter</a>
-          <a href="#" className="transition-colors hover:text-primary">Instagram</a>
-        </div>
-      </footer>
     </div>
   );
 }

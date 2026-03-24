@@ -7,6 +7,7 @@ import { useTheme } from '../context/ThemeContext';
 import { AvatarDisplay } from '../constants/avatars';
 
 const Navbar = () => {
+  const CONTACT_SCROLL_OFFSET = 112;
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
@@ -58,6 +59,22 @@ const Navbar = () => {
     navigate('/login');
   };
 
+  const scrollToContactSection = (behavior = 'smooth') => {
+    const contactSection = document.getElementById('contact');
+    if (!contactSection) return;
+
+    const top = contactSection.getBoundingClientRect().top + window.scrollY - CONTACT_SCROLL_OFFSET;
+    window.scrollTo({ top: Math.max(top, 0), behavior });
+  };
+
+  useEffect(() => {
+    if (location.pathname === '/about' && location.hash === '#contact') {
+      window.requestAnimationFrame(() => {
+        scrollToContactSection('smooth');
+      });
+    }
+  }, [location.pathname, location.hash]);
+
   const avatarId = user?.avatar || 'avatar-1';
   const currentSection =
     location.pathname === '/' ? 'home' : location.pathname === '/explore' ? 'explore' : activeSection;
@@ -102,12 +119,9 @@ const Navbar = () => {
               e.preventDefault();
               setActiveSection('contact');
               if (location.pathname === '/about') {
-                document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+                scrollToContactSection('smooth');
               } else {
-                navigate('/about');
-                setTimeout(() => {
-                  document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
-                }, 300);
+                navigate('/about#contact');
               }
             }}
             className={location.pathname === '/about' && currentSection === 'contact' ? activeLinkClass : inactiveLinkClass}

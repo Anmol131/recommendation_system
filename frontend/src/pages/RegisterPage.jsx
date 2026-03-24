@@ -229,27 +229,6 @@ function RegisterPage() {
           </div>
         </div>
       </main>
-
-      <footer className="mt-auto w-full bg-light-surface-alt dark:bg-dark-surface px-8 py-12 text-xs font-semibold uppercase tracking-widest">
-        <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-6 md:flex-row">
-          <div className="text-lg font-bold text-primary dark:text-primary-light">Vibeify</div>
-          <div className="flex items-center gap-8 text-light-text-secondary/40 dark:text-dark-text-secondary/60">
-            <Link className="opacity-80 transition-colors duration-200 hover:text-primary dark:hover:text-primary-light hover:opacity-100" to="/privacy">
-              Privacy
-            </Link>
-            <Link className="opacity-80 transition-colors duration-200 hover:text-primary dark:hover:text-primary-light hover:opacity-100" to="/terms">
-              Terms
-            </Link>
-            <a className="opacity-80 transition-colors duration-200 hover:text-primary dark:hover:text-primary-light hover:opacity-100" href="#" aria-label="Twitter">
-              Twitter
-            </a>
-            <a className="opacity-80 transition-colors duration-200 hover:text-primary dark:hover:text-primary-light hover:opacity-100" href="#" aria-label="Instagram">
-              Instagram
-            </a>
-          </div>
-          <div className="text-light-text-secondary/40 dark:text-dark-text-secondary/60">© 2024 Vibeify. The Digital Curator.</div>
-        </div>
-      </footer>
     </div>
   );
 }

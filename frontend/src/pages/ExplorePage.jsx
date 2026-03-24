@@ -493,20 +493,6 @@ function ExplorePage() {
           </div>
         </div>
       </main>
-
-      <footer className="w-full bg-slate-50 py-12">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-8 px-8 md:flex-row">
-          <div className="text-center md:text-left">
-            <div className="mb-2 text-lg font-bold text-purple-600">Vibeify</div>
-            <div className="text-sm text-slate-500">Â© 2024 Vibeify. Curated with intention.</div>
-          </div>
-          <div className="flex flex-wrap justify-center gap-8">
-            <button type="button" className="text-sm text-slate-500 underline-offset-4 transition-colors hover:text-purple-600 hover:underline">Privacy Policy</button>
-            <button type="button" className="text-sm text-slate-500 underline-offset-4 transition-colors hover:text-purple-600 hover:underline">Terms of Service</button>
-            <button type="button" className="text-sm text-slate-500 underline-offset-4 transition-colors hover:text-purple-600 hover:underline">Cookie Policy</button>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import SiteFooter from './components/SiteFooter';
 import { useAuth } from './context/AuthContext';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -9,6 +10,8 @@ import PreferencesPage from './pages/PreferencesPage';
 import ExplorePage from './pages/ExplorePage';
 import AboutPage from './pages/AboutPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 
 function ProtectedRoute({ children }) {
   const { user, isLoading } = useAuth();
@@ -41,6 +44,9 @@ function App() {
           <Route path="/music" element={<Navigate to="/explore?type=music" replace />} />
           <Route path="/music/:trackId" element={<Navigate to="/explore?type=music" replace />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/termsofservice" element={<TermsOfServicePage />} />
+          <Route path="/terms" element={<Navigate to="/termsofservice" replace />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/explore" element={<ExplorePage />} />
@@ -70,6 +76,7 @@ function App() {
           />
         </Routes>
       </main>
+      <SiteFooter />
     </div>
   );
 }
