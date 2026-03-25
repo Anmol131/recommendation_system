@@ -1,4 +1,5 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import SiteFooter from './components/SiteFooter';
 import { useAuth } from './context/AuthContext';
@@ -12,6 +13,20 @@ import AboutPage from './pages/AboutPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+
+function ScrollToTopOnRouteChange() {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash) {
+      return;
+    }
+
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [location.pathname, location.search, location.hash]);
+
+  return null;
+}
 
 function ProtectedRoute({ children }) {
   const { user, isLoading } = useAuth();
@@ -30,6 +45,7 @@ function ProtectedRoute({ children }) {
 function App() {
   return (
     <div className="min-h-screen bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text transition-colors duration-300">
+      <ScrollToTopOnRouteChange />
       <Navbar />
       <main className="pt-0">
         <Routes>
