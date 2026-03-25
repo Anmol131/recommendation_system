@@ -1,15 +1,18 @@
 import { ArrowRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
 
 function SiteFooter() {
   const navigate = useNavigate();
+  const { isDarkMode } = useTheme();
+  const footerLogoSrc = isDarkMode ? '/logo1.png' : '/logo2.png';
 
   return (
     <footer className="mt-12 rounded-t-3xl border border-light-surface-alt bg-gradient-to-b from-light-surface to-light-surface-alt px-6 py-10 text-light-text shadow-lg dark:border-dark-surface-alt dark:from-[#061233] dark:to-dark-bg dark:text-dark-text sm:px-10">
       <div className="mx-auto max-w-7xl">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-4">
           <div className="space-y-4">
-            <img src="/logo2.png" alt="Vibefy" className="h-14 w-auto object-contain" />
+            <img src={footerLogoSrc} alt="Vibefy" className="h-20 w-[220px] object-contain object-left" />
             <p className="max-w-xs text-sm leading-relaxed text-light-text-secondary dark:text-dark-text-secondary">
               A curated experience for the digital avant-garde. We prioritize depth over noise, and soul over algorithms.
             </p>
@@ -59,7 +62,7 @@ function SiteFooter() {
               <button type="button" onClick={() => navigate('/about#contact')} className="text-left transition-colors hover:text-primary">Contact</button>
               <button type="button" onClick={() => navigate('/about')} className="text-left transition-colors hover:text-primary">Careers</button>
             </div>
-            <img src="/logo2.png" alt="Vibefy" className="h-10 w-auto object-contain opacity-40" />
+            <img src={footerLogoSrc} alt="Vibefy" className="h-35 w-[200px] object-contain object-left opacity-40" />
           </div>
         </div>
       </div>
