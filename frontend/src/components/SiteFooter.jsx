@@ -9,7 +9,7 @@ function SiteFooter() {
       <div className="mx-auto max-w-7xl">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-4">
           <div className="space-y-4">
-            <h3 className="text-4xl font-extrabold tracking-tight text-light-text dark:text-dark-text">Vibeify</h3>
+            <img src="/logo2.png" alt="Vibefy" className="h-14 w-auto object-contain" />
             <p className="max-w-xs text-sm leading-relaxed text-light-text-secondary dark:text-dark-text-secondary">
               A curated experience for the digital avant-garde. We prioritize depth over noise, and soul over algorithms.
             </p>
@@ -59,7 +59,7 @@ function SiteFooter() {
               <button type="button" onClick={() => navigate('/about#contact')} className="text-left transition-colors hover:text-primary">Contact</button>
               <button type="button" onClick={() => navigate('/about')} className="text-left transition-colors hover:text-primary">Careers</button>
             </div>
-            <p className="pt-3 text-4xl font-extrabold tracking-wider text-primary/30 dark:text-primary/25">VIBEIFY</p>
+            <img src="/logo2.png" alt="Vibefy" className="h-10 w-auto object-contain opacity-40" />
           </div>
         </div>
       </div>

@@ -76,6 +76,7 @@ const Navbar = () => {
   }, [location.pathname, location.hash]);
 
   const avatarId = user?.avatar || 'avatar-1';
+  const brandLogoSrc = location.pathname === '/' && isDarkMode ? '/logo1.png' : '/logo2.png';
   const currentSection =
     location.pathname === '/' ? 'home' : location.pathname === '/explore' ? 'explore' : activeSection;
 
@@ -85,7 +86,9 @@ const Navbar = () => {
   return (
     <nav className="sticky top-0 z-50 h-20 bg-light-surface dark:bg-dark-surface shadow-lg transition-all duration-300 border-b border-light-surface-alt dark:border-dark-surface-alt">
       <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-8">
-        <Link to="/" className="text-2xl font-bold tracking-tighter bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent hover:opacity-80 transition-opacity">Vibeify</Link>
+        <Link to="/" className="inline-flex items-center hover:opacity-80 transition-opacity" aria-label="Vibefy home">
+          <img src={brandLogoSrc} alt="Vibefy" className="h-23 w-[145px] object-contain object-left" />
+        </Link>
 
         <div className="hidden items-center gap-8 md:flex">
           <Link
