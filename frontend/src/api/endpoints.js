@@ -42,6 +42,12 @@ export const getMe = async () => {
   return data;
 };
 
+// NEW: OTP FEATURE
+export const verifyOtp = async (payload) => instance.post('/auth/verify-otp', payload).then((r) => r.data);
+
+// NEW: OTP FEATURE
+export const resendOtp = async (payload) => instance.post('/auth/resend-otp', payload).then((r) => r.data);
+
 // ─────────────────────────────────────────
 // MOVIES
 // ─────────────────────────────────────────

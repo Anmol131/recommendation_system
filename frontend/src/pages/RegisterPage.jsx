@@ -54,7 +54,7 @@ function RegisterPage() {
 
     try {
       await endpoints.register({ name: name.trim(), email: email.trim(), password });
-      navigate('/login');
+      navigate('/verify-otp', { state: { email: email.trim() } });
     } catch (apiError) {
       setError(apiError.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
