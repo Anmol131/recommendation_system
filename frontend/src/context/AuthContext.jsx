@@ -120,17 +120,6 @@ export const AuthProvider = ({ children }) => {
   const register = useCallback(async (name, email, password) => {
     try {
       const response = await api.register(name, email, password);
-      const { token: newToken, user: rawUser } = normalizeAuthPayload(response);
-      if (!newToken || !rawUser) {
-        throw new Error('Invalid register response');
-      }
-
-      const resolvedAvatar = rawUser.avatar || 'avatar-1';
-      const resolvedBio = typeof rawUser.bio === 'string' ? rawUser.bio : '';
-      localStorage.setItem(TOKEN_STORAGE_KEY, newToken);
-      setToken(newToken);
-      setUser({ ...rawUser, avatar: resolvedAvatar, bio: resolvedBio });
-      setUserAvatar(resolvedAvatar);
       return response;
     } catch (error) {
       console.error('Registration failed:', error);

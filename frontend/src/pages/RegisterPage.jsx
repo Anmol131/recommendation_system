@@ -17,7 +17,7 @@ import { useAuth } from '../context/AuthContext';
 
 function RegisterPage() {
   const navigate = useNavigate();
-  const { login, isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -53,9 +53,8 @@ function RegisterPage() {
     setSubmitting(true);
 
     try {
-      const authPayload = await endpoints.register({ name: name.trim(), email: email.trim(), password });
-      await login(authPayload);
-      navigate('/');
+      await endpoints.register({ name: name.trim(), email: email.trim(), password });
+      navigate('/login');
     } catch (apiError) {
       setError(apiError.response?.data?.message || 'Registration failed. Please try again.');
     } finally {

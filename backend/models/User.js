@@ -43,6 +43,19 @@ const userSchema = new mongoose.Schema(
 			type: String,
 			required: true,
 		},
+		// NEW: OTP FEATURE
+		isVerified: {
+			type: Boolean,
+			default: false,
+		},
+		// NEW: OTP FEATURE
+		otp: {
+			type: String,
+		},
+		// NEW: OTP FEATURE
+		otpExpiry: {
+			type: Date,
+		},
 		preferences: {
 			movies: {
 				type: [String],
