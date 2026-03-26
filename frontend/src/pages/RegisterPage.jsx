@@ -35,7 +35,10 @@ function RegisterPage() {
     event.preventDefault();
     setError('');
 
-    if (!name.trim() || !email.trim() || !password || !confirmPassword) {
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+
+    if (!trimmedName || !trimmedEmail || !password || !confirmPassword) {
       setError('Please fill all fields.');
       return;
     }
@@ -53,8 +56,8 @@ function RegisterPage() {
     setSubmitting(true);
 
     try {
-      await endpoints.register({ name: name.trim(), email: email.trim(), password });
-      navigate('/verify-otp', { state: { email: email.trim() } });
+      await endpoints.register({ name: trimmedName, email: trimmedEmail, password });
+      navigate('/verify-otp', { state: { email: trimmedEmail } });
     } catch (apiError) {
       setError(apiError.response?.data?.message || 'Registration failed. Please try again.');
     } finally {

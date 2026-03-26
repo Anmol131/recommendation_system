@@ -15,6 +15,8 @@ const sanitizeUser = (userDoc) => {
 	return user;
 };
 
+const normalizeEmail = (email) => (email || '').toLowerCase();
+
 const register = async (req, res) => {
 	try {
 		const { name, email, password } = req.body;
@@ -23,7 +25,7 @@ const register = async (req, res) => {
 			return res.status(400).json({ success: false, message: 'Name, email and password are required' });
 		}
 
-		const existingUser = await User.findOne({ email: email.toLowerCase() });
+		const existingUser = await User.findOne({ email: normalizeEmail(email) });
 		if (existingUser) {
 			return res.status(400).json({ success: false, message: 'Email already registered' });
 		}
@@ -34,7 +36,7 @@ const register = async (req, res) => {
 
 		const user = await User.create({
 			name,
-			email,
+			email: normalizeEmail(email),
 			password,
 			isVerified: false,
 			otp,
@@ -64,7 +66,7 @@ const login = async (req, res) => {
 			return res.status(400).json({ success: false, message: 'Email and password are required' });
 		}
 
-		const user = await User.findOne({ email: email.toLowerCase() });
+		const user = await User.findOne({ email: normalizeEmail(email) });
 		if (!user) {
 			return res.status(401).json({ success: false, message: 'Invalid credentials' });
 		}
@@ -113,7 +115,7 @@ const verifyOTP = async (req, res) => {
 			return res.status(400).json({ success: false, message: 'Email and OTP are required' });
 		}
 
-		const user = await User.findOne({ email: email.toLowerCase() });
+		const user = await User.findOne({ email: normalizeEmail(email) });
 		if (!user) {
 			return res.status(404).json({ success: false, message: 'User not found' });
 		}
@@ -153,7 +155,7 @@ const resendOTP = async (req, res) => {
 			return res.status(400).json({ success: false, message: 'Email is required' });
 		}
 
-		const user = await User.findOne({ email: email.toLowerCase() });
+		const user = await User.findOne({ email: normalizeEmail(email) });
 		if (!user) {
 			return res.status(404).json({ success: false, message: 'User not found' });
 		}

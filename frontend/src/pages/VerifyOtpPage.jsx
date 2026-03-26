@@ -20,14 +20,17 @@ function VerifyOtpPage() {
 		setError('');
 		setMessage('');
 
-		if (!email.trim() || !otp.trim()) {
+		const trimmedEmail = email.trim();
+		const trimmedOtp = otp.trim();
+
+		if (!trimmedEmail || !trimmedOtp) {
 			setError('Email and OTP are required.');
 			return;
 		}
 
 		setSubmitting(true);
 		try {
-			await endpoints.verifyOtp({ email: email.trim(), otp: otp.trim() });
+			await endpoints.verifyOtp({ email: trimmedEmail, otp: trimmedOtp });
 			setMessage('Email verified. You can now log in.');
 			setTimeout(() => navigate('/login'), 1500);
 		} catch (apiError) {
@@ -41,14 +44,16 @@ function VerifyOtpPage() {
 		setError('');
 		setMessage('');
 
-		if (!email.trim()) {
+		const trimmedEmail = email.trim();
+
+		if (!trimmedEmail) {
 			setError('Enter your email to resend OTP.');
 			return;
 		}
 
 		setResending(true);
 		try {
-			await endpoints.resendOtp({ email: email.trim() });
+			await endpoints.resendOtp({ email: trimmedEmail });
 			setMessage('New OTP sent to your email.');
 		} catch (apiError) {
 			setError(apiError.response?.data?.message || 'Failed to resend OTP.');
