@@ -1,10 +1,22 @@
-from typing import Optional
-
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from ai.services.recommendation_pipeline import run_pipeline
 
-app = FastAPI(title="AI Recommendation Service")
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")
@@ -20,9 +32,3 @@ def health():
 @app.get("/analyze")
 def analyze(query: str, top_n: int = 5):
     return run_pipeline(query, top_n)
-    return run_pipeline(
-        query=query,
-        age_group=age_group,
-        interest_mode=interest_mode,
-        top_n=top_n
-    )
