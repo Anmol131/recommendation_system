@@ -71,6 +71,33 @@ function pickCast(credits, limit = 5) {
 	return names.length ? names : null;
 }
 
+function pickDirector(credits) {
+	if (!credits || !Array.isArray(credits.crew)) return null;
+
+	const director =
+		credits.crew.find((person) => person?.job === 'Director') ||
+		credits.crew.find((person) => person?.department === 'Directing');
+
+	return director?.name || null;
+}
+
+function pickKeywords(keywordPayload) {
+	if (!keywordPayload) return [];
+
+	const source =
+		keywordPayload.keywords ||
+		keywordPayload.results ||
+		[];
+
+	if (!Array.isArray(source)) return [];
+
+	return source
+		.map((item) => item?.name)
+		.filter(Boolean)
+		.map((name) => String(name).trim())
+		.filter(Boolean);
+}
+
 async function enrichMovies() {
 	await mongoose.connect(MONGO_URI, { dbName: DB_NAME });
 	const db = mongoose.connection.db;
@@ -80,10 +107,10 @@ async function enrichMovies() {
 		const posterBase = await getImageBaseUrl();
 
 		const filter = {
-			enriched: false,
-			tmdbId: { $ne: null },
-			tmdbFailed: { $ne: true },
-		};
+	title: /^John Wick$/i,
+	tmdbId: { $ne: null },
+	tmdbFailed: { $ne: true },
+};
 
 		const total = await movies.countDocuments(filter);
 		console.log(`Starting TMDb enrichment for ${total} high-value unenriched movies...\n`);
@@ -96,16 +123,12 @@ async function enrichMovies() {
 					title: 1,
 					tmdbId: 1,
 					ratingCount: 1,
-					description: 1,
-					poster: 1,
-					cast: 1,
-					trailer: 1,
 					enriched: 1,
 				},
 			}
 		)
 		.sort({ ratingCount: -1 })
-		.limit(100);
+		.limit(1);
 
 		let processed = 0;
 		let updated = 0;
@@ -126,7 +149,7 @@ async function enrichMovies() {
 
 			try {
 				const details = await tmdbFetch(
-					`/movie/${tmdbId}?language=en-US&append_to_response=credits,videos`
+					`/movie/${tmdbId}?language=en-US&append_to_response=credits,videos,keywords`
 				);
 
 				const update = {
@@ -134,6 +157,8 @@ async function enrichMovies() {
 					poster: details?.poster_path ? `${posterBase}${details.poster_path}` : null,
 					cast: pickCast(details?.credits, 5),
 					trailer: pickTrailer(details?.videos),
+					director: pickDirector(details?.credits),
+					keywords: pickKeywords(details?.keywords),
 					enriched: true,
 					tmdbFailed: false,
 					tmdbError: null,

@@ -60,6 +60,26 @@ class MovieRecommender(BaseRecommender):
 
         return []
 
+    def _parse_keywords(self, keywords_value) -> List[str]:
+        if not keywords_value:
+            return []
+
+        if isinstance(keywords_value, list):
+            return [
+                str(keyword).strip().lower()
+                for keyword in keywords_value
+                if str(keyword).strip()
+            ]
+
+        if isinstance(keywords_value, str):
+            return [
+                keyword.strip().lower()
+                for keyword in re.split(r"[|,;]+", keywords_value)
+                if keyword.strip()
+            ]
+
+        return []
+
     def _safe_float(self, value, default: float = 0.0) -> float:
         try:
             return float(value)
@@ -79,6 +99,12 @@ class MovieRecommender(BaseRecommender):
             word for word in cleaned.split()
             if len(word) > 2 and word not in STOPWORDS
         }
+
+    def _keyword_wordset(self, keywords_list: List[str]) -> Set[str]:
+        result = set()
+        for item in keywords_list:
+            result.update(self._text_words(item))
+        return result
 
     def _extract_reference_title(self, cleaned_query: str) -> Optional[str]:
         patterns = [
@@ -110,6 +136,8 @@ class MovieRecommender(BaseRecommender):
                 "genres": 1,
                 "description": 1,
                 "cast": 1,
+                "director": 1,
+                "keywords": 1,
             },
         )
 
@@ -141,6 +169,9 @@ class MovieRecommender(BaseRecommender):
         reference_genres = []
         reference_cast = []
         reference_desc_words = set()
+        reference_director = None
+        reference_keywords = []
+        reference_keyword_words = set()
 
         if intent == "similar_content":
             reference_title = self._extract_reference_title(cleaned_query)
@@ -150,6 +181,13 @@ class MovieRecommender(BaseRecommender):
                     reference_genres = self._parse_genres(reference_movie.get("genres", []))
                     reference_cast = self._parse_cast(reference_movie.get("cast", []))
                     reference_desc_words = self._text_words(reference_movie.get("description", ""))
+                    reference_director = (
+                        str(reference_movie.get("director")).strip().lower()
+                        if reference_movie.get("director")
+                        else None
+                    )
+                    reference_keywords = self._parse_keywords(reference_movie.get("keywords", []))
+                    reference_keyword_words = self._keyword_wordset(reference_keywords)
 
         movies = list(
             self.collection.find(
@@ -168,6 +206,8 @@ class MovieRecommender(BaseRecommender):
                     "cast": 1,
                     "poster": 1,
                     "trailer": 1,
+                    "director": 1,
+                    "keywords": 1,
                 },
             )
         )
@@ -182,6 +222,9 @@ class MovieRecommender(BaseRecommender):
             cast = self._parse_cast(movie.get("cast", []))
             description = movie.get("description", "") or ""
             description_words = self._text_words(description)
+            director = str(movie.get("director")).strip().lower() if movie.get("director") else None
+            movie_keywords = self._parse_keywords(movie.get("keywords", []))
+            movie_keyword_words = self._keyword_wordset(movie_keywords)
 
             avg_rating = self._safe_float(movie.get("avgRating"), 0.0)
             rating_count = self._safe_float(movie.get("ratingCount"), 0.0)
@@ -238,6 +281,23 @@ class MovieRecommender(BaseRecommender):
                         f"Shared cast with reference: {', '.join(cast_overlap[:2])}"
                     )
 
+                if reference_director and director and director == reference_director:
+                    score += 18
+                    reasons.append(f"Same director as reference: {movie.get('director')}")
+
+                keyword_overlap = movie_keyword_words.intersection(reference_keyword_words)
+                keyword_overlap_count = len(keyword_overlap)
+
+                if keyword_overlap_count >= 4:
+                    score += 25
+                    reasons.append("Strong keyword similarity to reference")
+                elif keyword_overlap_count >= 2:
+                    score += 15
+                    reasons.append("Moderate keyword similarity to reference")
+                elif keyword_overlap_count >= 1:
+                    score += 8
+                    reasons.append("Light keyword similarity to reference")
+
             else:
                 normalized_title_words = self._title_words(title)
                 query_words = set(cleaned_query.split())
@@ -286,6 +346,8 @@ class MovieRecommender(BaseRecommender):
                         "cast": movie.get("cast"),
                         "poster": movie.get("poster"),
                         "trailer": movie.get("trailer"),
+                        "director": movie.get("director"),
+                        "keywords": movie.get("keywords"),
                         "score": score,
                         "reasons": reasons,
                     }

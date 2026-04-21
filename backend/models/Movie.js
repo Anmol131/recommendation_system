@@ -38,6 +38,22 @@ const movieSchema = new mongoose.Schema(
 			type: Boolean,
 			default: false,
 		},
+		director: {
+			type: String,
+			default: null,
+		},
+		keywords: {
+			type: [String],
+			default: [],
+		},
+		tmdbFailed: {
+			type: Boolean,
+			default: false,
+		},
+		tmdbError: {
+			type: String,
+			default: null,
+		},
 	},
 	{
 		timestamps: true,
