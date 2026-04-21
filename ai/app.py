@@ -18,12 +18,8 @@ def health():
 
 
 @app.get("/analyze")
-def analyze_query(
-    query: str,
-    age_group: Optional[str] = None,
-    interest_mode: Optional[str] = None,
-    top_n: int = 5
-):
+def analyze(query: str, top_n: int = 5):
+    return run_pipeline(query, top_n)
     return run_pipeline(
         query=query,
         age_group=age_group,
