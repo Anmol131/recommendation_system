@@ -1,3 +1,4 @@
+import math
 import re
 from typing import Dict, List, Optional, Set
 
@@ -12,6 +13,13 @@ STOPWORDS = {
     "me", "you", "your", "my", "our", "their", "like", "similar",
     "song", "songs", "music", "track", "tracks", "artist", "artists",
     "recommend", "best", "listen"
+}
+
+MUSIC_GENRE_TERMS = {
+    "pop", "rock", "hip-hop", "hiphop", "rap", "dance", "edm", "electronic",
+    "indie", "latin", "jazz", "classical", "country", "metal", "punk",
+    "folk", "reggae", "blues", "rnb", "soul", "house", "techno", "trap",
+    "k-pop", "kpop"
 }
 
 
@@ -56,32 +64,53 @@ class MusicRecommender(BaseRecommender):
             if len(word) > 2 and word not in STOPWORDS
         }
 
+    def _normalize_genre_token(self, token: str) -> str:
+        token = token.strip().lower()
+        if token in {"hip hop", "hiphop"}:
+            return "hip-hop"
+        if token in {"r&b", "rnb"}:
+            return "rnb"
+        if token in {"k pop", "kpop"}:
+            return "k-pop"
+        return token
+
     def _parse_genres(self, genre_value, genres_value) -> List[str]:
         collected = []
 
         if genre_value:
             if isinstance(genre_value, str):
                 collected.extend(
-                    [g.strip().lower() for g in re.split(r"[|,;/]+", genre_value) if g.strip()]
+                    [
+                        self._normalize_genre_token(g)
+                        for g in re.split(r"[|,;/]+", genre_value)
+                        if g.strip()
+                    ]
                 )
 
         if genres_value:
             if isinstance(genres_value, list):
                 collected.extend(
-                    [str(g).strip().lower() for g in genres_value if str(g).strip()]
+                    [
+                        self._normalize_genre_token(str(g))
+                        for g in genres_value
+                        if str(g).strip()
+                    ]
                 )
             elif isinstance(genres_value, str):
                 collected.extend(
-                    [g.strip().lower() for g in re.split(r"[|,;/]+", genres_value) if g.strip()]
+                    [
+                        self._normalize_genre_token(g)
+                        for g in re.split(r"[|,;/]+", genres_value)
+                        if g.strip()
+                    ]
                 )
 
-        # preserve order, remove duplicates
         seen = set()
         final = []
-        for g in collected:
-            if g not in seen:
-                seen.add(g)
-                final.append(g)
+        for genre in collected:
+            if genre and genre not in seen:
+                seen.add(genre)
+                final.append(genre)
 
         return final
 
@@ -147,6 +176,47 @@ class MusicRecommender(BaseRecommender):
 
         return None
 
+    def _extract_query_genres(self, keywords: Set[str]) -> Set[str]:
+        normalized = {self._normalize_genre_token(k) for k in keywords}
+        return {k for k in normalized if k in MUSIC_GENRE_TERMS}
+
+    def _normalized_popularity(self, track: Dict) -> float:
+        raw = self._safe_float(track.get("popularity"), 0.0)
+        if raw <= 0:
+            return 0.0
+
+        # Spotify-like records usually have real trackId and 0-100 popularity
+        if track.get("trackId"):
+            return min(100.0, raw)
+
+        # Last.fm-like records may have huge popularity values
+        if raw > 100:
+            return min(100.0, math.log10(raw + 1) * 18)
+
+        return raw
+
+    def _metadata_quality_bonus(self, track: Dict, genres: List[str]) -> int:
+        bonus = 0
+
+        if track.get("trackId"):
+            bonus += 12
+        if genres:
+            bonus += 10
+        if track.get("artist"):
+            bonus += 4
+        if track.get("album"):
+            bonus += 3
+        if track.get("spotifyUrl"):
+            bonus += 4
+        if track.get("previewUrl"):
+            bonus += 3
+        if track.get("cover") or track.get("albumArt"):
+            bonus += 2
+        if track.get("enriched"):
+            bonus += 5
+
+        return bonus
+
     def recommend(
         self,
         query_data: Dict,
@@ -166,6 +236,8 @@ class MusicRecommender(BaseRecommender):
         reference_explicit = None
 
         explicit_artist_query = self._extract_artist_name(cleaned_query)
+        explicit_artist_words = self._text_words(explicit_artist_query or "")
+        query_genres = self._extract_query_genres(keywords)
 
         if intent == "similar_content":
             reference_title = self._extract_reference_title(cleaned_query)
@@ -219,9 +291,21 @@ class MusicRecommender(BaseRecommender):
             album_words = self._text_words(album)
             genres = self._parse_genres(track.get("genre"), track.get("genres"))
 
-            popularity = self._safe_int(track.get("popularity"), 0)
+            normalized_popularity = self._normalized_popularity(track)
             explicit = self._safe_bool(track.get("explicit"), False)
             duration_sec = self._safe_int(track.get("durationSec"), 0)
+
+            # Strong query filtering for artist-based searches
+            if explicit_artist_words:
+                artist_overlap = explicit_artist_words.intersection(artist_words)
+                if not artist_overlap:
+                    continue
+
+            # Strong query filtering for genre searches
+            genre_matches = [genre for genre in genres if genre in query_genres]
+            if query_genres and intent == "top_results":
+                if not genre_matches:
+                    continue
 
             if intent == "similar_content" and reference_track:
                 reference_track_id = reference_track.get("trackId")
@@ -235,7 +319,7 @@ class MusicRecommender(BaseRecommender):
 
             title_matches = title_words.intersection(keywords)
             if len(title_matches) >= 2:
-                score += 18 * len(title_matches)
+                score += 16 * len(title_matches)
                 reasons.append(
                     f"Matched multiple title words: {', '.join(sorted(title_matches))}"
                 )
@@ -243,63 +327,72 @@ class MusicRecommender(BaseRecommender):
                 score += 20
                 reasons.append("Title phrase closely matched query")
 
-            genre_matches = [genre for genre in genres if genre in keywords]
             if genre_matches:
-                score += 25 * len(genre_matches)
+                score += 35 * len(genre_matches)
                 reasons.append(f"Matched genre: {', '.join(genre_matches)}")
 
-            if explicit_artist_query:
-                explicit_artist_words = self._text_words(explicit_artist_query)
-                overlap = explicit_artist_words.intersection(artist_words)
-                if overlap:
-                    score += 35
+            if explicit_artist_words:
+                artist_overlap = explicit_artist_words.intersection(artist_words)
+                if artist_overlap:
+                    score += 50
                     reasons.append(f"Matched artist: {track.get('artist')}")
 
             if intent == "similar_content" and reference_track:
                 artist_overlap = artist_words.intersection(reference_artist_words)
+                album_overlap = album_words.intersection(reference_album_words)
+                reference_genre_overlap = [genre for genre in genres if genre in reference_genres]
+
+                # Require real similarity, not just popularity
+                if not artist_overlap and not album_overlap and not reference_genre_overlap:
+                    continue
+
                 if artist_overlap:
-                    score += 35
+                    score += 45
                     reasons.append("Same or similar artist as reference")
 
-                album_overlap = album_words.intersection(reference_album_words)
                 if album_overlap:
-                    score += 10
+                    score += 12
                     reasons.append("Related album wording to reference")
 
-                genre_overlap = [genre for genre in genres if genre in reference_genres]
-                if len(genre_overlap) >= 2:
+                if len(reference_genre_overlap) >= 2:
                     score += 30
                     reasons.append(
-                        f"Strong genre overlap with reference: {', '.join(genre_overlap)}"
+                        f"Strong genre overlap with reference: {', '.join(reference_genre_overlap)}"
                     )
-                elif len(genre_overlap) == 1:
-                    score += 15
+                elif len(reference_genre_overlap) == 1:
+                    score += 16
                     reasons.append(
-                        f"Partial genre overlap with reference: {', '.join(genre_overlap)}"
+                        f"Partial genre overlap with reference: {', '.join(reference_genre_overlap)}"
                     )
 
                 if reference_explicit is not None and explicit == reference_explicit:
                     score += 6
                     reasons.append("Matched explicit style of reference")
 
-            if intent == "top_results" and popularity >= 85:
+            if intent == "top_results" and normalized_popularity >= 85:
                 score += 18
                 reasons.append("Boosted for high popularity")
-            elif popularity >= 70:
+            elif normalized_popularity >= 70:
                 score += 10
                 reasons.append("Boosted for good popularity")
 
-            if popularity > 0:
-                score += int(popularity / 5)
-                reasons.append("Included popularity-based bonus")
+            if normalized_popularity > 0:
+                score += int(normalized_popularity / 4)
+                reasons.append("Included normalized popularity bonus")
 
             if duration_sec >= 120 and duration_sec <= 360:
                 score += 4
                 reasons.append("Standard track length bonus")
 
-            if track.get("enriched"):
-                score += 5
-                reasons.append("Boosted for enriched metadata")
+            quality_bonus = self._metadata_quality_bonus(track, genres)
+            if quality_bonus > 0:
+                score += quality_bonus
+                reasons.append("Metadata quality bonus applied")
+
+            # Penalize weak records with almost no metadata
+            if not track.get("trackId") and not genres:
+                score -= 20
+                reasons.append("Weak metadata penalty")
 
             if score > 0:
                 results.append(
