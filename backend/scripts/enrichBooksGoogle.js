@@ -110,21 +110,30 @@ async function enrichBooks() {
 	try {
 		const filter = {
 			isbn: { $ne: null },
-			$or: [
-				{ enriched: false },
-				{ description: null },
-				{ description: { $exists: false } },
-				{ categories: { $exists: false } },
-				{ categories: { $size: 0 } },
-				{ pageCount: null },
-				{ pageCount: { $exists: false } },
-				{ lang: null },
-				{ lang: { $exists: false } },
+			$and: [
+				{
+					$or: [
+						{ author: /tolkien/i },
+						{ title: /lord of the rings|fellowship of the ring|two towers|return of the king/i },
+						{ title: /harry potter|narnia|magician's nephew|silver chair/i },
+						{ categories: "Fantasy" },
+					],
+				},
+				{
+					$or: [
+						{ enriched: false },
+						{ description: null },
+						{ categories: { $exists: false } },
+						{ categories: { $size: 0 } },
+						{ pageCount: null },
+						{ lang: null },
+					],
+				},
 			],
 		};
 
 		const total = await books.countDocuments(filter);
-		console.log(`Starting Google Books enrichment for ${total} books...\n`);
+		console.log(`Starting Google Books enrichment for ${total} targeted fantasy/Tolkien books...\n`);
 
 		const cursor = books
 			.find(filter, {
@@ -134,9 +143,10 @@ async function enrichBooks() {
 					title: 1,
 					author: 1,
 					enriched: 1,
+					categories: 1,
 				},
 			})
-			.limit(100);
+			.limit(50);
 
 		let processed = 0;
 		let updated = 0;
