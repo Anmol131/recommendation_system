@@ -1,98 +1,130 @@
-import logging
-from typing import Any, Dict, List
+import re
+from typing import Dict, List
 
-import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-
-from utils.db import get_collection
-
-logger = logging.getLogger(__name__)
+from ai.recommenders.base_recommender import BaseRecommender
+from ai.utils.db import get_collection
 
 
-class MovieRecommender:
-    def __init__(self) -> None:
-        self.loaded = False
-        self.items: List[Dict[str, Any]] = []
-        self.id_to_index: Dict[str, int] = {}
-        self.vectorizer = TfidfVectorizer(max_features=10000, stop_words="english")
-        self.tfidf_matrix = None
-        self._load_documents()
+class MovieRecommender(BaseRecommender):
+    def __init__(self):
+        self.collection = get_collection("movies")
 
-    def _as_text(self, value: Any) -> str:
-        if value is None:
-            return ""
-        if isinstance(value, list):
-            return " ".join(self._as_text(v) for v in value)
-        if isinstance(value, dict):
-            return " ".join(self._as_text(v) for v in value.values())
-        return str(value)
-
-    def _build_soup(self, doc: Dict[str, Any]) -> str:
-        fields = [
-            doc.get("title"),
-            doc.get("genres"),
-            doc.get("overview"),
-            doc.get("cast"),
-            doc.get("director"),
-            doc.get("keywords"),
-        ]
-        return " ".join(self._as_text(value) for value in fields).strip().lower()
-
-    def _sanitize_item(self, doc: Dict[str, Any]) -> Dict[str, Any]:
-        item = dict(doc)
-        if "_id" in item:
-            item["_id"] = str(item["_id"])
-        return item
-
-    def _load_documents(self) -> None:
-        logger.info("Loading movie documents")
-        collection = get_collection("movies")
-        raw_docs = list(collection.find({}))
-
-        if not raw_docs:
-            logger.warning("No movie documents found")
-            self.loaded = True
-            return
-
-        self.items = [self._sanitize_item(doc) for doc in raw_docs]
-        soups = [self._build_soup(item) for item in self.items]
-        self.tfidf_matrix = self.vectorizer.fit_transform(soups)
-        self.id_to_index = {item["_id"]: idx for idx, item in enumerate(self.items)}
-        self.loaded = True
-        logger.info("Movie recommender loaded with %s items", len(self.items))
-
-    def get_similar(self, item_id: str, top_n: int = 10) -> List[Dict[str, Any]]:
-        if not self.loaded or self.tfidf_matrix is None:
+    def _parse_genres(self, genres_value) -> List[str]:
+        if not genres_value:
             return []
 
-        index = self.id_to_index.get(str(item_id))
-        if index is None:
-            return []
+        if isinstance(genres_value, list):
+            return [
+                str(genre).strip().lower()
+                for genre in genres_value
+                if str(genre).strip()
+            ]
 
-        similarity_scores = cosine_similarity(self.tfidf_matrix[index], self.tfidf_matrix).flatten()
-        ranked_indices = np.argsort(similarity_scores)[::-1]
-        filtered_indices = [i for i in ranked_indices if i != index][:top_n]
-        return [self.items[i] for i in filtered_indices]
+        if isinstance(genres_value, str):
+            if genres_value.strip() == "(no genres listed)":
+                return []
+            return [
+                genre.strip().lower()
+                for genre in genres_value.split("|")
+                if genre.strip()
+            ]
 
-    def recommend_by_preferences(self, preferences_list: List[str], top_n: int = 20) -> List[Dict[str, Any]]:
-        if not self.loaded or self.tfidf_matrix is None or not preferences_list:
-            return []
+        return []
 
-        query = " ".join(str(value) for value in preferences_list)
-        query_vector = self.vectorizer.transform([query])
-        similarity_scores = cosine_similarity(query_vector, self.tfidf_matrix).flatten()
-        ranked_indices = np.argsort(similarity_scores)[::-1][:top_n]
-        return [self.items[i] for i in ranked_indices]
+    def _safe_float(self, value, default: float = 0.0) -> float:
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return default
 
+    def _title_words(self, title: str) -> set:
+        cleaned = re.sub(r"[^a-z0-9\s]", " ", title.lower())
+        return set(cleaned.split())
 
-_movie_recommender_instance = None
+    def recommend(
+        self,
+        query_data: Dict,
+        intent: str = "general_search",
+        top_n: int = 5
+    ) -> List[Dict]:
+        keywords = set(query_data.get("keywords", []))
+        cleaned_query = query_data.get("cleaned_query", "")
+        results = []
 
+        movies = list(
+            self.collection.find(
+                {},
+                {
+                    "_id": 0,
+                    "movieId": 1,
+                    "title": 1,
+                    "year": 1,
+                    "genres": 1,
+                    "avgRating": 1,
+                    "ratingCount": 1,
+                    "tmdbId": 1,
+                    "imdbId": 1,
+                },
+            )
+        )
 
-def get_movie_recommender() -> MovieRecommender:
-    global _movie_recommender_instance
+        for movie in movies:
+            score = 0
+            reasons = []
 
-    if _movie_recommender_instance is None:
-        _movie_recommender_instance = MovieRecommender()
+            title = movie.get("title", "")
+            title_lower = title.lower()
+            genres_raw = movie.get("genres", "")
+            genres = self._parse_genres(genres_raw)
+            avg_rating = self._safe_float(movie.get("avgRating"), 0.0)
+            rating_count = self._safe_float(movie.get("ratingCount"), 0.0)
 
-    return _movie_recommender_instance
+            genre_matches = [genre for genre in genres if genre in keywords]
+            if genre_matches:
+                score += 30 * len(genre_matches)
+                reasons.append(f"Matched genre: {', '.join(genre_matches)}")
+
+            # Strong bonus for exact title phrase match
+            if title_lower in cleaned_query:
+                score += 40
+                reasons.append("Exact title phrase matched")
+            else:
+                title_matches = self._title_words(title).intersection(keywords)
+                if len(title_matches) >= 2:
+                    score += 25 * len(title_matches)
+                    reasons.append(
+                        f"Matched multiple title words: {', '.join(sorted(title_matches))}"
+                    )
+
+            if intent == "top_results" and avg_rating >= 4.0:
+                score += 15
+                reasons.append("Boosted for high average rating")
+
+            if avg_rating > 0:
+                rating_bonus = int(avg_rating * 5)
+                score += rating_bonus
+                reasons.append("Included rating-based bonus")
+
+            if rating_count >= 1000:
+                score += 5
+                reasons.append("Popular based on rating count")
+
+            if score > 0:
+                results.append(
+                    {
+                        "movieId": movie.get("movieId"),
+                        "title": title,
+                        "type": "movie",
+                        "year": movie.get("year"),
+                        "genres": genres,
+                        "avgRating": movie.get("avgRating"),
+                        "ratingCount": movie.get("ratingCount"),
+                        "tmdbId": movie.get("tmdbId"),
+                        "imdbId": movie.get("imdbId"),
+                        "score": score,
+                        "reasons": reasons,
+                    }
+                )
+
+        results.sort(key=lambda x: x["score"], reverse=True)
+        return results[:top_n]

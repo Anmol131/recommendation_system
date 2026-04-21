@@ -1,0 +1,6 @@
+.venv/
+ai/.venv/
+__pycache__/
+*.pyc
+.env
+ai_legacy_backup/
