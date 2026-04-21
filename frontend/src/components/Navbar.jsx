@@ -47,7 +47,6 @@ const Navbar = () => {
     };
 
     window.addEventListener('scroll', handleScroll);
-
     handleScroll();
 
     return () => window.removeEventListener('scroll', handleScroll);
@@ -77,16 +76,30 @@ const Navbar = () => {
 
   const avatarId = user?.avatar || 'avatar-1';
   const brandLogoSrc = location.pathname === '/' && isDarkMode ? '/logo1.png' : '/logo2.png';
-  const currentSection =
-    location.pathname === '/' ? 'home' : location.pathname === '/explore' ? 'explore' : activeSection;
 
-  const activeLinkClass = 'text-primary font-semibold text-sm tracking-wide border-b-2 border-primary pb-1 transition-colors duration-200';
-  const inactiveLinkClass = 'text-light-text-secondary dark:text-dark-text-secondary hover:text-primary transition-colors duration-200 text-sm tracking-wide';
+  const currentSection =
+    location.pathname === '/'
+      ? 'home'
+      : location.pathname === '/explore'
+        ? 'explore'
+        : location.pathname === '/recommend'
+          ? 'recommend'
+          : activeSection;
+
+  const activeLinkClass =
+    'text-primary font-semibold text-sm tracking-wide border-b-2 border-primary pb-1 transition-colors duration-200';
+
+  const inactiveLinkClass =
+    'text-light-text-secondary dark:text-dark-text-secondary hover:text-primary transition-colors duration-200 text-sm tracking-wide';
 
   return (
     <nav className="sticky top-0 z-50 h-20 bg-light-surface dark:bg-dark-surface shadow-lg transition-all duration-300 border-b border-light-surface-alt dark:border-dark-surface-alt">
       <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-8">
-        <Link to="/" className="inline-flex items-center hover:opacity-80 transition-opacity" aria-label="Vibefy home">
+        <Link
+          to="/"
+          className="inline-flex items-center hover:opacity-80 transition-opacity"
+          aria-label="Vibefy home"
+        >
           <img src={brandLogoSrc} alt="Vibefy" className="h-23 w-[145px] object-contain object-left" />
         </Link>
 
@@ -106,12 +119,23 @@ const Navbar = () => {
           </Link>
 
           <Link
+            to="/recommend"
+            className={location.pathname === '/recommend' ? activeLinkClass : inactiveLinkClass}
+          >
+            Recommend
+          </Link>
+
+          <Link
             to="/about"
             onClick={() => {
               setActiveSection('about');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            className={location.pathname === '/about' && currentSection === 'about' ? activeLinkClass : inactiveLinkClass}
+            className={
+              location.pathname === '/about' && currentSection === 'about'
+                ? activeLinkClass
+                : inactiveLinkClass
+            }
           >
             About
           </Link>
@@ -127,7 +151,11 @@ const Navbar = () => {
                 navigate('/about#contact');
               }
             }}
-            className={location.pathname === '/about' && currentSection === 'contact' ? activeLinkClass : inactiveLinkClass}
+            className={
+              location.pathname === '/about' && currentSection === 'contact'
+                ? activeLinkClass
+                : inactiveLinkClass
+            }
           >
             Contact
           </Link>
@@ -160,8 +188,12 @@ const Navbar = () => {
                   <div className="flex items-center gap-3 px-2 pb-4 border-b border-light-surface-alt dark:border-dark-surface-alt">
                     <AvatarDisplay avatarId={avatarId} size={44} className="rounded-lg" />
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-light-text dark:text-dark-text">{user?.name || 'User'}</p>
-                      <p className="truncate text-xs text-light-text-secondary dark:text-dark-text-secondary">{user?.email || 'No email'}</p>
+                      <p className="truncate text-sm font-semibold text-light-text dark:text-dark-text">
+                        {user?.name || 'User'}
+                      </p>
+                      <p className="truncate text-xs text-light-text-secondary dark:text-dark-text-secondary">
+                        {user?.email || 'No email'}
+                      </p>
                     </div>
                   </div>
 
