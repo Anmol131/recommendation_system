@@ -19,7 +19,7 @@ MUSIC_GENRE_TERMS = {
     "pop", "rock", "hip-hop", "hiphop", "rap", "dance", "edm", "electronic",
     "indie", "latin", "jazz", "classical", "country", "metal", "punk",
     "folk", "reggae", "blues", "rnb", "soul", "house", "techno", "trap",
-    "k-pop", "kpop"
+    "k-pop", "kpop", "afrobeats", "alt-rock", "alternative"
 }
 
 
@@ -114,6 +114,25 @@ class MusicRecommender(BaseRecommender):
 
         return final
 
+    def _parse_artists(self, artist_value: Optional[str]) -> List[str]:
+        if not artist_value:
+            return []
+
+        artists = [
+            part.strip().lower()
+            for part in re.split(r"[;,/&]+", str(artist_value))
+            if part.strip()
+        ]
+
+        seen = set()
+        final = []
+        for artist in artists:
+            if artist not in seen:
+                seen.add(artist)
+                final.append(artist)
+
+        return final
+
     def _extract_reference_title(self, cleaned_query: str) -> Optional[str]:
         patterns = [
             r"like\s+(.+)$",
@@ -185,11 +204,9 @@ class MusicRecommender(BaseRecommender):
         if raw <= 0:
             return 0.0
 
-        # Spotify-like records usually have real trackId and 0-100 popularity
         if track.get("trackId"):
             return min(100.0, raw)
 
-        # Last.fm-like records may have huge popularity values
         if raw > 100:
             return min(100.0, math.log10(raw + 1) * 18)
 
@@ -230,7 +247,7 @@ class MusicRecommender(BaseRecommender):
         results = []
 
         reference_track = None
-        reference_artist_words = set()
+        reference_artist_names = []
         reference_album_words = set()
         reference_genres = []
         reference_explicit = None
@@ -244,7 +261,7 @@ class MusicRecommender(BaseRecommender):
             if reference_title:
                 reference_track = self._find_reference_track(reference_title)
                 if reference_track:
-                    reference_artist_words = self._text_words(reference_track.get("artist", "") or "")
+                    reference_artist_names = self._parse_artists(reference_track.get("artist", ""))
                     reference_album_words = self._text_words(reference_track.get("album", "") or "")
                     reference_genres = self._parse_genres(
                         reference_track.get("genre"),
@@ -289,19 +306,18 @@ class MusicRecommender(BaseRecommender):
             title_words = self._title_words(title)
             artist_words = self._text_words(artist)
             album_words = self._text_words(album)
+            artist_names = self._parse_artists(artist)
             genres = self._parse_genres(track.get("genre"), track.get("genres"))
 
             normalized_popularity = self._normalized_popularity(track)
             explicit = self._safe_bool(track.get("explicit"), False)
             duration_sec = self._safe_int(track.get("durationSec"), 0)
 
-            # Strong query filtering for artist-based searches
             if explicit_artist_words:
                 artist_overlap = explicit_artist_words.intersection(artist_words)
                 if not artist_overlap:
                     continue
 
-            # Strong query filtering for genre searches
             genre_matches = [genre for genre in genres if genre in query_genres]
             if query_genres and intent == "top_results":
                 if not genre_matches:
@@ -338,20 +354,19 @@ class MusicRecommender(BaseRecommender):
                     reasons.append(f"Matched artist: {track.get('artist')}")
 
             if intent == "similar_content" and reference_track:
-                artist_overlap = artist_words.intersection(reference_artist_words)
+                exact_artist_overlap = set(artist_names).intersection(set(reference_artist_names))
                 album_overlap = album_words.intersection(reference_album_words)
                 reference_genre_overlap = [genre for genre in genres if genre in reference_genres]
 
-                # Require real similarity, not just popularity
-                if not artist_overlap and not album_overlap and not reference_genre_overlap:
+                if not exact_artist_overlap and not reference_genre_overlap:
                     continue
 
-                if artist_overlap:
-                    score += 45
-                    reasons.append("Same or similar artist as reference")
+                if exact_artist_overlap:
+                    score += 55
+                    reasons.append("Same artist as reference")
 
                 if album_overlap:
-                    score += 12
+                    score += 8
                     reasons.append("Related album wording to reference")
 
                 if len(reference_genre_overlap) >= 2:
@@ -389,7 +404,6 @@ class MusicRecommender(BaseRecommender):
                 score += quality_bonus
                 reasons.append("Metadata quality bonus applied")
 
-            # Penalize weak records with almost no metadata
             if not track.get("trackId") and not genres:
                 score -= 20
                 reasons.append("Weak metadata penalty")
