@@ -45,6 +45,32 @@ class BookRecommender(BaseRecommender):
             if len(word) > 2 and word not in STOPWORDS
         }
 
+    def _parse_categories(self, categories_value) -> List[str]:
+        if not categories_value:
+            return []
+
+        if isinstance(categories_value, list):
+            return [
+                str(category).strip().lower()
+                for category in categories_value
+                if str(category).strip()
+            ]
+
+        if isinstance(categories_value, str):
+            return [
+                category.strip().lower()
+                for category in re.split(r"[|,;/]+", categories_value)
+                if category.strip()
+            ]
+
+        return []
+
+    def _category_words(self, categories_list: List[str]) -> Set[str]:
+        words = set()
+        for category in categories_list:
+            words.update(self._text_words(category))
+        return words
+
     def _extract_reference_title(self, cleaned_query: str) -> Optional[str]:
         patterns = [
             r"like\s+(.+)$",
@@ -75,6 +101,8 @@ class BookRecommender(BaseRecommender):
                 "author": 1,
                 "publisher": 1,
                 "year": 1,
+                "categories": 1,
+                "description": 1,
             },
         )
 
@@ -121,6 +149,9 @@ class BookRecommender(BaseRecommender):
         reference_author = None
         reference_publisher = None
         reference_year = None
+        reference_categories = []
+        reference_category_words = set()
+        reference_description_words = set()
 
         explicit_author_query = self._extract_author_name(cleaned_query)
 
@@ -140,6 +171,11 @@ class BookRecommender(BaseRecommender):
                         else None
                     )
                     reference_year = reference_book.get("year")
+                    reference_categories = self._parse_categories(reference_book.get("categories", []))
+                    reference_category_words = self._category_words(reference_categories)
+                    reference_description_words = self._text_words(
+                        reference_book.get("description", "") or ""
+                    )
 
         books = list(
             self.collection.find(
@@ -157,6 +193,7 @@ class BookRecommender(BaseRecommender):
                     "description": 1,
                     "pageCount": 1,
                     "lang": 1,
+                    "categories": 1,
                     "enriched": 1,
                 },
             )
@@ -171,6 +208,10 @@ class BookRecommender(BaseRecommender):
             author = str(book.get("author")).strip().lower() if book.get("author") else None
             publisher = str(book.get("publisher")).strip().lower() if book.get("publisher") else None
             year = book.get("year")
+            description = book.get("description", "") or ""
+            categories = self._parse_categories(book.get("categories", []))
+            category_words = self._category_words(categories)
+            description_words = self._text_words(description)
 
             avg_rating = self._safe_float(book.get("avgRating"), 0.0)
             rating_count = self._safe_int(book.get("ratingCount"), 0)
@@ -197,6 +238,13 @@ class BookRecommender(BaseRecommender):
                 score += 20
                 reasons.append("Title phrase closely matched query")
 
+            query_category_overlap = category_words.intersection(keywords)
+            if len(query_category_overlap) >= 1:
+                score += 35 * len(query_category_overlap)
+                reasons.append(
+                    f"Matched category: {', '.join(sorted(query_category_overlap))}"
+                )
+
             if explicit_author_query and author:
                 explicit_author_words = self._text_words(explicit_author_query)
                 author_words = self._text_words(author)
@@ -215,6 +263,22 @@ class BookRecommender(BaseRecommender):
                     score += 10
                     reasons.append(f"Same publisher as reference: {book.get('publisher')}")
 
+                ref_cat_overlap = category_words.intersection(reference_category_words)
+                if len(ref_cat_overlap) >= 2:
+                    score += 35
+                    reasons.append("Strong category overlap with reference")
+                elif len(ref_cat_overlap) == 1:
+                    score += 18
+                    reasons.append("Partial category overlap with reference")
+
+                desc_overlap = description_words.intersection(reference_description_words)
+                if len(desc_overlap) >= 5:
+                    score += 20
+                    reasons.append("Strong description similarity to reference")
+                elif len(desc_overlap) >= 3:
+                    score += 10
+                    reasons.append("Moderate description similarity to reference")
+
                 if (
                     reference_year is not None
                     and year is not None
@@ -230,23 +294,30 @@ class BookRecommender(BaseRecommender):
                         reasons.append("Moderately close publication year to reference")
 
             if intent == "top_results" and avg_rating >= 8.0:
-                score += 15
+                score += 10
                 reasons.append("Boosted for high rating")
 
             if avg_rating > 0:
-                rating_bonus = int(avg_rating * 6) if intent != "similar_content" else int(avg_rating * 3)
+                rating_bonus = int(avg_rating * 3) if intent != "similar_content" else int(avg_rating * 2)
                 score += rating_bonus
                 reasons.append("Included rating-based bonus")
 
             if rating_count >= 10000:
-                score += 12 if intent != "similar_content" else 6
+                score += 20 if intent != "similar_content" else 10
                 reasons.append("Very popular based on rating count")
             elif rating_count >= 1000:
-                score += 8 if intent != "similar_content" else 4
+                score += 12 if intent != "similar_content" else 6
                 reasons.append("Popular based on rating count")
             elif rating_count >= 100:
-                score += 4
+                score += 6
                 reasons.append("Known based on rating count")
+            elif rating_count < 10:
+                score -= 8
+                reasons.append("Small rating sample penalty")
+
+            if book.get("enriched"):
+                score += 5
+                reasons.append("Boosted for enriched metadata")
 
             if score > 0:
                 results.append(
@@ -263,6 +334,7 @@ class BookRecommender(BaseRecommender):
                         "description": book.get("description"),
                         "pageCount": book.get("pageCount"),
                         "lang": book.get("lang"),
+                        "categories": book.get("categories", []),
                         "enriched": book.get("enriched"),
                         "score": score,
                         "reasons": reasons,

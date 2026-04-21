@@ -26,6 +26,10 @@ const bookSchema = new mongoose.Schema(
 			type: String,
 			default: null,
 		},
+		categories: {
+			type: [String],
+			default: [],
+		},
 		enriched: {
 			type: Boolean,
 			default: false,
