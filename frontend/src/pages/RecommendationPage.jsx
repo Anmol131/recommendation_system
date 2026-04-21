@@ -2,16 +2,21 @@ import React, { useState } from 'react';
 import { analyzeQuery } from '../api/endpoints';
 import RecommendationCard from '../components/RecommendationCard';
 
+const EXAMPLE_QUERIES = [
+  'Recommend me action movies like John Wick',
+  'Best mobile strategy games',
+  'Best fantasy books',
+  'Best songs by Drake',
+];
+
 export default function RecommendationPage() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [data, setData] = useState(null);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!query.trim()) {
+  const runSearch = async (searchQuery) => {
+    if (!searchQuery.trim()) {
       setError('Please enter a query.');
       return;
     }
@@ -19,7 +24,7 @@ export default function RecommendationPage() {
     try {
       setLoading(true);
       setError('');
-      const result = await analyzeQuery(query, 5);
+      const result = await analyzeQuery(searchQuery, 5);
       setData(result);
     } catch (err) {
       setError(err?.response?.data?.message || err.message || 'Something went wrong.');
@@ -27,6 +32,16 @@ export default function RecommendationPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await runSearch(query);
+  };
+
+  const handleExampleClick = async (example) => {
+    setQuery(example);
+    await runSearch(example);
   };
 
   return (
@@ -37,13 +52,12 @@ export default function RecommendationPage() {
             AI Recommendation Search
           </h1>
           <p className="mt-3 text-base text-light-text dark:text-dark-text/90">
-            Try natural language queries like:
-            {' '}
+            Try natural language queries like{' '}
             <span className="font-semibold">Recommend me action movies like John Wick</span>
           </p>
         </header>
 
-        <form onSubmit={handleSubmit} className="mb-8 flex flex-col gap-3 sm:flex-row">
+        <form onSubmit={handleSubmit} className="mb-4 flex flex-col gap-3 sm:flex-row">
           <input
             type="text"
             value={query}
@@ -59,9 +73,30 @@ export default function RecommendationPage() {
           </button>
         </form>
 
+        <div className="mb-8 flex flex-wrap gap-2">
+          {EXAMPLE_QUERIES.map((example) => (
+            <button
+              key={example}
+              type="button"
+              onClick={() => handleExampleClick(example)}
+              className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+            >
+              {example}
+            </button>
+          ))}
+        </div>
+
         {error ? (
-          <div className="mb-6 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-red-700">
+          <div className="mb-6 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
             {error}
+          </div>
+        ) : null}
+
+        {loading ? (
+          <div className="mb-8 rounded-lg bg-surface-container-low px-5 py-6 shadow-sm">
+            <p className="text-sm text-slate-700 dark:text-slate-200">
+              Analyzing your query and preparing recommendations...
+            </p>
           </div>
         ) : null}
 
@@ -99,7 +134,9 @@ export default function RecommendationPage() {
                   ))}
                 </div>
               ) : (
-                <p>No results found.</p>
+                <div className="rounded-lg border border-slate-200 bg-white px-5 py-6 text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                  No results found for this query. Try one of the example prompts above.
+                </div>
               )}
             </section>
           </div>

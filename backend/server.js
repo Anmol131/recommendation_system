@@ -16,45 +16,6 @@ app.get('/', (req, res) => {
   res.json({ message: '🚀 Recommendation Platform API is running!' });
 });
 
-// Optional temporary debug route
-app.get('/debug/spotify', async (req, res) => {
-  try {
-    const axios = require('axios');
-    const clientId = process.env.SPOTIFY_CLIENT_ID;
-    const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
-
-    const tokenRes = await axios.post(
-      'https://accounts.spotify.com/api/token',
-      'grant_type=client_credentials',
-      {
-        headers: {
-          Authorization: 'Basic ' + Buffer.from(`${clientId}:${clientSecret}`).toString('base64'),
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      }
-    );
-
-    const token = tokenRes.data.access_token;
-
-    const searchRes = await axios.get('https://api.spotify.com/v1/search', {
-      headers: { Authorization: `Bearer ${token}` },
-      params: { q: 'coldplay', type: 'track', limit: 1 },
-    });
-
-    res.json({
-      tokenOk: true,
-      searchOk: true,
-      sample: searchRes.data.tracks.items[0]?.name,
-    });
-  } catch (err) {
-    res.json({
-      tokenOk: false,
-      error: err.response?.data || err.message,
-      status: err.response?.status,
-    });
-  }
-});
-
 // Routes
 app.use('/api/ai', require('./routes/aiRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
