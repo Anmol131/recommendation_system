@@ -75,11 +75,10 @@ class MovieRecommender(BaseRecommender):
             return set()
 
         cleaned = re.sub(r"[^a-z0-9\s]", " ", text.lower())
-        words = {
+        return {
             word for word in cleaned.split()
             if len(word) > 2 and word not in STOPWORDS
         }
-        return words
 
     def _extract_reference_title(self, cleaned_query: str) -> Optional[str]:
         patterns = [
@@ -197,15 +196,12 @@ class MovieRecommender(BaseRecommender):
                 if title_lower == str(reference_movie.get("title", "")).lower():
                     continue
 
-            # Query genre match
             query_genre_matches = [genre for genre in genres if genre in keywords]
             if query_genre_matches:
                 score += 15 * len(query_genre_matches)
                 reasons.append(f"Matched query genre: {', '.join(query_genre_matches)}")
 
-            # Similar-content scoring
             if intent == "similar_content" and reference_movie:
-                # Genre overlap with reference
                 overlapping_reference_genres = [
                     genre for genre in genres if genre in reference_genres
                 ]
@@ -222,7 +218,6 @@ class MovieRecommender(BaseRecommender):
                         f"Partial genre overlap with reference: {', '.join(overlapping_reference_genres)}"
                     )
 
-                # Description overlap with reference movie
                 desc_overlap = description_words.intersection(reference_desc_words)
                 desc_overlap_count = len(desc_overlap)
 
@@ -236,26 +231,28 @@ class MovieRecommender(BaseRecommender):
                     score += 8
                     reasons.append("Light description similarity to reference")
 
-                # Cast overlap with reference movie
                 cast_overlap = [person for person in cast if person in reference_cast]
                 if cast_overlap:
                     score += 20
-                    reasons.append(f"Shared cast with reference: {', '.join(cast_overlap[:2])}")
+                    reasons.append(
+                        f"Shared cast with reference: {', '.join(cast_overlap[:2])}"
+                    )
 
             else:
-                # Only use title matching strongly for non-similar searches
-                if title_lower in cleaned_query:
-                    score += 40
-                    reasons.append("Exact title phrase matched")
+                normalized_title_words = self._title_words(title)
+                query_words = set(cleaned_query.split())
+
+                if len(normalized_title_words) >= 2 and normalized_title_words.issubset(query_words):
+                    score += 25
+                    reasons.append("Title phrase closely matched query")
                 else:
-                    title_matches = self._title_words(title).intersection(keywords)
+                    title_matches = normalized_title_words.intersection(keywords)
                     if len(title_matches) >= 2:
-                        score += 20 * len(title_matches)
+                        score += 15 * len(title_matches)
                         reasons.append(
                             f"Matched multiple title words: {', '.join(sorted(title_matches))}"
                         )
 
-            # Rating bonus
             if intent == "top_results" and avg_rating >= 4.0:
                 score += 15
                 reasons.append("Boosted for high average rating")
