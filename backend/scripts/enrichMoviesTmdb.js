@@ -136,7 +136,7 @@ async function enrichMovies() {
 			}
 		)
 		.sort({ ratingCount: -1 })
-		.limit(100);
+		.limit(500);
 
 		let processed = 0;
 		let updated = 0;

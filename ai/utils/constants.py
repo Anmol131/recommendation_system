@@ -5,7 +5,8 @@ STOPWORDS = {
     "i", "me", "my", "you", "your", "we", "our", "they", "their",
     "this", "that", "these", "those",
     "please", "show", "give", "find", "recommend", "suggest", "want",
-    "some", "any", "all", "from", "as", "it", "into","like", "best", "top", "similar", "something", "related"
+    "some", "any", "all", "from", "as", "it", "into",
+    "like", "best", "top", "similar", "something", "related"
 }
 
 CONTENT_TYPE_KEYWORDS = {
