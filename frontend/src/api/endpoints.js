@@ -155,3 +155,9 @@ export const getHistory = async () => {
   const { data } = await instance.get('/user/history');
   return data;
 };
+export const analyzeQuery = async (query, topN = 5) => {
+  const { data } = await instance.get('/ai/analyze', {
+    params: { query, top_n: topN },
+  });
+  return data;
+};

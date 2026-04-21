@@ -8,7 +8,6 @@ router.use(
   createProxyMiddleware({
     target: 'http://localhost:8000',
     changeOrigin: true,
-    pathRewrite: (path) => path.replace(/^\/api\/ai/, ''),
     on: {
       proxyReq: fixRequestBody,
     },

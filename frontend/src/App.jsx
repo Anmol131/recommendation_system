@@ -14,6 +14,7 @@ import AboutPage from './pages/AboutPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import RecommendationPage from './pages/RecommendationPage';
 
 function ScrollToTopOnRouteChange() {
   const location = useLocation();
@@ -68,6 +69,8 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/verify-otp" element={<VerifyOtpPage />} />
           <Route path="/explore" element={<ExplorePage />} />
+          <Route path="/recommend" element={<RecommendationPage />} />
+          
           <Route
             path="/profile"
             element={(
