@@ -79,10 +79,14 @@ async function enrichMovies() {
 	try {
 		const posterBase = await getImageBaseUrl();
 
-		const filter = { title: /^John Wick$/i };
+		const filter = {
+			enriched: false,
+			tmdbId: { $ne: null },
+			tmdbFailed: { $ne: true },
+		};
 
 		const total = await movies.countDocuments(filter);
-		console.log(`Starting TMDb enrichment for ${total} matching movies...\n`);
+		console.log(`Starting TMDb enrichment for ${total} high-value unenriched movies...\n`);
 
 		const cursor = movies.find(
 			filter,
@@ -91,6 +95,7 @@ async function enrichMovies() {
 					_id: 1,
 					title: 1,
 					tmdbId: 1,
+					ratingCount: 1,
 					description: 1,
 					poster: 1,
 					cast: 1,
@@ -98,7 +103,9 @@ async function enrichMovies() {
 					enriched: 1,
 				},
 			}
-		).limit(1);
+		)
+		.sort({ ratingCount: -1 })
+		.limit(100);
 
 		let processed = 0;
 		let updated = 0;
@@ -128,6 +135,8 @@ async function enrichMovies() {
 					cast: pickCast(details?.credits, 5),
 					trailer: pickTrailer(details?.videos),
 					enriched: true,
+					tmdbFailed: false,
+					tmdbError: null,
 				};
 
 				await movies.updateOne({ _id: movie._id }, { $set: update });
@@ -137,6 +146,17 @@ async function enrichMovies() {
 				await sleep(150);
 			} catch (err) {
 				failed += 1;
+
+				await movies.updateOne(
+					{ _id: movie._id },
+					{
+						$set: {
+							tmdbFailed: true,
+							tmdbError: err.message,
+						},
+					}
+				);
+
 				console.log(`[${processed}] Failed: ${movie.title} -> ${err.message}`);
 				await sleep(400);
 			}
