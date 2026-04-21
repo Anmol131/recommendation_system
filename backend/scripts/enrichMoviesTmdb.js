@@ -107,13 +107,19 @@ async function enrichMovies() {
 		const posterBase = await getImageBaseUrl();
 
 		const filter = {
-	title: /^John Wick$/i,
-	tmdbId: { $ne: null },
-	tmdbFailed: { $ne: true },
-};
+			tmdbId: { $ne: null },
+			tmdbFailed: { $ne: true },
+			$or: [
+				{ director: null },
+				{ director: { $exists: false } },
+				{ keywords: { $exists: false } },
+				{ keywords: null },
+				{ keywords: { $size: 0 } },
+			],
+		};
 
 		const total = await movies.countDocuments(filter);
-		console.log(`Starting TMDb enrichment for ${total} high-value unenriched movies...\n`);
+		console.log(`Starting TMDb enrichment for ${total} movies missing director/keywords...\n`);
 
 		const cursor = movies.find(
 			filter,
@@ -124,11 +130,13 @@ async function enrichMovies() {
 					tmdbId: 1,
 					ratingCount: 1,
 					enriched: 1,
+					director: 1,
+					keywords: 1,
 				},
 			}
 		)
 		.sort({ ratingCount: -1 })
-		.limit(1);
+		.limit(100);
 
 		let processed = 0;
 		let updated = 0;
