@@ -114,6 +114,20 @@ class GameRecommender(BaseRecommender):
 
         return None
 
+    def _normalized_rating(self, rating: float, source: Optional[str]) -> float:
+        """
+        Put ratings onto a roughly common 0-5 scale.
+        - Google Play style ratings are already ~0-5
+        - Steam ratings in this dataset are ~0-100 percentages
+        """
+        if rating <= 0:
+            return 0.0
+
+        if source == "steam" and rating > 5:
+            return rating / 20.0
+
+        return rating
+
     def recommend(
         self,
         query_data: Dict,
@@ -205,9 +219,13 @@ class GameRecommender(BaseRecommender):
             )
             release_year = game.get("releaseYear")
 
-            rating = self._safe_float(game.get("rating"), 0.0)
+            raw_rating = self._safe_float(game.get("rating"), 0.0)
+            normalized_rating = self._normalized_rating(raw_rating, source)
             total_reviews = self._safe_int(game.get("totalReviews"), 0)
             recommendations = self._safe_int(game.get("recommendations"), 0)
+
+            if platform_preference and platform != platform_preference:
+                continue
 
             if intent == "similar_content" and reference_game:
                 reference_game_id = reference_game.get("gameId")
@@ -219,13 +237,16 @@ class GameRecommender(BaseRecommender):
                 if title_lower == str(reference_game.get("title", "")).lower():
                     continue
 
+                if reference_platform and platform and platform != reference_platform:
+                    continue
+
             query_genre_matches = [genre for genre in genres if genre in keywords]
             if query_genre_matches:
-                score += 15 * len(query_genre_matches)
+                score += 18 * len(query_genre_matches)
                 reasons.append(f"Matched query genre: {', '.join(query_genre_matches)}")
 
             if platform_preference and platform == platform_preference:
-                score += 20
+                score += 25
                 reasons.append(f"Matched requested platform: {platform}")
 
             if intent == "similar_content" and reference_game:
@@ -235,26 +256,26 @@ class GameRecommender(BaseRecommender):
                 overlap_count = len(overlapping_reference_genres)
 
                 if overlap_count >= 2:
-                    score += 45
+                    score += 50
                     reasons.append(
                         f"Strong genre overlap with reference: {', '.join(overlapping_reference_genres)}"
                     )
                 elif overlap_count == 1:
-                    score += 20
+                    score += 24
                     reasons.append(
                         f"Partial genre overlap with reference: {', '.join(overlapping_reference_genres)}"
                     )
 
                 if reference_platform and platform and platform == reference_platform:
-                    score += 15
+                    score += 35
                     reasons.append(f"Same platform as reference: {platform}")
 
                 if reference_source and source and source == reference_source:
-                    score += 8
+                    score += 20
                     reasons.append(f"Same source as reference: {source}")
 
                 if reference_developer and developer and developer == reference_developer:
-                    score += 15
+                    score += 20
                     reasons.append(f"Same developer as reference: {game.get('developer')}")
 
                 if (
@@ -285,14 +306,14 @@ class GameRecommender(BaseRecommender):
                             f"Matched multiple title words: {', '.join(sorted(title_matches))}"
                         )
 
-            if intent == "top_results" and rating >= 4.0:
+            if intent == "top_results" and normalized_rating >= 4.0:
                 score += 15
                 reasons.append("Boosted for high rating")
 
-            if rating > 0:
-                rating_bonus = int(rating * 4) if intent != "similar_content" else int(rating * 2)
+            if normalized_rating > 0:
+                rating_bonus = int(normalized_rating * 20) if intent != "similar_content" else int(normalized_rating * 10)
                 score += rating_bonus
-                reasons.append("Included rating-based bonus")
+                reasons.append("Included normalized rating bonus")
 
             if total_reviews >= 1_000_000:
                 score += 10 if intent != "similar_content" else 5
