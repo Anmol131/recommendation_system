@@ -8,15 +8,35 @@ from ai.recommenders.movie_recommender import MovieRecommender
 from ai.recommenders.music_recommender import MusicRecommender
 
 
-def _pick_content_type(content_types: List[str]) -> Optional[str]:
-    if not content_types:
-        return None
+def _pick_content_type(query_data: Dict) -> Optional[str]:
+    scores = query_data.get("content_type_scores", {})
 
-    for preferred in ["movie", "game", "book", "music"]:
-        if preferred in content_types:
-            return preferred
+    if scores:
+        ranked_scores = sorted(
+            [(content_type, score) for content_type, score in scores.items() if score > 0],
+            key=lambda item: item[1],
+            reverse=True,
+        )
 
-    return content_types[0]
+        if not ranked_scores:
+            return None
+
+        top_type, top_score = ranked_scores[0]
+        second_score = ranked_scores[1][1] if len(ranked_scores) > 1 else 0
+
+        if top_score < 2:
+            return None
+
+        if second_score == top_score:
+            return None
+
+        return top_type
+
+    content_types = query_data.get("content_types", [])
+    if len(content_types) == 1:
+        return content_types[0]
+
+    return None
 
 
 def _should_enforce_strict_relevance(query_data: dict) -> bool:
@@ -78,7 +98,7 @@ def run_pipeline(query: str, top_n: int = 5) -> Dict:
     query_data = preprocess_query(query)
     intent = detect_intent(query)
 
-    content_type = _pick_content_type(query_data.get("content_types", []))
+    content_type = _pick_content_type(query_data)
     results = []
 
     if content_type == "movie":
@@ -114,6 +134,7 @@ def run_pipeline(query: str, top_n: int = 5) -> Dict:
         "cleaned_query": query_data.get("cleaned_query"),
         "tokens": query_data.get("tokens", []),
         "keywords": query_data.get("keywords", []),
+        "content_type_scores": query_data.get("content_type_scores", {}),
         "content_types": query_data.get("content_types", []),
         "intent": intent,
         "age_group": query_data.get("age_group"),
