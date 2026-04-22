@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { analyzeQuery } from '../api/endpoints';
 import RecommendationCard from '../components/RecommendationCard';
 
@@ -10,14 +11,18 @@ const EXAMPLE_QUERIES = [
 ];
 
 export default function RecommendationPage() {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [data, setData] = useState(null);
+  const lastAutoQueryRef = useRef('');
 
-  const runSearch = async (searchQuery) => {
+  const runSearch = useCallback(async (searchQuery) => {
     if (!searchQuery.trim()) {
       setError('Please enter a query.');
+      setData(null);
       return;
     }
 
@@ -32,21 +37,53 @@ export default function RecommendationPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const incomingQuery = (searchParams.get('query') || '').trim();
+
+    if (!incomingQuery) return;
+    if (incomingQuery === lastAutoQueryRef.current) return;
+
+    lastAutoQueryRef.current = incomingQuery;
+    setQuery(incomingQuery);
+    runSearch(incomingQuery);
+  }, [searchParams, runSearch]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await runSearch(query);
+    const trimmed = query.trim();
+
+    if (!trimmed) {
+      setError('Please enter a query.');
+      setData(null);
+      return;
+    }
+
+    lastAutoQueryRef.current = trimmed;
+    setSearchParams({ query: trimmed });
+    await runSearch(trimmed);
+  };
+
+  const handleBrowseSearch = () => {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      navigate('/explore');
+      return;
+    }
+    navigate(`/explore?q=${encodeURIComponent(trimmed)}`);
   };
 
   const handleExampleClick = async (example) => {
     setQuery(example);
+    lastAutoQueryRef.current = example;
+    setSearchParams({ query: example });
     await runSearch(example);
   };
 
   return (
     <div className="min-h-screen bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text transition-colors duration-300">
-      <main className="mx-auto max-w-5xl px-6 py-16">
+      <main className="mx-auto max-w-6xl px-6 py-16">
         <header className="mb-10 text-center">
           <h1 className="text-4xl font-extrabold tracking-tight text-on-surface dark:text-white">
             AI Recommendation Search
@@ -57,7 +94,7 @@ export default function RecommendationPage() {
           </p>
         </header>
 
-        <form onSubmit={handleSubmit} className="mb-4 flex flex-col gap-3 sm:flex-row">
+        <form onSubmit={handleSubmit} className="mb-4 flex flex-col gap-3 lg:flex-row">
           <input
             type="text"
             value={query}
@@ -65,11 +102,20 @@ export default function RecommendationPage() {
             placeholder="Type your recommendation query..."
             className="flex-1 rounded-lg border border-surface-container-highest bg-white dark:bg-slate-900 px-4 py-3 outline-none focus:ring-2 focus:ring-primary/30"
           />
+
+          <button
+            type="button"
+            onClick={handleBrowseSearch}
+            className="rounded-lg border border-primary/30 bg-surface-container-low px-6 py-3 font-semibold text-primary transition hover:bg-surface-container-high"
+          >
+            Search
+          </button>
+
           <button
             type="submit"
             className="rounded-lg bg-primary px-6 py-3 font-semibold text-white transition hover:opacity-90"
           >
-            {loading ? 'Searching...' : 'Search'}
+            {loading ? 'Searching...' : 'AI Recommend'}
           </button>
         </form>
 

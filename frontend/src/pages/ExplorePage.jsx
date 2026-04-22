@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useRef, useState } from 'react';
-import { Search, Star } from 'lucide-react';
+import { Search, Sparkles, Star } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import * as endpoints from '../api/endpoints';
 
@@ -90,14 +90,6 @@ const parseId = (item, type) => {
   return item?.trackId ?? item?.id ?? item?._id;
 };
 
-const getDetailPath = (item) => {
-  if (item.type === 'movie') return '/explore?type=movies';
-  if (item.type === 'book') return '/explore?type=books';
-  if (item.type === 'game') return '/explore?type=games';
-  if (item.type === 'music') return '/explore?type=music';
-  return '/explore';
-};
-
 const mapMedia = (rawItems, type) => rawItems.map((item, index) => ({
   id: parseId(item, type) || `${type}-${index}`,
   type,
@@ -127,7 +119,7 @@ function ExplorePage() {
 
   const [activeCategory, setActiveCategory] = useState('all');
   const [query, setQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [appliedQuery, setAppliedQuery] = useState('');
   const [activeGenre, setActiveGenre] = useState('All');
   const [minRating, setMinRating] = useState(0);
   const [selectedYears, setSelectedYears] = useState([]);
@@ -146,23 +138,18 @@ function ExplorePage() {
     const urlType = (searchParams.get('type') || '').trim().toLowerCase();
 
     setQuery(urlQuery);
-    setDebouncedQuery(urlQuery);
+    setAppliedQuery(urlQuery);
 
     if (['all', 'movies', 'books', 'games', 'music'].includes(urlType)) {
       setActiveCategory(urlType);
+    } else if (!urlType) {
+      setActiveCategory('all');
     }
   }, [searchParams]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedQuery(query.trim());
-    }, 350);
-    return () => window.clearTimeout(timer);
-  }, [query]);
-
-  useEffect(() => {
     setPage(1);
-  }, [activeCategory, debouncedQuery]);
+  }, [activeCategory, appliedQuery]);
 
   useEffect(() => {
     const token = Date.now();
@@ -182,12 +169,12 @@ function ExplorePage() {
         let fetchedTotal = 0;
 
         if (activeCategory === 'all') {
-          if (debouncedQuery) {
+          if (appliedQuery) {
             const [moviesRes, booksRes, gamesRes, musicRes] = await Promise.allSettled([
-              SEARCH_REQUESTS.movies(debouncedQuery),
-              SEARCH_REQUESTS.books(debouncedQuery),
-              SEARCH_REQUESTS.games(debouncedQuery),
-              SEARCH_REQUESTS.music(debouncedQuery),
+              SEARCH_REQUESTS.movies(appliedQuery),
+              SEARCH_REQUESTS.books(appliedQuery),
+              SEARCH_REQUESTS.games(appliedQuery),
+              SEARCH_REQUESTS.music(appliedQuery),
             ]);
 
             if (fetchTokenRef.current !== token) return;
@@ -237,8 +224,8 @@ function ExplorePage() {
           };
           const resolvedType = typeMap[activeCategory];
 
-          if (debouncedQuery) {
-            const payload = await SEARCH_REQUESTS[activeCategory](debouncedQuery);
+          if (appliedQuery) {
+            const payload = await SEARCH_REQUESTS[activeCategory](appliedQuery);
             if (fetchTokenRef.current !== token) return;
 
             fetchedItems = mapMedia(unwrapItems(payload), resolvedType);
@@ -270,18 +257,18 @@ function ExplorePage() {
     };
 
     loadData();
-  }, [activeCategory, debouncedQuery, page]);
+  }, [activeCategory, appliedQuery, page]);
 
   useEffect(() => {
     const nextParams = new URLSearchParams();
-    if (debouncedQuery) {
-      nextParams.set('q', debouncedQuery);
+    if (appliedQuery) {
+      nextParams.set('q', appliedQuery);
     }
     if (activeCategory !== 'all') {
       nextParams.set('type', activeCategory);
     }
     setSearchParams(nextParams, { replace: true });
-  }, [activeCategory, debouncedQuery, setSearchParams]);
+  }, [activeCategory, appliedQuery, setSearchParams]);
 
   const availableGenres = useMemo(() => {
     const setOfGenres = new Set();
@@ -301,9 +288,9 @@ function ExplorePage() {
   }), [activeGenre, items, minRating, selectedYears]);
 
   const canLoadMore = useMemo(() => {
-    if (debouncedQuery) return false;
+    if (appliedQuery) return false;
     return items.length < totalItems;
-  }, [debouncedQuery, items.length, totalItems]);
+  }, [appliedQuery, items.length, totalItems]);
 
   const toggleYear = (yearLabel) => {
     setSelectedYears((current) => {
@@ -314,37 +301,83 @@ function ExplorePage() {
     });
   };
 
+  const handleBrowseSearch = (e) => {
+    e.preventDefault();
+    setAppliedQuery(query.trim());
+    setPage(1);
+  };
+
+  const handleAiRecommend = () => {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      navigate('/recommend');
+      return;
+    }
+    navigate(`/recommend?query=${encodeURIComponent(trimmed)}`);
+  };
+
   return (
     <div className="min-h-screen bg-light-bg dark:bg-dark-bg font-body text-light-text dark:text-dark-text antialiased transition-colors duration-300">
       <main className="mx-auto max-w-screen-2xl px-8 pb-24 pt-16">
         <header className="mb-16 space-y-4 text-center">
-          <h1 className="text-5xl font-extrabold tracking-tight text-on-surface dark:text-white md:text-6xl">Explore Everything</h1>
+          <h1 className="text-5xl font-extrabold tracking-tight text-on-surface dark:text-white md:text-6xl">
+            Explore Everything
+          </h1>
           <p className="mx-auto max-w-2xl text-lg font-medium text-light-text dark:text-dark-text/95 dark:text-white/70 opacity-90">
-            A curated universe of movies, literature, soundscapes, and interactive worlds. Discover your next obsession through the lens of Vibeify.
+            A curated universe of movies, literature, soundscapes, and interactive worlds.
+            Discover your next obsession through the lens of Vibefy.
           </p>
         </header>
 
-        <div className="relative mx-auto mb-12 max-w-3xl">
-          <div className="flex items-center rounded-lg border border-surface-container bg-white dark:bg-slate-900 px-6 py-4 shadow-md dark:shadow-dark-md transition-all focus-within:ring-2 focus-within:ring-primary/20">
-            <Search size={18} className="mr-3 text-on-surface/60 dark:text-white/60" />
-            <input
-              type="text"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search across all categories..."
-              className="w-full border-none bg-transparent font-medium text-on-surface dark:text-white placeholder:text-on-surface/50 dark:placeholder:text-white/50 focus:outline-none focus:ring-0"
-            />
-            {query && (
-              <button
-                type="button"
-                onClick={() => setQuery('')}
-                className="ml-2 text-on-surface/50 hover:text-on-surface dark:text-white/60 dark:hover:text-white transition-colors duration-200"
-                aria-label="Clear search"
-              >
-                âœ•
-              </button>
-            )}
-          </div>
+        <div className="mx-auto mb-4 max-w-6xl">
+          <form onSubmit={handleBrowseSearch} className="flex flex-col gap-3 lg:flex-row">
+            <div className="flex flex-1 items-center rounded-lg border border-surface-container bg-white dark:bg-slate-900 px-6 py-4 shadow-md dark:shadow-dark-md transition-all focus-within:ring-2 focus-within:ring-primary/20">
+              <Search size={18} className="mr-3 text-on-surface/60 dark:text-white/60" />
+              <input
+                type="text"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search across all categories..."
+                className="w-full border-none bg-transparent font-medium text-on-surface dark:text-white placeholder:text-on-surface/50 dark:placeholder:text-white/50 focus:outline-none focus:ring-0"
+              />
+              {query ? (
+                <button
+                  type="button"
+                  onClick={() => setQuery('')}
+                  className="ml-2 text-on-surface/50 hover:text-on-surface dark:text-white/60 dark:hover:text-white transition-colors duration-200"
+                  aria-label="Clear search"
+                >
+                  ×
+                </button>
+              ) : null}
+            </div>
+
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center rounded-lg border border-primary/30 bg-surface-container-low px-6 py-4 text-sm font-semibold text-primary transition-all duration-200 hover:bg-surface-container-high active:scale-95"
+            >
+              Search
+            </button>
+
+            <button
+              type="button"
+              onClick={handleAiRecommend}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary to-secondary px-6 py-4 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-[1.01] active:scale-95"
+            >
+              <Sparkles size={16} />
+              AI Recommend
+            </button>
+          </form>
+        </div>
+
+        <div className="mx-auto mb-12 max-w-6xl text-center">
+          <p className="text-sm text-light-text dark:text-dark-text/80">
+            Use
+            <span className="font-semibold text-primary"> Search </span>
+            for regular browsing, or
+            <span className="font-semibold text-primary"> AI Recommend </span>
+            for natural-language recommendations.
+          </p>
         </div>
 
         <div className="mb-16 flex justify-center">
@@ -425,11 +458,13 @@ function ExplorePage() {
                         onChange={() => toggleYear(year)}
                         className="sr-only"
                       />
-                      <div className={[
-                        'flex h-5 w-5 items-center justify-center rounded border-2 transition-colors',
-                        checked ? 'border-primary bg-primary/10' : 'border-outline-variant group-hover:border-primary',
-                      ].join(' ')}>
-                        {checked ? <span className="text-xs font-bold text-primary">âœ“</span> : null}
+                      <div
+                        className={[
+                          'flex h-5 w-5 items-center justify-center rounded border-2 transition-colors',
+                          checked ? 'border-primary bg-primary/10' : 'border-outline-variant group-hover:border-primary',
+                        ].join(' ')}
+                      >
+                        {checked ? <span className="text-xs font-bold text-primary">✓</span> : null}
                       </div>
                       <span className="text-sm font-medium text-light-text dark:text-dark-text/95">{year}</span>
                     </label>
@@ -458,24 +493,24 @@ function ExplorePage() {
                   key={`${item.type}-${item.id}`}
                   className="group overflow-hidden rounded-lg bg-surface-container-lowest shadow-[0_20px_40px_-10px_rgba(62,37,72,0.08)] transition-all duration-300 hover:scale-[1.02]"
                 >
-                  <button type="button" onClick={() => navigate(getDetailPath(item))} className="w-full text-left">
-                    <div className="relative aspect-[2/3]">
-                      <img src={item.image} alt={item.title} className="h-full w-full object-cover" />
-                      <div className="absolute right-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-tighter text-primary backdrop-blur">
-                        {item.typeLabel}
+                  <div className="relative aspect-[2/3]">
+                    <img src={item.image} alt={item.title} className="h-full w-full object-cover" />
+                    <div className="absolute right-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-tighter text-primary backdrop-blur">
+                      {item.typeLabel}
+                    </div>
+                  </div>
+                  <div className="space-y-2 p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <h4 className="truncate pr-2 font-bold text-on-surface dark:text-white">{item.title}</h4>
+                      <div className="flex items-center gap-1">
+                        <Star size={12} className="fill-primary text-primary" />
+                        <span className="text-xs font-bold text-on-surface dark:text-white">
+                          {item.rating?.toFixed(1) || 'N/A'}
+                        </span>
                       </div>
                     </div>
-                    <div className="space-y-2 p-5">
-                      <div className="flex items-start justify-between">
-                        <h4 className="truncate pr-2 font-bold text-on-surface">{item.title}</h4>
-                        <div className="flex items-center gap-1">
-                          <Star size={12} className="fill-primary text-primary" />
-                          <span className="text-xs font-bold text-on-surface">{item.rating?.toFixed(1) || 'N/A'}</span>
-                        </div>
-                      </div>
-                      <p className="text-xs font-medium text-light-text dark:text-dark-text/95">{item.meta}</p>
-                    </div>
-                  </button>
+                    <p className="text-xs font-medium text-light-text dark:text-dark-text/95">{item.meta}</p>
+                  </div>
                 </article>
               ))}
             </div>
@@ -498,4 +533,3 @@ function ExplorePage() {
 }
 
 export default ExplorePage;
-

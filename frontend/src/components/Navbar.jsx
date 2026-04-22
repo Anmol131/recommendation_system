@@ -74,6 +74,17 @@ const Navbar = () => {
     }
   }, [location.pathname, location.hash]);
 
+  const currentSearchParams = new URLSearchParams(location.search);
+  const transferQuery =
+    location.pathname === '/explore'
+      ? (currentSearchParams.get('q') || '').trim()
+      : location.pathname === '/recommend'
+        ? (currentSearchParams.get('query') || '').trim()
+        : '';
+
+  const exploreHref = transferQuery ? `/explore?q=${encodeURIComponent(transferQuery)}` : '/explore';
+  const recommendHref = transferQuery ? `/recommend?query=${encodeURIComponent(transferQuery)}` : '/recommend';
+
   const avatarId = user?.avatar || 'avatar-1';
   const brandLogoSrc = location.pathname === '/' && isDarkMode ? '/logo1.png' : '/logo2.png';
 
@@ -112,14 +123,14 @@ const Navbar = () => {
           </Link>
 
           <Link
-            to="/explore"
+            to={exploreHref}
             className={location.pathname === '/explore' ? activeLinkClass : inactiveLinkClass}
           >
             Explore
           </Link>
 
           <Link
-            to="/recommend"
+            to={recommendHref}
             className={location.pathname === '/recommend' ? activeLinkClass : inactiveLinkClass}
           >
             Recommend
