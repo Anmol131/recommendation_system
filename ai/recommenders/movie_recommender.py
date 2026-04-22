@@ -10,7 +10,15 @@ STOPWORDS = {
     "by", "from", "is", "are", "was", "were", "be", "been", "being",
     "this", "that", "these", "those", "it", "its", "as", "into", "than",
     "me", "you", "your", "my", "our", "their", "like", "similar", "movie",
-    "movies", "film", "films", "something", "related", "recommend"
+    "movies", "film", "films", "cinema", "something", "related", "recommend",
+    "tv", "television", "series", "show", "shows", "anime", "episode",
+    "episodes", "season", "seasons"
+}
+
+TV_QUERY_TERMS = {
+    "tv", "television", "series", "show", "shows",
+    "anime", "episode", "episodes", "season", "seasons",
+    "webseries", "web-series"
 }
 
 
@@ -80,6 +88,10 @@ class MovieRecommender(BaseRecommender):
 
         return []
 
+    def _parse_media_type(self, media_type_value) -> str:
+        value = str(media_type_value or "movie").strip().lower()
+        return "tv" if value == "tv" else "movie"
+
     def _safe_float(self, value, default: float = 0.0) -> float:
         try:
             return float(value)
@@ -121,6 +133,13 @@ class MovieRecommender(BaseRecommender):
 
         return None
 
+    def _is_tv_friendly_query(self, cleaned_query: str, keywords: Set[str]) -> bool:
+        query_words = set(cleaned_query.split())
+        return (
+            len(query_words.intersection(TV_QUERY_TERMS)) > 0
+            or len(keywords.intersection(TV_QUERY_TERMS)) > 0
+        )
+
     def _find_reference_movie(self, reference_title: str) -> Optional[Dict]:
         if not reference_title:
             return None
@@ -138,6 +157,7 @@ class MovieRecommender(BaseRecommender):
                 "cast": 1,
                 "director": 1,
                 "keywords": 1,
+                "mediaType": 1,
             },
         )
 
@@ -163,6 +183,7 @@ class MovieRecommender(BaseRecommender):
     ) -> List[Dict]:
         keywords = {str(k).lower() for k in query_data.get("keywords", [])}
         cleaned_query = query_data.get("cleaned_query", "")
+        wants_tv = self._is_tv_friendly_query(cleaned_query, keywords)
         results = []
 
         reference_movie = None
@@ -172,6 +193,7 @@ class MovieRecommender(BaseRecommender):
         reference_director = None
         reference_keywords = []
         reference_keyword_words = set()
+        reference_media_type = "movie"
 
         if intent == "similar_content":
             reference_title = self._extract_reference_title(cleaned_query)
@@ -188,6 +210,7 @@ class MovieRecommender(BaseRecommender):
                     )
                     reference_keywords = self._parse_keywords(reference_movie.get("keywords", []))
                     reference_keyword_words = self._keyword_wordset(reference_keywords)
+                    reference_media_type = self._parse_media_type(reference_movie.get("mediaType"))
 
         movies = list(
             self.collection.find(
@@ -208,6 +231,7 @@ class MovieRecommender(BaseRecommender):
                     "trailer": 1,
                     "director": 1,
                     "keywords": 1,
+                    "mediaType": 1,
                 },
             )
         )
@@ -225,6 +249,7 @@ class MovieRecommender(BaseRecommender):
             director = str(movie.get("director")).strip().lower() if movie.get("director") else None
             movie_keywords = self._parse_keywords(movie.get("keywords", []))
             movie_keyword_words = self._keyword_wordset(movie_keywords)
+            media_type = self._parse_media_type(movie.get("mediaType"))
 
             avg_rating = self._safe_float(movie.get("avgRating"), 0.0)
             rating_count = self._safe_float(movie.get("ratingCount"), 0.0)
@@ -243,6 +268,18 @@ class MovieRecommender(BaseRecommender):
             if query_genre_matches:
                 score += 15 * len(query_genre_matches)
                 reasons.append(f"Matched query genre: {', '.join(query_genre_matches)}")
+
+            if wants_tv:
+                if media_type == "tv":
+                    score += 20
+                    reasons.append("Matched TV/series intent")
+                else:
+                    score += 2
+                    reasons.append("Visual content fallback match")
+            else:
+                if media_type == "movie":
+                    score += 6
+                    reasons.append("Matched visual content type")
 
             if intent == "similar_content" and reference_movie:
                 overlapping_reference_genres = [
@@ -298,6 +335,10 @@ class MovieRecommender(BaseRecommender):
                     score += 8
                     reasons.append("Light keyword similarity to reference")
 
+                if media_type == reference_media_type:
+                    score += 10
+                    reasons.append("Same visual media type as reference")
+
             else:
                 normalized_title_words = self._title_words(title)
                 query_words = set(cleaned_query.split())
@@ -318,11 +359,7 @@ class MovieRecommender(BaseRecommender):
                 reasons.append("Boosted for high average rating")
 
             if avg_rating > 0:
-                if intent == "similar_content":
-                    rating_bonus = int(avg_rating * 2)
-                else:
-                    rating_bonus = int(avg_rating * 5)
-
+                rating_bonus = int(avg_rating * 2) if intent == "similar_content" else int(avg_rating * 5)
                 score += rating_bonus
                 reasons.append("Included rating-based bonus")
 
@@ -336,6 +373,8 @@ class MovieRecommender(BaseRecommender):
                         "movieId": movie.get("movieId"),
                         "title": title,
                         "type": "movie",
+                        "mediaType": media_type,
+                        "displayType": "TV Series" if media_type == "tv" else "Movie",
                         "year": movie.get("year"),
                         "genres": genres,
                         "avgRating": movie.get("avgRating"),

@@ -10,8 +10,13 @@ STOPWORDS = {
 }
 
 CONTENT_TYPE_KEYWORDS = {
-    "movie": {"movie", "movies", "film", "films", "cinema"},
-    "book": {"book", "books", "novel", "novels", "read", "reading"},
-    "music": {"music", "song", "songs", "album", "albums", "track", "tracks"},
-    "game": {"game", "games", "gaming", "play", "played"}
+    "movie": {
+        "movie", "movies", "film", "films", "cinema",
+        "tv", "television", "series", "show", "shows",
+        "anime", "episode", "episodes", "season", "seasons",
+        "webseries", "web-series"
+    },
+    "book": {"book", "books", "novel", "novels", "read", "reading", "author", "authors"},
+    "music": {"music", "song", "songs", "album", "albums", "track", "tracks", "singer", "singers", "artist", "artists"},
+    "game": {"game", "games", "gaming", "play", "played", "gamer", "gamers"}
 }
