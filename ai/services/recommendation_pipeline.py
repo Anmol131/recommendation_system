@@ -94,40 +94,105 @@ def _has_real_relevance(result: dict) -> bool:
     )
 
 
+def _run_movie(query_data: Dict, intent: str, top_n: int) -> List[Dict]:
+    return MovieRecommender().recommend(
+        query_data=query_data,
+        intent=intent,
+        top_n=top_n,
+    )
+
+
+def _run_game(query_data: Dict, intent: str, top_n: int) -> List[Dict]:
+    return GameRecommender().recommend(
+        query_data=query_data,
+        intent=intent,
+        top_n=top_n,
+    )
+
+
+def _run_book(query_data: Dict, intent: str, top_n: int) -> List[Dict]:
+    return BookRecommender().recommend(
+        query_data=query_data,
+        intent=intent,
+        top_n=top_n,
+    )
+
+
+def _run_music(query_data: Dict, intent: str, top_n: int) -> List[Dict]:
+    return MusicRecommender().recommend(
+        query_data=query_data,
+        intent=intent,
+        top_n=top_n,
+    )
+
+
+def _result_identity(item: Dict) -> str:
+    return str(
+        item.get("movieId")
+        or item.get("gameId")
+        or item.get("isbn")
+        or item.get("trackId")
+        or item.get("title")
+        or id(item)
+    )
+
+
+def _dedupe_and_sort(results: List[Dict], top_n: int) -> List[Dict]:
+    unique = {}
+
+    for item in results:
+        key = f'{item.get("type", "unknown")}::{_result_identity(item)}'
+        existing = unique.get(key)
+
+        if existing is None or item.get("score", 0) > existing.get("score", 0):
+            unique[key] = item
+
+    final_items = list(unique.values())
+    final_items.sort(key=lambda entry: entry.get("score", 0), reverse=True)
+    return final_items[:top_n]
+
+
+def _run_cross_domain_general_search(query_data: Dict, intent: str, top_n: int) -> List[Dict]:
+    candidate_results: List[Dict] = []
+
+    runners = [
+        _run_movie,
+        _run_book,
+        _run_game,
+        _run_music,
+    ]
+
+    for runner in runners:
+        try:
+            candidate_results.extend(runner(query_data, intent, top_n))
+        except Exception:
+            continue
+
+    return _dedupe_and_sort(candidate_results, top_n)
+
+
 def run_pipeline(query: str, top_n: int = 5) -> Dict:
     query_data = preprocess_query(query)
     intent = detect_intent(query)
 
     content_type = _pick_content_type(query_data)
-    results = []
+    results: List[Dict] = []
 
     if content_type == "movie":
-        results = MovieRecommender().recommend(
-            query_data=query_data,
-            intent=intent,
-            top_n=top_n,
-        )
+        results = _run_movie(query_data, intent, top_n)
     elif content_type == "game":
-        results = GameRecommender().recommend(
-            query_data=query_data,
-            intent=intent,
-            top_n=top_n,
-        )
+        results = _run_game(query_data, intent, top_n)
     elif content_type == "book":
-        results = BookRecommender().recommend(
-            query_data=query_data,
-            intent=intent,
-            top_n=top_n,
-        )
+        results = _run_book(query_data, intent, top_n)
     elif content_type == "music":
-        results = MusicRecommender().recommend(
-            query_data=query_data,
-            intent=intent,
-            top_n=top_n,
-        )
+        results = _run_music(query_data, intent, top_n)
+    elif intent == "general_search" and not query_data.get("ambiguous_entity_phrase", False):
+        results = _run_cross_domain_general_search(query_data, intent, top_n)
 
     if _should_enforce_strict_relevance(query_data):
         results = [item for item in results if _has_real_relevance(item)]
+
+    results = _dedupe_and_sort(results, top_n)
 
     return {
         "query": query,
@@ -136,6 +201,7 @@ def run_pipeline(query: str, top_n: int = 5) -> Dict:
         "keywords": query_data.get("keywords", []),
         "content_type_scores": query_data.get("content_type_scores", {}),
         "content_types": query_data.get("content_types", []),
+        "ambiguous_entity_phrase": query_data.get("ambiguous_entity_phrase", False),
         "intent": intent,
         "age_group": query_data.get("age_group"),
         "interest_mode": query_data.get("interest_mode"),
