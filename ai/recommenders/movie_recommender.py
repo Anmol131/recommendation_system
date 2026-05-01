@@ -10,10 +10,11 @@ class MovieRecommender:
     """
     Movie recommender used by the AI pipeline.
 
-    Main improvement in this version:
-    - Uses external understanding more strongly for similar_content queries
-    - Reduces false matches caused by literal title words like "Dark"
-    - Prefers theme/tone/genre similarity over naive keyword overlap
+    Improvements in this version:
+    - stricter theme matching
+    - less false matching from literal title words
+    - ignores external author/language/region hint tokens for movie similarity
+    - better semantic ranking for TV-series-like queries mapped into movie domain
     """
 
     GENERIC_QUERY_WORDS = {
@@ -71,7 +72,6 @@ class MovieRecommender:
         "horror": "horror",
     }
 
-    # Stronger weights for specific genre identity, lower for generic genres.
     GENRE_WEIGHTS = {
         "science fiction": 14,
         "fantasy": 13,
@@ -88,130 +88,21 @@ class MovieRecommender:
         "horror": 6,
     }
 
-    # Theme alias map used for strong semantic matching.
-    THEME_ALIASES = {
-        "political intrigue": {
-            "political intrigue",
-            "political",
-            "intrigue",
-            "betrayal",
-            "alliance",
-            "court",
-            "ruler",
-            "kingdom",
-            "throne",
-            "succession",
-            "dynasty",
-        },
-        "power struggle": {
-            "power struggle",
-            "power",
-            "struggle",
-            "control",
-            "dominance",
-            "leadership",
-            "factions",
-            "civil war",
-        },
-        "war": {
-            "war",
-            "battle",
-            "armies",
-            "army",
-            "siege",
-            "rebellion",
-            "conflict",
-        },
-        "dragons": {
-            "dragon",
-            "dragons",
-            "mythical creature",
-            "mythical creatures",
-        },
-        "medieval world": {
-            "medieval",
-            "castle",
-            "kingdom",
-            "sword",
-            "sorcery",
-            "knight",
-            "throne",
-            "fantasy world",
-            "royal",
-        },
-        "ensemble cast": {
-            "ensemble",
-            "ensemble cast",
-            "multiple protagonists",
-            "many characters",
-            "families",
-            "factions",
-        },
-        "time travel": {
-            "time travel",
-            "time loop",
-            "time machine",
-            "temporal",
-            "travel through time",
-            "wormhole",
-            "paradox",
-        },
-        "parallel timelines": {
-            "parallel timelines",
-            "parallel timeline",
-            "timeline",
-            "timelines",
-            "alternate timeline",
-            "alternate reality",
-            "loop",
-            "nonlinear",
-        },
-        "family secrets": {
-            "family secret",
-            "family secrets",
-            "secret",
-            "secrets",
-            "generations",
-            "parents",
-            "children",
-            "ancestry",
-        },
-        "missing persons": {
-            "missing persons",
-            "missing person",
-            "disappearance",
-            "vanished",
-            "kidnapping",
-            "lost child",
-            "missing",
-        },
-        "small town mystery": {
-            "small town",
-            "town mystery",
-            "local mystery",
-            "investigation",
-            "disappearance",
-            "close-knit town",
-        },
-        "mind-bending narrative": {
-            "mind bending",
-            "mind-bending",
-            "twist",
-            "paradox",
-            "complex narrative",
-            "nonlinear",
-            "layered mystery",
-        },
-        "dark atmosphere": {
-            "bleak",
-            "grim",
-            "gloomy",
-            "moody",
-            "ominous",
-            "brooding",
-            "haunting",
-            "atmospheric",
-        },
+    LOW_VALUE_DESCRIPTION_WORDS = {
+        "movie",
+        "movies",
+        "story",
+        "series",
+        "show",
+        "world",
+        "people",
+        "person",
+        "family",
+        "life",
+        "man",
+        "woman",
+        "young",
+        "old",
     }
 
     def __init__(self):
@@ -336,6 +227,29 @@ class MovieRecommender:
             and len(token) > 1
         }
 
+    def _normalized_list(self, values: List[str]) -> List[str]:
+        return [self._normalize_text(v) for v in values if v]
+
+    def _hint_block_tokens(self, understanding: Dict) -> Set[str]:
+        blocked = set()
+
+        blocked.update(self._meaningful_entity_tokens(understanding.get("resolved_entity", "")))
+
+        for key in [
+            "artist_hints",
+            "author_hints",
+            "director_hints",
+            "language_hints",
+            "region_hints",
+        ]:
+            for value in understanding.get(key, []) or []:
+                blocked.update(self._tokenize(str(value)))
+
+        return {
+            token for token in blocked
+            if token and token not in self.GENERIC_QUERY_WORDS
+        }
+
     def _rating_bonus(self, doc: Dict) -> Tuple[int, List[str]]:
         reasons = []
 
@@ -355,7 +269,6 @@ class MovieRecommender:
         if rating <= 0:
             return 0, reasons
 
-        # Handle both /5 and /10 datasets.
         rating_scale = 10.0 if rating > 5 else 5.0
         rating_norm = max(0.0, min(rating / rating_scale, 1.0))
 
@@ -374,7 +287,7 @@ class MovieRecommender:
 
         return score, reasons
 
-    def _base_movie_tokens(self, doc: Dict) -> Dict[str, Set[str]]:
+    def _base_movie_tokens(self, doc: Dict) -> Dict[str, Set[str] | str]:
         title = doc.get("title") or ""
         description = doc.get("description") or ""
         genres = doc.get("genres") or []
@@ -383,7 +296,10 @@ class MovieRecommender:
         director = doc.get("director") or ""
 
         title_tokens = set(self._tokenize(title))
-        description_tokens = set(self._tokenize(description))
+        description_tokens = {
+            token for token in self._tokenize(description)
+            if token not in self.LOW_VALUE_DESCRIPTION_WORDS
+        }
         genre_tokens = set()
         for genre in genres:
             genre_tokens.update(self._tokenize(str(genre)))
@@ -429,21 +345,13 @@ class MovieRecommender:
             "all_text": all_text,
         }
 
-    def _theme_terms(self, theme: str) -> Set[str]:
-        normalized_theme = self._normalize_text(theme)
-        aliases = self.THEME_ALIASES.get(normalized_theme, set())
-        if aliases:
-            return {self._normalize_text(alias) for alias in aliases if alias}
-        return {normalized_theme}
-
     def _semantic_query_tokens(
         self,
         query_data: Dict,
         understanding: Dict,
     ) -> Set[str]:
         raw_keywords = {self._normalize_text(str(k)) for k in query_data.get("keywords", []) if k}
-        resolved_entity = understanding.get("resolved_entity", "")
-        entity_tokens = self._meaningful_entity_tokens(resolved_entity)
+        blocked_tokens = self._hint_block_tokens(understanding)
 
         cleaned = set()
         for token in raw_keywords:
@@ -451,13 +359,179 @@ class MovieRecommender:
                 continue
             if token in self.GENERIC_QUERY_WORDS:
                 continue
-            if token in entity_tokens:
+            if token in blocked_tokens:
                 continue
             if len(token) <= 1:
                 continue
             cleaned.add(token)
 
         return cleaned
+
+    # ---------------------------------------------------------------------
+    # strict theme matching
+    # ---------------------------------------------------------------------
+    def _matches_theme(self, theme: str, movie_tokens: Dict[str, Set[str] | str]) -> bool:
+        tokens = movie_tokens["all_tokens"]
+        all_text = movie_tokens["all_text"]
+
+        theme_norm = self._normalize_text(theme)
+
+        if theme_norm == "time travel":
+            return (
+                "time travel" in all_text
+                or {"time", "travel"}.issubset(tokens)
+                or "time loop" in all_text
+                or {"paradox"}.issubset(tokens)
+            )
+
+        if theme_norm == "parallel worlds":
+            return (
+                "parallel world" in all_text
+                or "parallel worlds" in all_text
+                or "parallel universe" in all_text
+                or "alternate reality" in all_text
+                or {"parallel", "worlds"}.issubset(tokens)
+                or {"parallel", "universe"}.issubset(tokens)
+            )
+
+        if theme_norm == "parallel timelines":
+            return (
+                "parallel timeline" in all_text
+                or "parallel timelines" in all_text
+                or "alternate timeline" in all_text
+                or {"parallel", "timeline"}.issubset(tokens)
+                or {"parallel", "timelines"}.issubset(tokens)
+            )
+
+        if theme_norm == "family secrets":
+            return (
+                "family secret" in all_text
+                or "family secrets" in all_text
+                or {"family", "secret"}.issubset(tokens)
+                or {"family", "secrets"}.issubset(tokens)
+            )
+
+        if theme_norm == "family conflict":
+            return (
+                "family conflict" in all_text
+                or {"family", "conflict"}.issubset(tokens)
+                or {"dynasty", "family"}.issubset(tokens)
+            )
+
+        if theme_norm == "missing persons":
+            return (
+                "missing person" in all_text
+                or "missing persons" in all_text
+                or {"missing", "person"}.issubset(tokens)
+                or {"missing", "persons"}.issubset(tokens)
+                or {"disappearance"}.issubset(tokens)
+            )
+
+        if theme_norm == "small town mystery":
+            return (
+                "small town" in all_text
+                or {"small", "town"}.issubset(tokens)
+                or {"town", "mystery"}.issubset(tokens)
+            )
+
+        if theme_norm == "mind-bending":
+            return (
+                "mind bending" in all_text
+                or "mind-bending" in all_text
+                or {"mind", "bending"}.issubset(tokens)
+                or {"paradox"}.issubset(tokens)
+            )
+
+        if theme_norm == "mind-bending narrative":
+            return (
+                "mind bending" in all_text
+                or "mind-bending" in all_text
+                or "complex narrative" in all_text
+                or {"paradox"}.issubset(tokens)
+                or {"nonlinear"}.issubset(tokens)
+            )
+
+        if theme_norm == "nonlinear storytelling":
+            return (
+                "nonlinear storytelling" in all_text
+                or {"nonlinear"}.issubset(tokens)
+                or "nonlinear timeline" in all_text
+                or "nonlinear narrative" in all_text
+            )
+
+        if theme_norm == "atmospheric":
+            return (
+                {"atmospheric"}.issubset(tokens)
+                or {"brooding"}.issubset(tokens)
+                or {"haunting"}.issubset(tokens)
+                or {"ominous"}.issubset(tokens)
+                or {"moody"}.issubset(tokens)
+            )
+
+        if theme_norm == "dark atmosphere":
+            return (
+                "dark atmosphere" in all_text
+                or {"grim"}.issubset(tokens)
+                or {"brooding"}.issubset(tokens)
+                or {"haunting"}.issubset(tokens)
+                or {"ominous"}.issubset(tokens)
+                or {"gloomy"}.issubset(tokens)
+            )
+
+        if theme_norm == "political intrigue":
+            return (
+                "political intrigue" in all_text
+                or {"political", "intrigue"}.issubset(tokens)
+                or {"court"}.issubset(tokens)
+                or {"succession"}.issubset(tokens)
+                or {"dynasty"}.issubset(tokens)
+                or {"throne"}.issubset(tokens)
+            )
+
+        if theme_norm == "power struggle":
+            return (
+                "power struggle" in all_text
+                or {"power", "struggle"}.issubset(tokens)
+                or {"factions"}.issubset(tokens)
+                or {"succession"}.issubset(tokens)
+            )
+
+        if theme_norm == "war":
+            return (
+                {"war"}.issubset(tokens)
+                or {"battle"}.issubset(tokens)
+                or {"armies"}.issubset(tokens)
+                or {"army"}.issubset(tokens)
+                or {"siege"}.issubset(tokens)
+            )
+
+        if theme_norm == "dragons":
+            return (
+                {"dragon"}.issubset(tokens)
+                or {"dragons"}.issubset(tokens)
+                or "mythical creature" in all_text
+                or "talking dragon" in all_text
+            )
+
+        if theme_norm == "medieval world":
+            return (
+                {"medieval"}.issubset(tokens)
+                or {"kingdom"}.issubset(tokens)
+                or {"castle"}.issubset(tokens)
+                or {"knight"}.issubset(tokens)
+                or {"throne"}.issubset(tokens)
+                or "sword and sorcery" in all_text
+            )
+
+        if theme_norm == "ensemble cast":
+            return (
+                "ensemble cast" in all_text
+                or {"ensemble"}.issubset(tokens)
+                or {"families"}.issubset(tokens)
+                or {"factions"}.issubset(tokens)
+            )
+
+        return False
 
     # ---------------------------------------------------------------------
     # similar content scoring
@@ -489,92 +563,39 @@ class MovieRecommender:
         normalized_title = self._normalize_text(doc.get("title") or "")
         normalized_entity = self._normalize_text(resolved_entity)
 
-        # Exclude exact same title when the resolved entity itself is in the movie DB.
         if normalized_entity and normalized_title == normalized_entity:
             return 0, []
 
-        # --------------------------------------------------------------
-        # 1. genre similarity (stronger than before)
-        # --------------------------------------------------------------
+        # 1. genre similarity
         specific_genre_hits = 0
-        generic_genre_hits = 0
-
         for genre in sorted(target_genres):
             if genre in candidate_genres:
                 weight = self.GENRE_WEIGHTS.get(genre, 4)
                 score += weight
                 reasons.append(f"Matched target genre: {genre}")
-
                 if weight >= 6:
                     specific_genre_hits += 1
-                else:
-                    generic_genre_hits += 1
 
-        # --------------------------------------------------------------
-        # 2. theme/tone similarity
-        # --------------------------------------------------------------
+        # 2. strict theme similarity
         theme_hits = 0
         for theme in target_themes:
-            theme_terms = self._theme_terms(theme)
-            theme_matched = False
-
-            for term in theme_terms:
-                if not term:
-                    continue
-
-                # phrase match first
-                if len(term.split()) > 1 and term in movie_tokens["all_text"]:
-                    theme_matched = True
-                    break
-
-                # token match fallback
-                term_tokens = set(self._tokenize(term))
-                if term_tokens and term_tokens.issubset(movie_tokens["all_tokens"]):
-                    theme_matched = True
-                    break
-
-            if theme_matched:
+            if self._matches_theme(theme, movie_tokens):
+                score += 12
                 theme_hits += 1
-                score += 11
                 reasons.append(f"Matched theme: {theme}")
 
-        # --------------------------------------------------------------
-        # 3. semantic keyword similarity (without entity-title pollution)
-        # --------------------------------------------------------------
+        # 3. semantic keyword overlap after blocking noisy hint tokens
         semantic_hits = sorted(
             token for token in semantic_query_tokens if token in movie_tokens["all_tokens"]
         )
         if semantic_hits:
-            semantic_bonus = min(18, len(semantic_hits) * 3)
+            semantic_bonus = min(16, len(semantic_hits) * 3)
             score += semantic_bonus
             reasons.append(
                 f"Matched semantic keywords: {', '.join(semantic_hits[:4])}"
             )
 
-        # --------------------------------------------------------------
-        # 4. cast/director exact hint only if query explicitly contains them
-        # --------------------------------------------------------------
-        query_tokens_lower = {self._normalize_text(str(k)) for k in query_data.get("keywords", []) if k}
-        cast_match_names = []
-        for person in doc.get("cast") or []:
-            person_norm = self._normalize_text(person)
-            person_tokens = set(self._tokenize(person_norm))
-            if person_tokens and person_tokens.issubset(query_tokens_lower):
-                cast_match_names.append(person)
-
-        if cast_match_names:
-            score += 6
-            reasons.append(f"Matched cast/person hint: {', '.join(cast_match_names[:2])}")
-
-        director = doc.get("director") or ""
-        director_tokens = set(self._tokenize(director))
-        if director_tokens and director_tokens.issubset(query_tokens_lower):
-            score += 5
-            reasons.append(f"Matched director hint: {director}")
-
-        # --------------------------------------------------------------
-        # 5. literal title overlap penalty
-        # --------------------------------------------------------------
+        # 4. literal title overlap penalty
         title_overlap = entity_tokens & movie_tokens["title_tokens"]
         has_real_semantic_match = (
             specific_genre_hits > 0
@@ -583,10 +604,9 @@ class MovieRecommender:
         )
 
         if title_overlap and not has_real_semantic_match:
-            score -= 26
+            score -= 30
             reasons.append("Penalized literal title-word overlap without thematic match")
 
-        # Strong extra penalty for the classic Dark -> Dark Knight problem.
         if (
             resolved_entity_type in {"tv_series", "movie", "franchise"}
             and normalized_entity
@@ -598,24 +618,17 @@ class MovieRecommender:
             score -= 20
             reasons.append("Rejected title-only similarity")
 
-        # --------------------------------------------------------------
-        # 6. base rating/popularity bonus
-        # --------------------------------------------------------------
+        # 5. rating bonus
         rating_bonus, rating_reasons = self._rating_bonus(doc)
         score += rating_bonus
         reasons.extend(rating_reasons)
 
-        # --------------------------------------------------------------
-        # 7. semantic quality gate
-        # --------------------------------------------------------------
-        # For externally resolved similar-content requests, require at least one
-        # meaningful signal, not only generic overlap.
+        # 6. stronger external similarity gate
         used_external = bool(understanding.get("used_external"))
         if used_external:
             if specific_genre_hits == 0 and theme_hits == 0 and len(semantic_hits) < 2:
                 return 0, []
 
-        # Very low score => ignore
         if score < 12:
             return 0, []
 
