@@ -1,9 +1,15 @@
 import json
 from pathlib import Path
-from statistics import mean
 
-from ai.benchmarks.query_benchmark_cases import BENCHMARK_CASES
 from ai.services.recommendation_pipeline import run_pipeline
+
+try:
+    from ai.benchmarks.query_benchmark_cases import BENCHMARK_CASES
+except ImportError as exc:
+    raise ImportError(
+        "Could not import BENCHMARK_CASES from ai.benchmarks.query_benchmark_cases. "
+        "Make sure the file exists, is saved, and contains BENCHMARK_CASES = [...]."
+    ) from exc
 
 
 OUTPUT_PATH = Path("ai/benchmarks/benchmark_output.json")
@@ -66,6 +72,9 @@ def evaluate_case(case: dict) -> dict:
 
 
 def main():
+    if not BENCHMARK_CASES:
+        raise ValueError("BENCHMARK_CASES is empty.")
+
     evaluations = [evaluate_case(case) for case in BENCHMARK_CASES]
 
     total = len(evaluations)
@@ -97,7 +106,10 @@ def main():
         "cases": evaluations,
     }
 
-    OUTPUT_PATH.write_text(json.dumps(output, indent=2, ensure_ascii=False), encoding="utf-8")
+    OUTPUT_PATH.write_text(
+        json.dumps(output, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
 
     print("\n=== BENCHMARK SUMMARY ===")
     print(f"Total cases       : {summary['total_cases']}")
@@ -110,7 +122,7 @@ def main():
     print("\n=== BY DOMAIN ===")
     for domain, stats in summary["by_domain"].items():
         rate = round((stats["passed"] / stats["total"]) * 100, 2) if stats["total"] else 0
-        print(f"{domain:<8} {stats['passed']}/{stats['total']}  ({rate}%)")
+        print(f"{domain:<8} {stats['passed']}/{stats['total']} ({rate}%)")
 
     failed = [item for item in evaluations if not item["passed"]]
     if failed:
