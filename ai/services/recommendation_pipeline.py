@@ -6,6 +6,7 @@ from ai.recommenders.book_recommender import BookRecommender
 from ai.recommenders.game_recommender import GameRecommender
 from ai.recommenders.movie_recommender import MovieRecommender
 from ai.recommenders.music_recommender import MusicRecommender
+from ai.services.external_understanding_service import understand_query_externally
 
 
 def _pick_content_type(query_data: Dict) -> Optional[str]:
@@ -86,6 +87,8 @@ def _has_real_relevance(result: dict) -> bool:
         "matched requested platform",
         "matched multiple title words",
         "title phrase closely matched query",
+        "matched tv/series intent",
+        "same visual media type as reference",
     ]
 
     return any(
@@ -171,9 +174,115 @@ def _run_cross_domain_general_search(query_data: Dict, intent: str, top_n: int) 
     return _dedupe_and_sort(candidate_results, top_n)
 
 
+def _tokenize_hint_values(values: List[str]) -> List[str]:
+    words = []
+    for value in values:
+        if not value:
+            continue
+
+        normalized = (
+            str(value)
+            .replace("/", " ")
+            .replace("-", " ")
+            .replace(",", " ")
+            .replace(";", " ")
+        )
+
+        for part in normalized.split():
+            cleaned = part.strip().lower()
+            if cleaned:
+                words.append(cleaned)
+
+    return words
+
+
+def _apply_external_understanding(
+    original_query: str,
+    local_query_data: Dict,
+    local_intent: str,
+    understanding: Dict,
+) -> tuple[Dict, str]:
+    if not understanding.get("used_external"):
+        merged = dict(local_query_data)
+        merged["external_understanding"] = understanding
+        return merged, local_intent
+
+    mapped_domain = str(understanding.get("mapped_domain", "unknown")).lower()
+    resolved_entity = str(understanding.get("resolved_entity", "")).strip()
+    resolved_entity_type = str(understanding.get("resolved_entity_type", "unknown")).lower()
+
+    effective_query = original_query
+    effective_intent = str(understanding.get("intent") or local_intent)
+
+    if mapped_domain == "music" and resolved_entity_type == "artist" and resolved_entity:
+        effective_query = f"best songs by {resolved_entity}"
+        effective_intent = "top_results"
+    elif mapped_domain == "book" and resolved_entity_type == "author" and resolved_entity:
+        effective_query = f"best books by {resolved_entity}"
+        effective_intent = "top_results"
+    elif mapped_domain == "movie" and resolved_entity and resolved_entity_type in {
+        "movie", "tv_series", "franchise"
+    }:
+        effective_query = f"recommend me movies like {resolved_entity}"
+        effective_intent = "similar_content"
+    elif mapped_domain == "book" and resolved_entity and resolved_entity_type in {
+        "book", "franchise"
+    }:
+        effective_query = f"recommend me books like {resolved_entity}"
+        effective_intent = "similar_content"
+    elif mapped_domain == "game" and resolved_entity and resolved_entity_type in {
+        "game", "franchise"
+    }:
+        effective_query = f"recommend me games like {resolved_entity}"
+        effective_intent = "similar_content"
+    elif mapped_domain == "music" and resolved_entity and resolved_entity_type in {
+        "song", "album", "franchise"
+    }:
+        effective_query = f"recommend me songs like {resolved_entity}"
+        effective_intent = "similar_content"
+
+    merged_query_data = preprocess_query(effective_query)
+    merged_query_data["external_understanding"] = understanding
+
+    if mapped_domain in {"movie", "book", "game", "music"}:
+        merged_query_data["content_types"] = [mapped_domain]
+        scores = dict(merged_query_data.get("content_type_scores", {}))
+        scores[mapped_domain] = max(int(scores.get(mapped_domain, 0)), 10)
+        merged_query_data["content_type_scores"] = scores
+
+    extra_keywords = set(str(k).lower() for k in merged_query_data.get("keywords", []))
+
+    extra_keywords.update(_tokenize_hint_values(understanding.get("genres", [])))
+    extra_keywords.update(_tokenize_hint_values(understanding.get("themes", [])))
+    extra_keywords.update(_tokenize_hint_values(understanding.get("language_hints", [])))
+    extra_keywords.update(_tokenize_hint_values(understanding.get("region_hints", [])))
+    extra_keywords.update(_tokenize_hint_values(understanding.get("artist_hints", [])))
+    extra_keywords.update(_tokenize_hint_values(understanding.get("author_hints", [])))
+    extra_keywords.update(_tokenize_hint_values(understanding.get("director_hints", [])))
+
+    if mapped_domain == "movie" and resolved_entity_type == "tv_series":
+        extra_keywords.update({"tv", "series", "show"})
+    if mapped_domain == "music" and resolved_entity_type == "artist":
+        extra_keywords.update({"songs", "music", "artist"})
+    if mapped_domain == "book" and resolved_entity_type == "author":
+        extra_keywords.update({"books", "author"})
+
+    merged_query_data["keywords"] = sorted(extra_keywords)
+
+    return merged_query_data, effective_intent
+
+
 def run_pipeline(query: str, top_n: int = 5) -> Dict:
-    query_data = preprocess_query(query)
-    intent = detect_intent(query)
+    local_query_data = preprocess_query(query)
+    local_intent = detect_intent(query)
+
+    external_understanding = understand_query_externally(query)
+    query_data, intent = _apply_external_understanding(
+        original_query=query,
+        local_query_data=local_query_data,
+        local_intent=local_intent,
+        understanding=external_understanding,
+    )
 
     content_type = _pick_content_type(query_data)
     results: List[Dict] = []
@@ -186,7 +295,7 @@ def run_pipeline(query: str, top_n: int = 5) -> Dict:
         results = _run_book(query_data, intent, top_n)
     elif content_type == "music":
         results = _run_music(query_data, intent, top_n)
-    elif intent == "general_search" and not query_data.get("ambiguous_entity_phrase", False):
+    else:
         results = _run_cross_domain_general_search(query_data, intent, top_n)
 
     if _should_enforce_strict_relevance(query_data):
@@ -206,5 +315,6 @@ def run_pipeline(query: str, top_n: int = 5) -> Dict:
         "age_group": query_data.get("age_group"),
         "interest_mode": query_data.get("interest_mode"),
         "top_n": top_n,
+        "understanding": query_data.get("external_understanding", external_understanding),
         "results": results,
     }
