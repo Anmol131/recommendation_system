@@ -1,0 +1,1438 @@
+{
+  "summary": {
+    "total_cases": 28,
+    "passed_cases": 26,
+    "overall_pass_rate": 92.86,
+    "domain_match_rate": 100.0,
+    "intent_match_rate": 96.43,
+    "non_empty_rate": 92.86,
+    "by_domain": {
+      "movie": {
+        "total": 7,
+        "passed": 7
+      },
+      "book": {
+        "total": 7,
+        "passed": 7
+      },
+      "music": {
+        "total": 7,
+        "passed": 5
+      },
+      "game": {
+        "total": 7,
+        "passed": 7
+      }
+    }
+  },
+  "cases": [
+    {
+      "query": "game of thrones",
+      "expected_domain": "movie",
+      "detected_domain": "movie",
+      "domain_ok": true,
+      "expected_intent": "similar_content",
+      "detected_intent": "similar_content",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "Lord of the Rings: The Return of the King, The",
+        "Dragonheart",
+        "Eragon",
+        "Hobbit: An Unexpected Journey, The",
+        "Nausicaä of the Valley of the Wind (Kaze no tani no Naushika)"
+      ],
+      "understanding": {
+        "query": "game of thrones",
+        "intent": "similar_content",
+        "resolved_entity": "Game of Thrones",
+        "resolved_entity_type": "tv_series",
+        "mapped_domain": "movie",
+        "supported": true,
+        "genres": [
+          "fantasy",
+          "drama",
+          "adventure",
+          "action"
+        ],
+        "themes": [
+          "political intrigue",
+          "power struggle",
+          "war",
+          "dynastic conflict",
+          "dragons",
+          "medieval world",
+          "betrayal"
+        ],
+        "language_hints": [
+          "English"
+        ],
+        "region_hints": [
+          "US",
+          "UK"
+        ],
+        "artist_hints": [],
+        "author_hints": [
+          "George R. R. Martin"
+        ],
+        "director_hints": [],
+        "confidence": 0.98,
+        "explanation": "The query refers to the TV series Game of Thrones. TV series are mapped to the movie domain. With only a title provided, the most likely recommendation intent is finding similar content.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "tv shows like dark",
+      "expected_domain": "movie",
+      "detected_domain": "movie",
+      "domain_ok": true,
+      "expected_intent": "similar_content",
+      "detected_intent": "similar_content",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "Donnie Darko",
+        "Jacket, The",
+        "Source Code",
+        "Twelve Monkeys (a.k.a. 12 Monkeys)",
+        "Déjà Vu (Deja Vu)"
+      ],
+      "understanding": {
+        "query": "tv shows like dark",
+        "intent": "similar_content",
+        "resolved_entity": "Dark",
+        "resolved_entity_type": "tv_series",
+        "mapped_domain": "movie",
+        "supported": true,
+        "genres": [
+          "science fiction",
+          "thriller",
+          "mystery",
+          "drama"
+        ],
+        "themes": [
+          "time travel",
+          "parallel timelines",
+          "small town secrets",
+          "family relationships",
+          "psychological tension",
+          "complex narrative"
+        ],
+        "language_hints": [
+          "German"
+        ],
+        "region_hints": [
+          "Germany"
+        ],
+        "artist_hints": [],
+        "author_hints": [],
+        "director_hints": [],
+        "confidence": 0.98,
+        "explanation": "The user wants similar TV series to the show 'Dark'. TV series are mapped to the movie domain.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "recommend me action movies like john wick",
+      "expected_domain": "movie",
+      "detected_domain": "movie",
+      "domain_ok": true,
+      "expected_intent": "similar_content",
+      "detected_intent": "similar_content",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "Killer, The (Die xue shuang xiong)",
+        "Léon: The Professional (a.k.a. The Professional) (Léon)",
+        "Kill Bill: Vol. 1",
+        "Man on Fire",
+        "Collateral"
+      ],
+      "understanding": {
+        "query": "recommend me action movies like john wick",
+        "intent": "similar_content",
+        "resolved_entity": "John Wick",
+        "resolved_entity_type": "movie",
+        "mapped_domain": "movie",
+        "supported": true,
+        "genres": [
+          "action",
+          "thriller",
+          "crime"
+        ],
+        "themes": [
+          "assassin",
+          "revenge",
+          "gun-fu",
+          "stylized violence",
+          "underworld"
+        ],
+        "language_hints": [
+          "English"
+        ],
+        "region_hints": [
+          "US"
+        ],
+        "artist_hints": [],
+        "author_hints": [],
+        "director_hints": [
+          "Chad Stahelski"
+        ],
+        "confidence": 0.98,
+        "explanation": "The user wants similar content to the film John Wick, specifically action movies. This is a supported movie-domain similarity query.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "best sci fi movies",
+      "expected_domain": "movie",
+      "detected_domain": "movie",
+      "domain_ok": true,
+      "expected_intent": "top_results",
+      "detected_intent": "top_results",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "Fifth Element, The",
+        "Mystery Science Theater 3000: The Movie",
+        "Aliens",
+        "2001: A Space Odyssey",
+        "Star Trek"
+      ],
+      "understanding": {
+        "query": "best sci fi movies",
+        "intent": "top_results",
+        "resolved_entity": "science fiction movies",
+        "resolved_entity_type": "unknown",
+        "mapped_domain": "movie",
+        "supported": true,
+        "genres": [
+          "science fiction"
+        ],
+        "themes": [
+          "futuristic",
+          "space",
+          "technology"
+        ],
+        "language_hints": [],
+        "region_hints": [],
+        "artist_hints": [],
+        "author_hints": [],
+        "director_hints": [],
+        "confidence": 0.97,
+        "explanation": "The user is asking for top-ranked items in the movie domain, specifically science fiction movies.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "best korean thriller movies",
+      "expected_domain": "movie",
+      "detected_domain": "movie",
+      "domain_ok": true,
+      "expected_intent": "top_results",
+      "detected_intent": "top_results",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "Silence of the Lambs, The",
+        "Manhunter",
+        "Red Dragon",
+        "Manchurian Candidate, The",
+        "Marathon Man"
+      ],
+      "understanding": {
+        "query": "best korean thriller movies",
+        "intent": "top_results",
+        "resolved_entity": "Korean thriller movies",
+        "resolved_entity_type": "unknown",
+        "mapped_domain": "movie",
+        "supported": true,
+        "genres": [
+          "thriller"
+        ],
+        "themes": [
+          "suspense",
+          "crime",
+          "psychological tension"
+        ],
+        "language_hints": [
+          "Korean"
+        ],
+        "region_hints": [
+          "South Korea"
+        ],
+        "artist_hints": [],
+        "author_hints": [],
+        "director_hints": [],
+        "confidence": 0.96,
+        "explanation": "The user is asking for top/best items in the movie domain, specifically thriller films from South Korea.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "movies like interstellar",
+      "expected_domain": "movie",
+      "detected_domain": "movie",
+      "domain_ok": true,
+      "expected_intent": "similar_content",
+      "detected_intent": "similar_content",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "THX 1138",
+        "Her",
+        "Children of Men",
+        "Sunshine",
+        "Nausicaä of the Valley of the Wind (Kaze no tani no Naushika)"
+      ],
+      "understanding": {
+        "query": "movies like interstellar",
+        "intent": "similar_content",
+        "resolved_entity": "Interstellar",
+        "resolved_entity_type": "movie",
+        "mapped_domain": "movie",
+        "supported": true,
+        "genres": [
+          "science fiction",
+          "drama",
+          "adventure"
+        ],
+        "themes": [
+          "space exploration",
+          "time dilation",
+          "survival",
+          "humanity's future",
+          "father-daughter relationship",
+          "existential stakes"
+        ],
+        "language_hints": [
+          "English"
+        ],
+        "region_hints": [
+          "US",
+          "UK"
+        ],
+        "artist_hints": [],
+        "author_hints": [],
+        "director_hints": [
+          "Christopher Nolan"
+        ],
+        "confidence": 0.98,
+        "explanation": "The user wants similar movies to the specific film 'Interstellar', so this is a supported movie-domain similar-content query.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "best fantasy books",
+      "expected_domain": "book",
+      "detected_domain": "book",
+      "domain_ok": true,
+      "expected_intent": "top_results",
+      "detected_intent": "top_results",
+      "intent_ok": true,
+      "result_count": 3,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "The Magician's Nephew",
+        "The Hobbit",
+        "The Silver Chair"
+      ],
+      "understanding": {
+        "query": "best fantasy books",
+        "intent": "top_results",
+        "resolved_entity": "fantasy books",
+        "resolved_entity_type": "unknown",
+        "mapped_domain": "book",
+        "supported": true,
+        "genres": [
+          "fantasy"
+        ],
+        "themes": [],
+        "language_hints": [],
+        "region_hints": [],
+        "artist_hints": [],
+        "author_hints": [],
+        "director_hints": [],
+        "confidence": 0.98,
+        "explanation": "The user is asking for top or best items in the fantasy book category, so this is a top-results query in the book domain.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "recommend me books like lord of the rings",
+      "expected_domain": "book",
+      "detected_domain": "book",
+      "domain_ok": true,
+      "expected_intent": "similar_content",
+      "detected_intent": "similar_content",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "The Fellowship of the Ring (Lord of the Rings (Paperback))",
+        "The Fellowship of the Ring (The Lord of the Rings, Part 1)",
+        "The Two Towers (The Lord of the Rings, Part 2)",
+        "The Return of the King (The Lord of The Rings, Part 3)",
+        "The Two Towers (The Lord of the Rings, Part 2)"
+      ],
+      "understanding": {
+        "query": "recommend me books like lord of the rings",
+        "intent": "similar_content",
+        "resolved_entity": "The Lord of the Rings",
+        "resolved_entity_type": "book",
+        "mapped_domain": "book",
+        "supported": true,
+        "genres": [
+          "fantasy",
+          "epic fantasy",
+          "high fantasy",
+          "adventure"
+        ],
+        "themes": [
+          "quest",
+          "friendship",
+          "good vs evil",
+          "mythic worldbuilding",
+          "heroism"
+        ],
+        "language_hints": [
+          "English"
+        ],
+        "region_hints": [
+          "UK"
+        ],
+        "artist_hints": [],
+        "author_hints": [
+          "J.R.R. Tolkien"
+        ],
+        "director_hints": [],
+        "confidence": 0.99,
+        "explanation": "The user wants similar books to a specific book/franchise, The Lord of the Rings, so this is a supported book-domain similar_content query.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "best books by agatha christie",
+      "expected_domain": "book",
+      "detected_domain": "book",
+      "domain_ok": true,
+      "expected_intent": "top_results",
+      "detected_intent": "top_results",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "Murder at the Vicarage (Agatha Christie Mysteries Collection (Library))",
+        "Murder Walks the Plank : A Death on Demand Mystery (Hart, Carolyn G)",
+        "Harry Potter and the Chamber of Secrets (Book 2)",
+        "The Fellowship of the Ring (The Lord of the Rings, Part 1)",
+        "The Hobbit : The Enchanting Prelude to The Lord of the Rings"
+      ],
+      "understanding": {
+        "query": "best books by agatha christie",
+        "intent": "top_results",
+        "resolved_entity": "Agatha Christie",
+        "resolved_entity_type": "author",
+        "mapped_domain": "book",
+        "supported": true,
+        "genres": [
+          "mystery",
+          "crime",
+          "detective fiction"
+        ],
+        "themes": [
+          "whodunit",
+          "investigation",
+          "murder mystery",
+          "classic literature"
+        ],
+        "language_hints": [
+          "English"
+        ],
+        "region_hints": [
+          "UK"
+        ],
+        "artist_hints": [],
+        "author_hints": [
+          "Agatha Christie"
+        ],
+        "director_hints": [],
+        "confidence": 0.98,
+        "explanation": "The user asks for top/best books by the author Agatha Christie. This is a supported book-domain top-results query centered on a specific author.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "books like harry potter",
+      "expected_domain": "book",
+      "detected_domain": "book",
+      "domain_ok": true,
+      "expected_intent": "similar_content",
+      "detected_intent": "similar_content",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "Harry Potter and the Prisoner of Azkaban (Book 3)",
+        "Harry Potter and the Order of the Phoenix (Book 5)",
+        "Harry Potter and the Chamber of Secrets (Book 2)",
+        "Harry Potter and the Chamber of Secrets (Book 2)",
+        "Harry Potter and the Goblet of Fire (Book 4)"
+      ],
+      "understanding": {
+        "query": "books like harry potter",
+        "intent": "similar_content",
+        "resolved_entity": "Harry Potter",
+        "resolved_entity_type": "franchise",
+        "mapped_domain": "book",
+        "supported": true,
+        "genres": [
+          "fantasy",
+          "young adult",
+          "middle grade",
+          "adventure"
+        ],
+        "themes": [
+          "magic",
+          "wizard school",
+          "friendship",
+          "coming of age",
+          "good versus evil",
+          "chosen one"
+        ],
+        "language_hints": [
+          "English"
+        ],
+        "region_hints": [
+          "UK"
+        ],
+        "artist_hints": [],
+        "author_hints": [
+          "J.K. Rowling"
+        ],
+        "director_hints": [],
+        "confidence": 0.98,
+        "explanation": "The user wants similar books to the Harry Potter franchise. This is a supported book-domain similar-content query centered on a well-known fantasy book franchise by J.K. Rowling.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "best self help books",
+      "expected_domain": "book",
+      "detected_domain": "book",
+      "domain_ok": true,
+      "expected_intent": "top_results",
+      "detected_intent": "top_results",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "As Nature Made Him: The Boy Who Was Raised As a Girl",
+        "ROAD LESS TRAVELED : A New Psychology of Love, Traditional Values, and Spritual Growth (Touchstone Books (Paperback))",
+        "SEVEN HABITS OF HIGHLY EFFECTIVE PEOPLE : Powerful Lessons in Personal Change",
+        "Women's Encyclopedia of Health &amp; Emotional Healing: Top Women Doctors Share Their Unique Self-Help Advice on Your Body, Your Feelings and Your Life",
+        "Spiritual Growth: Being Your Higher Self (Earth Life Book III)"
+      ],
+      "understanding": {
+        "query": "best self help books",
+        "intent": "top_results",
+        "resolved_entity": "self help books",
+        "resolved_entity_type": "unknown",
+        "mapped_domain": "book",
+        "supported": true,
+        "genres": [
+          "self-help",
+          "personal development",
+          "psychology"
+        ],
+        "themes": [
+          "habits",
+          "productivity",
+          "motivation",
+          "mindset",
+          "confidence",
+          "well-being"
+        ],
+        "language_hints": [],
+        "region_hints": [],
+        "artist_hints": [],
+        "author_hints": [],
+        "director_hints": [],
+        "confidence": 0.97,
+        "explanation": "The user is asking for top or best items in the book domain, specifically self-help books, so this maps to top_results for books.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "books by murakami",
+      "expected_domain": "book",
+      "detected_domain": "book",
+      "domain_ok": true,
+      "expected_intent": "top_results",
+      "detected_intent": "top_results",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "Harry Potter and the Chamber of Secrets (Book 2)",
+        "The Fellowship of the Ring (The Lord of the Rings, Part 1)",
+        "The Hobbit : The Enchanting Prelude to The Lord of the Rings",
+        "The Giving Tree",
+        "Charlotte's Web"
+      ],
+      "understanding": {
+        "query": "books by murakami",
+        "intent": "general_search",
+        "resolved_entity": "Haruki Murakami",
+        "resolved_entity_type": "author",
+        "mapped_domain": "book",
+        "supported": true,
+        "genres": [
+          "literary fiction",
+          "magical realism",
+          "contemporary fiction"
+        ],
+        "themes": [
+          "alienation",
+          "identity",
+          "surrealism",
+          "loneliness",
+          "memory"
+        ],
+        "language_hints": [
+          "Japanese",
+          "English"
+        ],
+        "region_hints": [
+          "Japan"
+        ],
+        "artist_hints": [],
+        "author_hints": [
+          "Haruki Murakami"
+        ],
+        "director_hints": [],
+        "confidence": 0.97,
+        "explanation": "The query asks for books by Murakami, which most likely refers to author Haruki Murakami. This is an author-based book search rather than a request for similar items or top results.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "purna rai",
+      "expected_domain": "music",
+      "detected_domain": "music",
+      "domain_ok": true,
+      "expected_intent": "top_results",
+      "detected_intent": "top_results",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "Khola Kharey",
+        "Kalo/Seto",
+        "Sparsha Sangeet",
+        "Manaka Kura",
+        "Dhurwa Tara - Drum Track"
+      ],
+      "understanding": {
+        "query": "purna rai",
+        "intent": "similar_content",
+        "resolved_entity": "Purna Rai",
+        "resolved_entity_type": "artist",
+        "mapped_domain": "music",
+        "supported": true,
+        "genres": [],
+        "themes": [],
+        "language_hints": [],
+        "region_hints": [
+          "Nepal"
+        ],
+        "artist_hints": [
+          "Purna Rai"
+        ],
+        "author_hints": [],
+        "director_hints": [],
+        "confidence": 0.93,
+        "explanation": "The query appears to refer to the musical artist Purna Rai. As an artist query, it maps to the music domain, and the likely intent is to find similar music or related artists.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "best songs by drake",
+      "expected_domain": "music",
+      "detected_domain": "music",
+      "domain_ok": true,
+      "expected_intent": "top_results",
+      "detected_intent": "top_results",
+      "intent_ok": true,
+      "result_count": 0,
+      "non_empty_ok": false,
+      "passed": false,
+      "preview_titles": [],
+      "understanding": {
+        "query": "best songs by drake",
+        "intent": "top_results",
+        "resolved_entity": "Drake",
+        "resolved_entity_type": "artist",
+        "mapped_domain": "music",
+        "supported": true,
+        "genres": [
+          "hip hop",
+          "rap",
+          "R&B",
+          "pop rap"
+        ],
+        "themes": [
+          "popular tracks",
+          "artist highlights",
+          "mainstream hits"
+        ],
+        "language_hints": [
+          "English"
+        ],
+        "region_hints": [
+          "Canada",
+          "North America"
+        ],
+        "artist_hints": [
+          "Drake"
+        ],
+        "author_hints": [],
+        "director_hints": [],
+        "confidence": 0.98,
+        "explanation": "The user wants top songs from the artist Drake. This is a music query focused on ranking or best-known tracks, so the intent is top_results.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "best pop songs",
+      "expected_domain": "music",
+      "detected_domain": "music",
+      "domain_ok": true,
+      "expected_intent": "top_results",
+      "detected_intent": "top_results",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "As It Was",
+        "Glimpse of Us",
+        "Calm Down (with Selena Gomez)",
+        "Blinding Lights",
+        "I Was Never There"
+      ],
+      "understanding": {
+        "query": "best pop songs",
+        "intent": "top_results",
+        "resolved_entity": "pop songs",
+        "resolved_entity_type": "unknown",
+        "mapped_domain": "music",
+        "supported": true,
+        "genres": [
+          "pop"
+        ],
+        "themes": [
+          "popular hits",
+          "mainstream",
+          "chart-topping"
+        ],
+        "language_hints": [],
+        "region_hints": [],
+        "artist_hints": [],
+        "author_hints": [],
+        "director_hints": [],
+        "confidence": 0.98,
+        "explanation": "The user is asking for top music results in the pop genre, not referencing a specific artist or song.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "recommend me songs like unholy",
+      "expected_domain": "music",
+      "detected_domain": "music",
+      "domain_ok": true,
+      "expected_intent": "similar_content",
+      "detected_intent": "similar_content",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "Too Good At Goodbyes",
+        "Fire On Fire",
+        "Promises (with Sam Smith)",
+        "VILLAIN",
+        "Left and Right (Feat. Jung Kook of BTS)"
+      ],
+      "understanding": {
+        "query": "recommend me songs like unholy",
+        "intent": "similar_content",
+        "resolved_entity": "Unholy",
+        "resolved_entity_type": "song",
+        "mapped_domain": "music",
+        "supported": true,
+        "genres": [
+          "pop",
+          "dark pop"
+        ],
+        "themes": [
+          "provocative",
+          "seductive",
+          "edgy",
+          "club"
+        ],
+        "language_hints": [
+          "english"
+        ],
+        "region_hints": [],
+        "artist_hints": [],
+        "author_hints": [],
+        "director_hints": [],
+        "confidence": 0.96,
+        "explanation": "The user wants similar music to the song 'Unholy,' so this is a music-domain similar-content request centered on a specific song.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "nepali songs",
+      "expected_domain": "music",
+      "detected_domain": "music",
+      "domain_ok": true,
+      "expected_intent": "top_results",
+      "detected_intent": "general_search",
+      "intent_ok": false,
+      "result_count": 0,
+      "non_empty_ok": false,
+      "passed": false,
+      "preview_titles": [],
+      "understanding": {
+        "query": "nepali songs",
+        "intent": "general_search",
+        "resolved_entity": "Nepali songs",
+        "resolved_entity_type": "unknown",
+        "mapped_domain": "music",
+        "supported": true,
+        "genres": [],
+        "themes": [],
+        "language_hints": [
+          "Nepali"
+        ],
+        "region_hints": [
+          "Nepal"
+        ],
+        "artist_hints": [],
+        "author_hints": [],
+        "director_hints": [],
+        "confidence": 0.97,
+        "explanation": "The user is broadly searching for music in the Nepali language/from Nepal, not a specific artist, song, or request for top or similar items.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "best hindi songs",
+      "expected_domain": "music",
+      "detected_domain": "music",
+      "domain_ok": true,
+      "expected_intent": "top_results",
+      "detected_intent": "top_results",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "As It Was",
+        "Glimpse of Us",
+        "Calm Down (with Selena Gomez)",
+        "Blinding Lights",
+        "I Was Never There"
+      ],
+      "understanding": {
+        "query": "best hindi songs",
+        "intent": "top_results",
+        "resolved_entity": "Hindi songs",
+        "resolved_entity_type": "unknown",
+        "mapped_domain": "music",
+        "supported": true,
+        "genres": [
+          "Bollywood",
+          "Indian pop",
+          "film music"
+        ],
+        "themes": [
+          "popular hits",
+          "chart-toppers",
+          "mainstream favorites"
+        ],
+        "language_hints": [
+          "Hindi"
+        ],
+        "region_hints": [
+          "India"
+        ],
+        "artist_hints": [],
+        "author_hints": [],
+        "director_hints": [],
+        "confidence": 0.97,
+        "explanation": "The user is asking for top music results in Hindi, likely popular or best-known Hindi songs. This maps to the music domain with Hindi language and India region hints.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "best mobile strategy games",
+      "expected_domain": "game",
+      "detected_domain": "game",
+      "domain_ok": true,
+      "expected_intent": "top_results",
+      "detected_intent": "top_results",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "Lords Mobile: Battle of the Empires - Strategy RPG",
+        "Castle Crush: Epic Battle - Free Strategy Games",
+        "Mobile Royale - War & Strategy",
+        "Vlogger Go Viral - Tuber Game",
+        "Stick War: Legacy"
+      ],
+      "understanding": {
+        "query": "best mobile strategy games",
+        "intent": "top_results",
+        "resolved_entity": "mobile strategy games",
+        "resolved_entity_type": "unknown",
+        "mapped_domain": "game",
+        "supported": true,
+        "genres": [
+          "strategy",
+          "mobile"
+        ],
+        "themes": [
+          "competitive",
+          "tactical",
+          "resource management"
+        ],
+        "language_hints": [],
+        "region_hints": [],
+        "artist_hints": [],
+        "author_hints": [],
+        "director_hints": [],
+        "confidence": 0.96,
+        "explanation": "The user is asking for top/best items in the game domain, specifically strategy games available on mobile platforms.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "recommend me games like clash of clans",
+      "expected_domain": "game",
+      "detected_domain": "game",
+      "domain_ok": true,
+      "expected_intent": "similar_content",
+      "detected_intent": "similar_content",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "Clash Royale",
+        "Boom Beach",
+        "Boom Beach: War Strategy Game",
+        "Vlogger Go Viral - Tuber Game",
+        "Stick War: Legacy"
+      ],
+      "understanding": {
+        "query": "recommend me games like clash of clans",
+        "intent": "similar_content",
+        "resolved_entity": "Clash of Clans",
+        "resolved_entity_type": "game",
+        "mapped_domain": "game",
+        "supported": true,
+        "genres": [
+          "strategy",
+          "mobile strategy",
+          "base-building",
+          "real-time strategy"
+        ],
+        "themes": [
+          "clan warfare",
+          "resource management",
+          "multiplayer competition",
+          "base defense",
+          "progression"
+        ],
+        "language_hints": [],
+        "region_hints": [],
+        "artist_hints": [],
+        "author_hints": [],
+        "director_hints": [],
+        "confidence": 0.99,
+        "explanation": "The user wants similar content to a specific game title, Clash of Clans, so this is a supported game-domain similar-content query.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "best pc shooting games",
+      "expected_domain": "game",
+      "detected_domain": "game",
+      "domain_ok": true,
+      "expected_intent": "top_results",
+      "detected_intent": "top_results",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "Terraria",
+        "Black Myth: Wukong",
+        "People Playground",
+        "Hades",
+        "Vampire Survivors"
+      ],
+      "understanding": {
+        "query": "best pc shooting games",
+        "intent": "top_results",
+        "resolved_entity": "PC shooting games",
+        "resolved_entity_type": "unknown",
+        "mapped_domain": "game",
+        "supported": true,
+        "genres": [
+          "shooter",
+          "action"
+        ],
+        "themes": [
+          "competitive",
+          "combat",
+          "gunplay"
+        ],
+        "language_hints": [],
+        "region_hints": [],
+        "artist_hints": [],
+        "author_hints": [],
+        "director_hints": [],
+        "confidence": 0.97,
+        "explanation": "The user is asking for top-rated shooting games on PC, which maps to the game domain and a top_results intent.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "games like gta",
+      "expected_domain": "game",
+      "detected_domain": "game",
+      "domain_ok": true,
+      "expected_intent": "similar_content",
+      "detected_intent": "similar_content",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "Hollow Knight",
+        "Tomb Raider Game of the Year",
+        "Life is Strange - Episode 1",
+        "Slime Rancher",
+        "Don't Starve Together"
+      ],
+      "understanding": {
+        "query": "games like gta",
+        "intent": "similar_content",
+        "resolved_entity": "Grand Theft Auto",
+        "resolved_entity_type": "franchise",
+        "mapped_domain": "game",
+        "supported": true,
+        "genres": [
+          "action-adventure",
+          "open-world",
+          "sandbox",
+          "crime"
+        ],
+        "themes": [
+          "urban crime",
+          "freedom of exploration",
+          "missions",
+          "vehicular gameplay"
+        ],
+        "language_hints": [],
+        "region_hints": [],
+        "artist_hints": [],
+        "author_hints": [],
+        "director_hints": [],
+        "confidence": 0.98,
+        "explanation": "The user wants similar games to the GTA franchise. 'GTA' resolves to Grand Theft Auto, a game franchise, so this maps to the game domain with a similar-content intent.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "best horror games",
+      "expected_domain": "game",
+      "detected_domain": "game",
+      "domain_ok": true,
+      "expected_intent": "top_results",
+      "detected_intent": "top_results",
+      "intent_ok": true,
+      "result_count": 3,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "DEAD TARGET: FPS Zombie Apocalypse Survival Games",
+        "Eyes - The Scary Horror Game Adventure",
+        "Zombie Shooter: Survival Games"
+      ],
+      "understanding": {
+        "query": "best horror games",
+        "intent": "top_results",
+        "resolved_entity": "horror games",
+        "resolved_entity_type": "unknown",
+        "mapped_domain": "game",
+        "supported": true,
+        "genres": [
+          "horror"
+        ],
+        "themes": [
+          "scary",
+          "survival",
+          "psychological tension"
+        ],
+        "language_hints": [],
+        "region_hints": [],
+        "artist_hints": [],
+        "author_hints": [],
+        "director_hints": [],
+        "confidence": 0.98,
+        "explanation": "The user is asking for top-rated items in the game domain, specifically horror games.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "best open world games",
+      "expected_domain": "game",
+      "detected_domain": "game",
+      "domain_ok": true,
+      "expected_intent": "top_results",
+      "detected_intent": "top_results",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "Terraria",
+        "Black Myth: Wukong",
+        "God of War",
+        "Castle Crashers®",
+        "Don't Starve Together"
+      ],
+      "understanding": {
+        "query": "best open world games",
+        "intent": "top_results",
+        "resolved_entity": "open world games",
+        "resolved_entity_type": "unknown",
+        "mapped_domain": "game",
+        "supported": true,
+        "genres": [
+          "open world",
+          "action-adventure",
+          "RPG",
+          "sandbox"
+        ],
+        "themes": [
+          "exploration",
+          "freedom",
+          "large map",
+          "player choice"
+        ],
+        "language_hints": [],
+        "region_hints": [],
+        "artist_hints": [],
+        "author_hints": [],
+        "director_hints": [],
+        "confidence": 0.97,
+        "explanation": "The user is asking for top recommendations in the game domain, specifically open world games, so this is a top_results query rather than a request about a specific title.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "dark",
+      "expected_domain": "movie",
+      "detected_domain": "movie",
+      "domain_ok": true,
+      "expected_intent": "similar_content",
+      "detected_intent": "similar_content",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "Donnie Darko",
+        "Jacket, The",
+        "Source Code",
+        "Twelve Monkeys (a.k.a. 12 Monkeys)",
+        "Déjà Vu (Deja Vu)"
+      ],
+      "understanding": {
+        "query": "dark",
+        "intent": "similar_content",
+        "resolved_entity": "Dark",
+        "resolved_entity_type": "tv_series",
+        "mapped_domain": "movie",
+        "supported": true,
+        "genres": [
+          "science fiction",
+          "thriller",
+          "mystery",
+          "drama"
+        ],
+        "themes": [
+          "time travel",
+          "parallel timelines",
+          "family secrets",
+          "small-town mystery",
+          "existential suspense"
+        ],
+        "language_hints": [
+          "German"
+        ],
+        "region_hints": [
+          "Germany"
+        ],
+        "artist_hints": [],
+        "author_hints": [],
+        "director_hints": [],
+        "confidence": 0.79,
+        "explanation": "'Dark' most likely refers to the German TV series. TV series are mapped to the movie domain. A single-title query usually indicates interest in similar content.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "harry potter",
+      "expected_domain": "book",
+      "detected_domain": "book",
+      "domain_ok": true,
+      "expected_intent": "similar_content",
+      "detected_intent": "similar_content",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "Harry Potter and the Prisoner of Azkaban (Book 3)",
+        "Harry Potter and the Order of the Phoenix (Book 5)",
+        "Harry Potter and the Chamber of Secrets (Book 2)",
+        "Harry Potter and the Chamber of Secrets (Book 2)",
+        "Harry Potter and the Goblet of Fire (Book 4)"
+      ],
+      "understanding": {
+        "query": "harry potter",
+        "intent": "similar_content",
+        "resolved_entity": "Harry Potter",
+        "resolved_entity_type": "franchise",
+        "mapped_domain": "book",
+        "supported": true,
+        "genres": [
+          "fantasy",
+          "young adult",
+          "adventure"
+        ],
+        "themes": [
+          "magic",
+          "wizardry",
+          "friendship",
+          "coming of age",
+          "good vs evil",
+          "school life"
+        ],
+        "language_hints": [
+          "English"
+        ],
+        "region_hints": [
+          "UK"
+        ],
+        "artist_hints": [],
+        "author_hints": [
+          "J.K. Rowling"
+        ],
+        "director_hints": [],
+        "confidence": 0.96,
+        "explanation": "The query refers to the Harry Potter franchise. With no explicit action requested, it most likely indicates interest in similar content. Harry Potter is strongly associated with books, though it also has film adaptations.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "justin bieber",
+      "expected_domain": "music",
+      "detected_domain": "music",
+      "domain_ok": true,
+      "expected_intent": "top_results",
+      "detected_intent": "top_results",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "Stuck with U (with Justin Bieber)",
+        "Where Are Ü Now (with Justin Bieber)",
+        "Monster (Shawn Mendes & Justin Bieber)",
+        "Ghost",
+        "Peaches (feat. Daniel Caesar & Giveon)"
+      ],
+      "understanding": {
+        "query": "justin bieber",
+        "intent": "similar_content",
+        "resolved_entity": "Justin Bieber",
+        "resolved_entity_type": "artist",
+        "mapped_domain": "music",
+        "supported": true,
+        "genres": [
+          "pop",
+          "dance-pop",
+          "teen pop",
+          "R&B"
+        ],
+        "themes": [
+          "mainstream pop",
+          "male solo vocalist",
+          "contemporary hits"
+        ],
+        "language_hints": [
+          "English"
+        ],
+        "region_hints": [
+          "Canada",
+          "North America"
+        ],
+        "artist_hints": [
+          "Justin Bieber"
+        ],
+        "author_hints": [],
+        "director_hints": [],
+        "confidence": 0.98,
+        "explanation": "The query names a music artist, so it maps to the music domain. With no other wording, it most likely implies interest in similar content related to this artist.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    },
+    {
+      "query": "elden ring",
+      "expected_domain": "game",
+      "detected_domain": "game",
+      "domain_ok": true,
+      "expected_intent": "similar_content",
+      "detected_intent": "similar_content",
+      "intent_ok": true,
+      "result_count": 5,
+      "non_empty_ok": true,
+      "passed": true,
+      "preview_titles": [
+        "ELDEN RING NIGHTREIGN",
+        "DARK SOULS™ II",
+        "Black Myth: Wukong",
+        "DARK SOULS™ II: Scholar of the First Sin",
+        "Hades"
+      ],
+      "understanding": {
+        "query": "elden ring",
+        "intent": "similar_content",
+        "resolved_entity": "Elden Ring",
+        "resolved_entity_type": "game",
+        "mapped_domain": "game",
+        "supported": true,
+        "genres": [
+          "action RPG",
+          "open world",
+          "soulslike",
+          "fantasy"
+        ],
+        "themes": [
+          "dark fantasy",
+          "challenging combat",
+          "exploration",
+          "character progression",
+          "boss battles"
+        ],
+        "language_hints": [],
+        "region_hints": [
+          "Japan"
+        ],
+        "artist_hints": [],
+        "author_hints": [],
+        "director_hints": [
+          "Hidetaka Miyazaki"
+        ],
+        "confidence": 0.99,
+        "explanation": "The query refers to a specific game title, so the most likely intent is to find similar content. Elden Ring is a supported game-domain entity.",
+        "used_external": true,
+        "provider": "openai",
+        "error": ""
+      }
+    }
+  ]
+}
