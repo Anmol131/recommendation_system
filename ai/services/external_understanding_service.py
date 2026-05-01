@@ -139,20 +139,24 @@ Supported recommendation domains are:
 - game
 - music
 
-Your job is NOT to recommend items.
+Your job is NOT to recommend final database items.
 Your job is to understand the user's query and return structured JSON only.
 
 Rules:
 1. If the query refers to a TV series, map it to "movie" domain.
-2. If the query refers to an artist or singer, map it to "music".
+2. If the query refers to an artist, singer, band, song, album, or music style, map it to "music".
 3. If the query refers to an author or writer, map it to "book".
-4. If the query refers to a specific title, franchise, item, or person and the user likely wants similar things, use "similar_content".
-5. If the user is asking for best/top items, use "top_results".
-6. If the user is asking to learn, use "learning_content".
-7. Otherwise use "general_search".
-8. Return useful genres, themes, language hints, region hints, and person hints that can help a local recommender.
-9. Be concise, practical, and structured.
-10. Output only valid JSON matching the schema.
+4. If the query refers to a game title, game franchise, platform, or gameplay style, map it to "game".
+5. If the query refers to a movie, film, TV series, actor/director context, or visual story style, map it to "movie".
+6. If the query refers to a specific title, franchise, item, song, game, movie, book, artist, or author and the user likely wants related items, use "similar_content".
+7. If the user asks for best, top, popular, recommended, or broadly asks for media items in a genre, language, country, region, mood, platform, or category, use "top_results".
+8. If the user asks to learn, study, practice, or find tutorials, use "learning_content".
+9. Only use "general_search" when the query clearly does not ask for recommendations, rankings, similar items, or learning content.
+10. For broad music queries involving any language, country, region, scene, culture, or style, fill language_hints and region_hints when possible.
+11. For broad music queries, include useful artist_hints when reasonably known. Do not hard-code one language or one country; adapt to the query.
+12. For artist queries, include artist_hints with the resolved artist and include genres/themes that can help fallback matching.
+13. Be concise, practical, and structured.
+14. Output only valid JSON matching the schema.
 """
 
     try:

@@ -12,14 +12,16 @@ STOPWORDS = {
     "this", "that", "these", "those", "it", "its", "as", "into", "than",
     "me", "you", "your", "my", "our", "their", "like", "similar",
     "song", "songs", "music", "track", "tracks", "artist", "artists",
-    "recommend", "best", "listen"
+    "recommend", "best", "listen", "top", "popular", "playlist",
 }
 
 MUSIC_GENRE_TERMS = {
-    "pop", "rock", "hip-hop", "hiphop", "rap", "dance", "edm", "electronic",
-    "indie", "latin", "jazz", "classical", "country", "metal", "punk",
-    "folk", "reggae", "blues", "rnb", "soul", "house", "techno", "trap",
-    "k-pop", "kpop", "afrobeats", "alt-rock", "alternative"
+    "pop", "rock", "hip-hop", "hiphop", "rap", "pop rap", "dance", "edm",
+    "electronic", "indie", "latin", "jazz", "classical", "country", "metal",
+    "punk", "folk", "reggae", "blues", "rnb", "r&b", "soul", "house",
+    "techno", "trap", "k-pop", "kpop", "afrobeats", "alt-rock",
+    "alternative", "dark pop", "electropop", "bollywood", "film music",
+    "indian pop", "lo-fi", "lofi", "acoustic", "ambient", "synthpop",
 }
 
 
@@ -42,37 +44,60 @@ class MusicRecommender(BaseRecommender):
     def _safe_bool(self, value, default: bool = False) -> bool:
         if isinstance(value, bool):
             return value
+
         if isinstance(value, str):
             lower = value.strip().lower()
             if lower == "true":
                 return True
             if lower == "false":
                 return False
+
         return default
 
+    def _normalize_text(self, text: str) -> str:
+        return re.sub(r"\s+", " ", str(text or "").strip().lower())
+
     def _title_words(self, text: str) -> Set[str]:
-        cleaned = re.sub(r"[^a-z0-9\s]", " ", text.lower())
+        cleaned = re.sub(r"[^a-z0-9\s]", " ", str(text or "").lower())
         return {word for word in cleaned.split() if word}
 
     def _text_words(self, text: str) -> Set[str]:
         if not text:
             return set()
 
-        cleaned = re.sub(r"[^a-z0-9\s]", " ", text.lower())
+        cleaned = re.sub(r"[^a-z0-9\s]", " ", str(text).lower())
         return {
             word for word in cleaned.split()
             if len(word) > 2 and word not in STOPWORDS
         }
 
+    def _tokenize_values(self, values: List[str]) -> Set[str]:
+        tokens: Set[str] = set()
+
+        for value in values or []:
+            cleaned = re.sub(r"[^a-z0-9\s]", " ", str(value).lower())
+            for part in cleaned.split():
+                part = part.strip()
+                if len(part) > 2 and part not in STOPWORDS:
+                    tokens.add(part)
+
+        return tokens
+
     def _normalize_genre_token(self, token: str) -> str:
-        token = token.strip().lower()
-        if token in {"hip hop", "hiphop"}:
-            return "hip-hop"
-        if token in {"r&b", "rnb"}:
-            return "rnb"
-        if token in {"k pop", "kpop"}:
-            return "k-pop"
-        return token
+        token = self._normalize_text(token)
+
+        replacements = {
+            "hip hop": "hip-hop",
+            "hiphop": "hip-hop",
+            "r b": "rnb",
+            "r&b": "rnb",
+            "k pop": "k-pop",
+            "kpop": "k-pop",
+            "lo fi": "lo-fi",
+            "lofi": "lo-fi",
+        }
+
+        return replacements.get(token, token)
 
     def _parse_genres(self, genre_value, genres_value) -> List[str]:
         collected = []
@@ -107,6 +132,7 @@ class MusicRecommender(BaseRecommender):
 
         seen = set()
         final = []
+
         for genre in collected:
             if genre and genre not in seen:
                 seen.add(genre)
@@ -119,13 +145,14 @@ class MusicRecommender(BaseRecommender):
             return []
 
         artists = [
-            part.strip().lower()
+            self._normalize_text(part)
             for part in re.split(r"[;,/&]+", str(artist_value))
             if part.strip()
         ]
 
         seen = set()
         final = []
+
         for artist in artists:
             if artist not in seen:
                 seen.add(artist)
@@ -152,7 +179,7 @@ class MusicRecommender(BaseRecommender):
         if not reference_title:
             return None
 
-        reference_words = set(reference_title.split())
+        reference_words = set(reference_title.lower().split())
 
         musics = self.collection.find(
             {},
@@ -195,12 +222,61 @@ class MusicRecommender(BaseRecommender):
 
         return None
 
-    def _extract_query_genres(self, keywords: Set[str]) -> Set[str]:
+    def _extract_query_genres(self, keywords: Set[str], understanding: Dict) -> Set[str]:
         normalized = {self._normalize_genre_token(k) for k in keywords}
-        return {k for k in normalized if k in MUSIC_GENRE_TERMS}
+        query_genres = {k for k in normalized if k in MUSIC_GENRE_TERMS}
+
+        for genre in understanding.get("genres", []) or []:
+            normalized_genre = self._normalize_genre_token(str(genre))
+            if normalized_genre:
+                query_genres.add(normalized_genre)
+
+        return query_genres
+
+    def _extract_external_artist_hint_names(self, understanding: Dict) -> Set[str]:
+        names = set()
+
+        for artist in understanding.get("artist_hints", []) or []:
+            cleaned = self._normalize_text(str(artist))
+            if cleaned:
+                names.add(cleaned)
+
+        resolved_entity = self._normalize_text(understanding.get("resolved_entity", ""))
+        resolved_type = self._normalize_text(understanding.get("resolved_entity_type", ""))
+
+        if resolved_entity and resolved_type == "artist":
+            names.add(resolved_entity)
+
+        return names
+
+    def _extract_external_hint_terms(self, understanding: Dict) -> Set[str]:
+        hint_values = []
+
+        for key in [
+            "genres",
+            "themes",
+            "language_hints",
+            "region_hints",
+            "artist_hints",
+        ]:
+            values = understanding.get(key, []) or []
+            if isinstance(values, list):
+                hint_values.extend(values)
+
+        return self._tokenize_values(hint_values)
+
+    def _phrase_in_text(self, phrase: str, text: str) -> bool:
+        phrase = self._normalize_text(phrase)
+        text = self._normalize_text(text)
+
+        if not phrase or not text:
+            return False
+
+        return phrase in text
 
     def _normalized_popularity(self, track: Dict) -> float:
         raw = self._safe_float(track.get("popularity"), 0.0)
+
         if raw <= 0:
             return 0.0
 
@@ -238,11 +314,17 @@ class MusicRecommender(BaseRecommender):
         self,
         query_data: Dict,
         intent: str = "general_search",
-        top_n: int = 5
+        top_n: int = 5,
     ) -> List[Dict]:
         keywords = {str(k).lower() for k in query_data.get("keywords", [])}
         cleaned_query = query_data.get("cleaned_query", "")
         query_words = set(cleaned_query.split())
+
+        understanding = query_data.get("external_understanding", {}) or {}
+
+        external_artist_hint_names = self._extract_external_artist_hint_names(understanding)
+        external_artist_hint_words = self._tokenize_values(list(external_artist_hint_names))
+        external_hint_terms = self._extract_external_hint_terms(understanding)
 
         results = []
 
@@ -254,12 +336,19 @@ class MusicRecommender(BaseRecommender):
 
         explicit_artist_query = self._extract_artist_name(cleaned_query)
         explicit_artist_words = self._text_words(explicit_artist_query or "")
-        query_genres = self._extract_query_genres(keywords)
+
+        query_genres = self._extract_query_genres(keywords, understanding)
+        semantic_query_terms = {
+            term for term in (keywords | external_hint_terms)
+            if term not in STOPWORDS and len(term) > 2
+        }
 
         if intent == "similar_content":
             reference_title = self._extract_reference_title(cleaned_query)
+
             if reference_title:
                 reference_track = self._find_reference_track(reference_title)
+
                 if reference_track:
                     reference_artist_names = self._parse_artists(reference_track.get("artist", ""))
                     reference_album_words = self._text_words(reference_track.get("album", "") or "")
@@ -298,30 +387,33 @@ class MusicRecommender(BaseRecommender):
             score = 0
             reasons = []
 
-            title = track.get("title", "")
-            title_lower = title.lower()
+            title = track.get("title", "") or ""
             artist = track.get("artist", "") or ""
             album = track.get("album", "") or ""
+
+            title_lower = title.lower()
 
             title_words = self._title_words(title)
             artist_words = self._text_words(artist)
             album_words = self._text_words(album)
+
             artist_names = self._parse_artists(artist)
             genres = self._parse_genres(track.get("genre"), track.get("genres"))
+            genre_words = self._tokenize_values(genres)
+
+            searchable_text = " ".join(
+                [
+                    str(title),
+                    str(artist),
+                    str(album),
+                    str(track.get("genre") or ""),
+                    " ".join(genres),
+                ]
+            )
 
             normalized_popularity = self._normalized_popularity(track)
             explicit = self._safe_bool(track.get("explicit"), False)
             duration_sec = self._safe_int(track.get("durationSec"), 0)
-
-            if explicit_artist_words:
-                artist_overlap = explicit_artist_words.intersection(artist_words)
-                if not artist_overlap:
-                    continue
-
-            genre_matches = [genre for genre in genres if genre in query_genres]
-            if query_genres and intent == "top_results":
-                if not genre_matches:
-                    continue
 
             if intent == "similar_content" and reference_track:
                 reference_track_id = reference_track.get("trackId")
@@ -334,6 +426,42 @@ class MusicRecommender(BaseRecommender):
                     continue
 
             title_matches = title_words.intersection(keywords)
+            artist_keyword_matches = artist_words.intersection(keywords)
+            album_keyword_matches = album_words.intersection(keywords)
+
+            genre_matches = [
+                genre for genre in genres
+                if self._normalize_genre_token(genre) in query_genres
+            ]
+
+            semantic_metadata_words = (
+                title_words
+                | artist_words
+                | album_words
+                | genre_words
+                | set(genres)
+            )
+
+            semantic_hint_matches = semantic_metadata_words.intersection(semantic_query_terms)
+
+            exact_artist_hint_matches = [
+                artist_hint
+                for artist_hint in external_artist_hint_names
+                if self._phrase_in_text(artist_hint, artist)
+            ]
+
+            artist_hint_word_matches = artist_words.intersection(external_artist_hint_words)
+
+            explicit_artist_overlap = (
+                explicit_artist_words.intersection(artist_words)
+                if explicit_artist_words
+                else set()
+            )
+
+            if query_genres and intent == "top_results":
+                if not genre_matches and not exact_artist_hint_matches and not semantic_hint_matches:
+                    continue
+
             if len(title_matches) >= 2:
                 score += 16 * len(title_matches)
                 reasons.append(
@@ -343,15 +471,49 @@ class MusicRecommender(BaseRecommender):
                 score += 20
                 reasons.append("Title phrase closely matched query")
 
+            if artist_keyword_matches:
+                score += 18 * len(artist_keyword_matches)
+                reasons.append(
+                    f"Matched artist keyword: {', '.join(sorted(artist_keyword_matches))}"
+                )
+
+            if album_keyword_matches:
+                score += 8 * len(album_keyword_matches)
+                reasons.append(
+                    f"Matched album keyword: {', '.join(sorted(album_keyword_matches))}"
+                )
+
             if genre_matches:
                 score += 35 * len(genre_matches)
                 reasons.append(f"Matched genre: {', '.join(genre_matches)}")
 
+            if exact_artist_hint_matches:
+                score += 55 * len(exact_artist_hint_matches)
+                reasons.append(
+                    f"Matched artist hint: {', '.join(sorted(exact_artist_hint_matches))}"
+                )
+
+            elif artist_hint_word_matches:
+                score += 20 * len(artist_hint_word_matches)
+                reasons.append(
+                    f"Matched artist hint words: {', '.join(sorted(artist_hint_word_matches))}"
+                )
+
+            if semantic_hint_matches:
+                score += 10 * len(semantic_hint_matches)
+                reasons.append(
+                    f"Matched semantic hint: {', '.join(sorted(semantic_hint_matches))}"
+                )
+
             if explicit_artist_words:
-                artist_overlap = explicit_artist_words.intersection(artist_words)
-                if artist_overlap:
+                if explicit_artist_overlap:
                     score += 50
                     reasons.append(f"Matched artist: {track.get('artist')}")
+                elif query_genres or external_hint_terms or external_artist_hint_names:
+                    score += 4
+                    reasons.append(
+                        "Related music fallback used because exact artist match was limited locally"
+                    )
 
             if intent == "similar_content" and reference_track:
                 exact_artist_overlap = set(artist_names).intersection(set(reference_artist_names))

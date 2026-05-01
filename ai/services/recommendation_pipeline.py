@@ -48,6 +48,7 @@ def _should_enforce_strict_relevance(query_data: dict) -> bool:
         "music", "song", "songs", "track", "tracks",
         "artist", "artists",
         "recommend", "best", "top", "like", "similar",
+        "listen", "playlist",
     }
 
     keywords = {str(k).lower() for k in query_data.get("keywords", [])}
@@ -81,14 +82,17 @@ def _has_real_relevance(result: dict) -> bool:
         "publisher as reference",
         "matched category",
         "matched artist",
-        "matched author",
+        "matched artist hint",
         "matched genre",
         "matched query genre",
+        "matched semantic hint",
+        "matched external hint",
         "matched requested platform",
         "matched multiple title words",
         "title phrase closely matched query",
         "matched tv/series intent",
         "same visual media type as reference",
+        "related music fallback",
     ]
 
     return any(
@@ -176,6 +180,7 @@ def _run_cross_domain_general_search(query_data: Dict, intent: str, top_n: int) 
 
 def _tokenize_hint_values(values: List[str]) -> List[str]:
     words = []
+
     for value in values:
         if not value:
             continue
@@ -186,6 +191,7 @@ def _tokenize_hint_values(values: List[str]) -> List[str]:
             .replace("-", " ")
             .replace(",", " ")
             .replace(";", " ")
+            .replace("&", " ")
         )
 
         for part in normalized.split():
@@ -211,30 +217,42 @@ def _apply_external_understanding(
     resolved_entity = str(understanding.get("resolved_entity", "")).strip()
     resolved_entity_type = str(understanding.get("resolved_entity_type", "unknown")).lower()
 
+    external_intent = str(understanding.get("intent") or "").strip() or local_intent
+
+    # Do not allow weak external "general_search" to overwrite a useful local intent.
+    if external_intent == "general_search" and local_intent != "general_search":
+        effective_intent = local_intent
+    else:
+        effective_intent = external_intent
+
     effective_query = original_query
-    effective_intent = str(understanding.get("intent") or local_intent)
 
     if mapped_domain == "music" and resolved_entity_type == "artist" and resolved_entity:
         effective_query = f"best songs by {resolved_entity}"
         effective_intent = "top_results"
+
     elif mapped_domain == "book" and resolved_entity_type == "author" and resolved_entity:
         effective_query = f"best books by {resolved_entity}"
         effective_intent = "top_results"
+
     elif mapped_domain == "movie" and resolved_entity and resolved_entity_type in {
         "movie", "tv_series", "franchise"
     }:
         effective_query = f"recommend me movies like {resolved_entity}"
         effective_intent = "similar_content"
+
     elif mapped_domain == "book" and resolved_entity and resolved_entity_type in {
         "book", "franchise"
     }:
         effective_query = f"recommend me books like {resolved_entity}"
         effective_intent = "similar_content"
+
     elif mapped_domain == "game" and resolved_entity and resolved_entity_type in {
         "game", "franchise"
     }:
         effective_query = f"recommend me games like {resolved_entity}"
         effective_intent = "similar_content"
+
     elif mapped_domain == "music" and resolved_entity and resolved_entity_type in {
         "song", "album", "franchise"
     }:
@@ -262,14 +280,71 @@ def _apply_external_understanding(
 
     if mapped_domain == "movie" and resolved_entity_type == "tv_series":
         extra_keywords.update({"tv", "series", "show"})
+
+    if mapped_domain == "music":
+        extra_keywords.update({"songs", "music"})
+
     if mapped_domain == "music" and resolved_entity_type == "artist":
-        extra_keywords.update({"songs", "music", "artist"})
+        extra_keywords.update({"artist"})
+
     if mapped_domain == "book" and resolved_entity_type == "author":
         extra_keywords.update({"books", "author"})
 
     merged_query_data["keywords"] = sorted(extra_keywords)
 
     return merged_query_data, effective_intent
+
+
+def _normalize_intent_after_understanding(
+    query: str,
+    query_data: Dict,
+    intent: str,
+) -> str:
+    if intent != "general_search":
+        return intent
+
+    content_types = {
+        str(content_type).lower()
+        for content_type in query_data.get("content_types", [])
+    }
+
+    keywords = {
+        str(keyword).lower()
+        for keyword in query_data.get("keywords", [])
+    }
+
+    tokens = {
+        str(token).lower()
+        for token in query_data.get("tokens", [])
+    }
+
+    query_words = set(query.lower().replace("-", " ").split())
+    all_terms = keywords | tokens | query_words
+
+    broad_music_terms = {
+        "song", "songs", "music", "track", "tracks", "playlist", "listen",
+        "artist", "singer", "band",
+    }
+
+    broad_media_terms = {
+        "movie", "movies", "film", "films",
+        "book", "books",
+        "game", "games",
+    }
+
+    if "music" in content_types and all_terms.intersection(broad_music_terms):
+        understanding = query_data.get("external_understanding")
+        if isinstance(understanding, dict):
+            understanding["intent"] = "top_results"
+        return "top_results"
+
+    if content_types.intersection({"movie", "book", "game"}) and all_terms.intersection(broad_media_terms):
+        understanding = query_data.get("external_understanding")
+        if isinstance(understanding, dict):
+            understanding["intent"] = "top_results"
+        return "top_results"
+
+    return intent
 
 
 def run_pipeline(query: str, top_n: int = 5) -> Dict:
@@ -283,6 +358,8 @@ def run_pipeline(query: str, top_n: int = 5) -> Dict:
         local_intent=local_intent,
         understanding=external_understanding,
     )
+
+    intent = _normalize_intent_after_understanding(query, query_data, intent)
 
     content_type = _pick_content_type(query_data)
     results: List[Dict] = []
