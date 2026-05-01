@@ -12,7 +12,8 @@ STOPWORDS = {
     "this", "that", "these", "those", "it", "its", "as", "into", "than",
     "me", "you", "your", "my", "our", "their", "like", "similar",
     "song", "songs", "music", "track", "tracks", "artist", "artists",
-    "recommend", "best", "listen", "top", "popular", "playlist",
+    "recommend", "best", "listen", "top", "popular", "playlist", "want",
+    "some",
 }
 
 MUSIC_GENRE_TERMS = {
@@ -317,6 +318,12 @@ class MusicRecommender(BaseRecommender):
         top_n: int = 5,
     ) -> List[Dict]:
         keywords = {str(k).lower() for k in query_data.get("keywords", [])}
+        meaningful_keywords = {
+            keyword
+            for keyword in keywords
+            if keyword not in STOPWORDS and len(keyword) > 2
+        }
+
         cleaned_query = query_data.get("cleaned_query", "")
         query_words = set(cleaned_query.split())
 
@@ -325,6 +332,10 @@ class MusicRecommender(BaseRecommender):
         external_artist_hint_names = self._extract_external_artist_hint_names(understanding)
         external_artist_hint_words = self._tokenize_values(list(external_artist_hint_names))
         external_hint_terms = self._extract_external_hint_terms(understanding)
+
+        has_language_or_region_hint = bool(
+            understanding.get("language_hints") or understanding.get("region_hints")
+        )
 
         results = []
 
@@ -338,8 +349,12 @@ class MusicRecommender(BaseRecommender):
         explicit_artist_words = self._text_words(explicit_artist_query or "")
 
         query_genres = self._extract_query_genres(keywords, understanding)
+
+        # Only external hints are used for semantic matching.
+        # This prevents generic query words like "listen", "song", and "music"
+        # from matching unrelated titles such as "Listen to the Music".
         semantic_query_terms = {
-            term for term in (keywords | external_hint_terms)
+            term for term in external_hint_terms
             if term not in STOPWORDS and len(term) > 2
         }
 
@@ -401,16 +416,6 @@ class MusicRecommender(BaseRecommender):
             genres = self._parse_genres(track.get("genre"), track.get("genres"))
             genre_words = self._tokenize_values(genres)
 
-            searchable_text = " ".join(
-                [
-                    str(title),
-                    str(artist),
-                    str(album),
-                    str(track.get("genre") or ""),
-                    " ".join(genres),
-                ]
-            )
-
             normalized_popularity = self._normalized_popularity(track)
             explicit = self._safe_bool(track.get("explicit"), False)
             duration_sec = self._safe_int(track.get("durationSec"), 0)
@@ -425,9 +430,9 @@ class MusicRecommender(BaseRecommender):
                 if title_lower == str(reference_track.get("title", "")).lower():
                     continue
 
-            title_matches = title_words.intersection(keywords)
-            artist_keyword_matches = artist_words.intersection(keywords)
-            album_keyword_matches = album_words.intersection(keywords)
+            title_matches = title_words.intersection(meaningful_keywords)
+            artist_keyword_matches = artist_words.intersection(meaningful_keywords)
+            album_keyword_matches = album_words.intersection(meaningful_keywords)
 
             genre_matches = [
                 genre for genre in genres
@@ -569,6 +574,28 @@ class MusicRecommender(BaseRecommender):
             if not track.get("trackId") and not genres:
                 score -= 20
                 reasons.append("Weak metadata penalty")
+
+            reason_text = " ".join(reasons).lower()
+            has_specific_match = any(
+                marker in reason_text
+                for marker in [
+                    "matched artist",
+                    "matched artist hint",
+                    "matched artist hint words",
+                    "matched artist keyword",
+                    "matched genre",
+                    "matched semantic hint",
+                    "same artist",
+                    "strong genre overlap",
+                    "partial genre overlap",
+                ]
+            )
+
+            # For language/region queries, do not return unrelated popular songs.
+            # Example: "Nepali song" should not return "Listen to the Music"
+            # only because it has the words listen/music.
+            if has_language_or_region_hint and not has_specific_match:
+                continue
 
             if score > 0:
                 results.append(
