@@ -323,7 +323,7 @@ function ExplorePage() {
           <h1 className="text-5xl font-extrabold tracking-tight text-on-surface dark:text-white md:text-6xl">
             Explore Everything
           </h1>
-          <p className="mx-auto max-w-2xl text-lg font-medium text-light-text dark:text-dark-text/95 dark:text-white/70 opacity-90">
+          <p className="mx-auto max-w-2xl text-lg font-medium text-light-text dark:text-dark-text/95 opacity-90">
             A curated universe of movies, literature, soundscapes, and interactive worlds.
             Discover your next obsession through the lens of Vibefy.
           </p>
@@ -491,7 +491,9 @@ function ExplorePage() {
               {filteredItems.map((item) => (
                 <article
                   key={`${item.type}-${item.id}`}
-                  className="group overflow-hidden rounded-lg bg-surface-container-lowest shadow-[0_20px_40px_-10px_rgba(62,37,72,0.08)] transition-all duration-300 hover:scale-[1.02]"
+                  className="group overflow-hidden rounded-lg bg-surface-container-lowest shadow-[0_20px_40px_-10px_rgba(62,37,72,0.08)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_24px_50px_-12px_rgba(62,37,72,0.14)]"
+                  onClick={() => navigate(`/details/${item.type}/${item.id}`)}
+                  style={{ cursor: 'pointer' }}
                 >
                   <div className="relative aspect-[2/3]">
                     <img src={item.image} alt={item.title} className="h-full w-full object-cover" />

@@ -1,12 +1,25 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function RecommendationCard({ item }) {
   const [imgFailed, setImgFailed] = useState(false);
+  const navigate = useNavigate();
 
   const imageSrc = item.poster || item.image || item.cover || item.albumArt || null;
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-colors dark:border-slate-700 dark:bg-slate-800">
+    <div
+      className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:shadow-md dark:border-slate-700 dark:bg-slate-800"
+      role="button"
+      tabIndex={0}
+      onClick={() => navigate(`/details/${item.type}/${item.id}`)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          navigate(`/details/${item.type}/${item.id}`);
+        }
+      }}
+    >
       <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">
         {item.title}
       </h3>

@@ -15,6 +15,7 @@ import ChangePasswordPage from './pages/ChangePasswordPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import RecommendationPage from './pages/RecommendationPage';
+import DetailsPage from './pages/DetailsPage';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminContentListPage from './pages/admin/AdminContentListPage';
@@ -125,6 +126,8 @@ function App() {
           <Route path="/explore" element={<ExplorePage />} />
           <Route path="/recommend" element={<RecommendationPage />} />
           
+  @@          <Route path="/details/:mediaType/:id" element={<DetailsPage />} />
+  @@          
           <Route
             path="/profile"
             element={(
