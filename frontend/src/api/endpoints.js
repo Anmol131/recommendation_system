@@ -120,6 +120,16 @@ export const getMusicByTrackId = async (trackId) => {
   return data;
 };
 
+export const getContentDetails = async (type, id) => {
+  const { data } = await instance.get(`/content/${type}/${id}`);
+  return data;
+};
+
+export const getSimilarContent = async (type, id) => {
+  const { data } = await instance.get(`/content/${type}/${id}/similar`);
+  return data;
+};
+
 export const getSimilarTracks = async (trackId) => {
   const { data } = await instance.get(`/music/${trackId}/similar`);
   return data;

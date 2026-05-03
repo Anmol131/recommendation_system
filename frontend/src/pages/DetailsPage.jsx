@@ -1,458 +1,359 @@
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import {
-  Star,
-  Heart,
-  Share2,
-  ArrowLeft,
-  Loader,
-  AlertCircle,
-  ExternalLink,
-  Zap,
-  TrendingUp,
-} from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
 import * as endpoints from '../api/endpoints';
 import Toast from '../components/Toast';
+import DetailHero from '../components/details/DetailHero';
+import DetailMetaCard from '../components/details/DetailMetaCard';
+import SimilarAtmosphere from '../components/details/SimilarAtmosphere';
 
-const DetailsPage = () => {
-  const { mediaType, id } = useParams();
+const TYPE_COPY = {
+  movie: { label: 'Movies', explore: '/explore?type=movies', action: 'Watch Trailer' },
+  book: { label: 'Books', explore: '/explore?type=books', action: 'Read Preview' },
+  music: { label: 'Music', explore: '/explore?type=music', action: 'Listen Preview' },
+  game: { label: 'Games', explore: '/explore?type=games', action: 'View Game' },
+};
+
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=1200';
+
+const asArray = (value) => {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (typeof value === 'string' && value.trim()) return value.split(',').map((entry) => entry.trim()).filter(Boolean);
+  if (value) return [value];
+  return [];
+};
+
+const formatValue = (value) => {
+  if (Array.isArray(value)) {
+    return value
+      .filter(Boolean)
+      .map((entry) => {
+        if (typeof entry === 'string') return entry;
+        if (typeof entry === 'number') return String(entry);
+        if (entry && typeof entry === 'object') return entry.name || entry.title || entry.label || String(entry);
+        return String(entry);
+      })
+      .join(', ');
+  }
+  if (value === 0) return '0';
+  return value || '—';
+};
+
+const formatDuration = (value) => {
+  if (value === null || value === undefined || value === '') return '—';
+  if (typeof value === 'string') return value;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return String(value);
+  if (numeric > 1000) {
+    const minutes = Math.floor(numeric / 60);
+    const seconds = numeric % 60;
+    return `${minutes}m ${seconds.toString().padStart(2, '0')}s`;
+  }
+  return `${numeric} min`;
+};
+
+const buildKeyDetails = (item, type) => {
+  const base = [
+    { label: 'Type', value: TYPE_COPY[type]?.label || type || '—' },
+    { label: 'Genre', value: item.genre || item.genres?.[0] || '—' },
+    { label: 'Year', value: item.year || item.releaseDate || '—' },
+    { label: 'Rating', value: item.rating || '—' },
+    { label: 'Language', value: item.language || '—' },
+  ];
+
+  const extrasByType = {
+    movie: [
+      { label: 'Director', value: item.director || '—' },
+      { label: 'Runtime', value: formatDuration(item.runtime) },
+      { label: 'Cast', value: formatValue(asArray(item.cast).slice(0, 3)) },
+    ],
+    book: [
+      { label: 'Author', value: item.author || '—' },
+      { label: 'Publisher', value: item.publisher || '—' },
+      { label: 'Pages', value: item.pages || '—' },
+    ],
+    music: [
+      { label: 'Artist', value: item.artist || '—' },
+      { label: 'Album', value: item.album || '—' },
+      { label: 'Duration', value: item.duration || '—' },
+    ],
+    game: [
+      { label: 'Developer', value: item.developer || '—' },
+      { label: 'Platform', value: item.platform || '—' },
+      { label: 'Release Date', value: item.releaseDate || '—' },
+    ],
+  };
+
+  return [...base, ...(extrasByType[type] || [])];
+};
+
+const getPrimaryActionLink = (item) =>
+  item.trailer || item.previewLink || item.originalData?.storeUrl || item.originalData?.website || item.originalData?.url || item.originalData?.link || null;
+
+const getTypeSpecificHint = (item, type) => {
+  if (type === 'movie') return item.director ? `Director: ${item.director}` : 'Movie details';
+  if (type === 'book') return item.author ? `Author: ${item.author}` : 'Book details';
+  if (type === 'music') return item.artist ? `Artist: ${item.artist}` : 'Track details';
+  if (type === 'game') return item.developer ? `Developer: ${item.developer}` : 'Game details';
+  return 'Content details';
+};
+
+function DetailsPage() {
+  const { type, id } = useParams();
   const navigate = useNavigate();
+  const similarSectionRef = useRef(null);
 
+  const [item, setItem] = useState(null);
+  const [similar, setSimilar] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [data, setData] = useState(null);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [similarLoading, setSimilarLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [saved, setSaved] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [toast, setToast] = useState({ message: '', type: 'info', visible: false });
 
-  useEffect(() => {
-    const fetchDetails = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const typeInfo = TYPE_COPY[type] || TYPE_COPY.movie;
 
-        let result;
-        switch (mediaType) {
-          case 'movie':
-            result = await endpoints.getMovieById(id);
-            break;
-          case 'book':
-            result = await endpoints.getBookByIsbn(id);
-            break;
-          case 'game':
-            result = await endpoints.getGameById(id);
-            break;
-          case 'music':
-            result = await endpoints.getMusicByTrackId(id);
-            break;
-          default:
-            throw new Error('Unknown media type');
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!type || !id) {
+        setError('Invalid details route');
+        setLoading(false);
+        setSimilarLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setSimilarLoading(true);
+      setError('');
+
+      try {
+        const [detailResult, similarResult] = await Promise.allSettled([
+          endpoints.getContentDetails(type, id),
+          endpoints.getSimilarContent(type, id),
+        ]);
+
+        if (detailResult.status === 'rejected') {
+          throw detailResult.reason;
         }
 
-        setData(result?.data || result);
+        const details = detailResult.value?.data || detailResult.value;
+        if (!details) {
+          throw new Error('Content not found');
+        }
+
+        setItem(details);
+        setSimilar(similarResult.status === 'fulfilled' ? similarResult.value?.data || similarResult.value || [] : []);
       } catch (err) {
-        console.error('Error fetching details:', err);
-        setError(err?.response?.data?.message || 'Failed to load details');
+        const message = err?.response?.data?.message || err?.message || 'Failed to load details';
+        setError(message);
+        setItem(null);
+        setSimilar([]);
       } finally {
         setLoading(false);
+        setSimilarLoading(false);
       }
     };
 
-    if (id && mediaType) {
-      fetchDetails();
-    }
-  }, [id, mediaType]);
+    fetchData();
+  }, [id, retryCount, type]);
 
-  const handleToggleFavorite = () => {
-    setIsFavorite(!isFavorite);
-    setToast({
-      message: isFavorite ? 'Removed from favorites' : 'Added to favorites',
-      type: 'success',
-      visible: true,
-    });
-    setTimeout(() => setToast({ ...toast, visible: false }), 3000);
-  };
+  const primaryActionLink = useMemo(() => getPrimaryActionLink(item || {}), [item]);
+  const primaryActionLabel = typeInfo.action;
 
   const handleShare = async () => {
-    const shareText = `Check out this ${mediaType}: ${data?.title || 'content'}`;
-    const shareUrl = window.location.href;
+    const url = window.location.href;
 
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: data?.title,
-          text: shareText,
-          url: shareUrl,
-        });
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          console.error('Error sharing:', err);
+        await navigator.share({ title: item?.title || 'Vibeify', text: item?.title || 'Vibeify content', url });
+        return;
+      } catch (shareError) {
+        if (shareError?.name !== 'AbortError') {
+          console.error('Share failed:', shareError);
         }
       }
-    } else {
-      // Fallback: copy to clipboard
-      try {
-        await navigator.clipboard.writeText(shareUrl);
-        setToast({
-          message: 'Link copied to clipboard',
-          type: 'success',
-          visible: true,
-        });
-        setTimeout(() => setToast({ ...toast, visible: false }), 3000);
-      } catch (err) {
-        console.error('Error copying to clipboard:', err);
-      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      setToast({ message: 'Link copied to clipboard', type: 'success', visible: true });
+      setTimeout(() => setToast((current) => ({ ...current, visible: false })), 2500);
+    } catch (clipboardError) {
+      console.error('Clipboard copy failed:', clipboardError);
     }
   };
 
+  const handlePrimaryAction = () => {
+    if (primaryActionLink) {
+      window.open(primaryActionLink, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleToggleSaved = () => {
+    setSaved((current) => !current);
+    setToast({
+      message: saved ? 'Removed from saved items' : 'Saved to watchlist',
+      type: 'success',
+      visible: true,
+    });
+    setTimeout(() => setToast((current) => ({ ...current, visible: false })), 2500);
+  };
+
+  const scrollToSimilar = () => {
+    similarSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const handleViewAll = () => {
+    navigate(typeInfo.explore);
+  };
+
+  const retry = () => setRetryCount((count) => count + 1);
+
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-light-bg dark:bg-dark-bg">
-        <div className="flex flex-col items-center gap-4">
-          <Loader size={48} className="animate-spin text-primary" />
-          <p className="text-light-text dark:text-dark-text">Loading details...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <div className="min-h-screen bg-light-bg dark:bg-dark-bg">
-        <div className="container mx-auto px-4 py-10">
-          <button
-            onClick={() => navigate(-1)}
-            className="mb-6 flex items-center gap-2 text-primary hover:underline"
-          >
-            <ArrowLeft size={20} />
-            Go Back
-          </button>
-          <div className="rounded-lg border border-error/20 bg-error/5 px-6 py-8 text-center">
-            <AlertCircle size={48} className="mx-auto mb-4 text-error" />
-            <p className="mb-4 text-light-text dark:text-dark-text">{error || 'Unable to load content'}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="rounded-lg bg-primary px-6 py-2 font-semibold text-white transition hover:bg-primary/90"
-            >
-              Retry
-            </button>
+      <div className="min-h-screen bg-[#050b16] px-4 py-8 text-slate-100 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl animate-pulse space-y-6">
+          <div className="h-6 w-56 rounded-full bg-white/10" />
+          <div className="grid gap-8 rounded-[2rem] border border-white/10 bg-white/5 p-5 lg:grid-cols-[340px_minmax(0,1fr)] lg:p-7">
+            <div className="space-y-4">
+              <div className="aspect-[2/3] rounded-[1.75rem] bg-slate-800/80" />
+              <div className="grid grid-cols-3 gap-3">
+                <div className="h-20 rounded-2xl bg-slate-800/80" />
+                <div className="h-20 rounded-2xl bg-slate-800/80" />
+                <div className="h-20 rounded-2xl bg-slate-800/80" />
+              </div>
+            </div>
+            <div className="space-y-4 py-2">
+              <div className="h-8 w-40 rounded-full bg-slate-800/80" />
+              <div className="h-14 w-3/4 rounded-2xl bg-slate-800/80" />
+              <div className="h-5 w-2/3 rounded-full bg-slate-800/80" />
+              <div className="flex gap-3 pt-4">
+                <div className="h-11 w-36 rounded-full bg-slate-800/80" />
+                <div className="h-11 w-36 rounded-full bg-slate-800/80" />
+                <div className="h-11 w-36 rounded-full bg-slate-800/80" />
+              </div>
+              <div className="grid gap-3 pt-6 sm:grid-cols-2 xl:grid-cols-5">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <div key={index} className="h-20 rounded-2xl bg-slate-800/80" />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  const mediaLabel = mediaType.charAt(0).toUpperCase() + mediaType.slice(1);
-  const posterImage =
-    data?.poster ||
-    data?.image ||
-    data?.cover ||
-    data?.albumArt ||
-    data?.thumbnail ||
-    'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=800';
-  const rating = data?.rating || data?.avgRating || data?.voteAverage || 0;
-  const year = data?.year || data?.releaseYear || data?.releaseDate || data?.publishedDate || 'N/A';
+  if (error || !item) {
+    return (
+      <div className="min-h-screen bg-[#050b16] px-4 py-8 text-slate-100 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-3xl">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-violet-400/30 hover:bg-violet-500/15"
+          >
+            Back
+          </button>
+
+          <div className="rounded-[2rem] border border-white/10 bg-white/5 p-8 text-center shadow-[0_24px_80px_-40px_rgba(96,69,190,0.8)]">
+            <AlertCircle className="mx-auto mb-4 text-rose-400" size={42} />
+            <h1 className="text-2xl font-semibold text-slate-50">Could not load details</h1>
+            <p className="mt-3 text-sm leading-7 text-slate-300">{error || 'The selected content is not available right now.'}</p>
+
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <button
+                type="button"
+                onClick={retry}
+                className="inline-flex items-center gap-2 rounded-full bg-violet-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-400"
+              >
+                <RefreshCw size={16} />
+                Retry
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:border-violet-400/30 hover:bg-violet-500/15"
+              >
+                Go Back
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const keyDetails = buildKeyDetails(item, type);
+  const overviewText = item.description || 'No description available.';
 
   return (
-    <div className="min-h-screen bg-light-bg dark:bg-dark-bg">
-      {/* Hero Section with Gradient Overlay */}
-      <div className="relative h-96 overflow-hidden md:h-[500px]">
-        <img
-          src={posterImage}
-          alt={data?.title}
-          className="absolute inset-0 h-full w-full object-cover"
+    <div className="min-h-screen bg-[#050b16] text-slate-100">
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_rgba(130,87,255,0.16),_transparent_35%),radial-gradient(circle_at_bottom_right,_rgba(75,85,255,0.12),_transparent_25%)]" />
+
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mb-5 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-400">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-100 transition hover:border-violet-400/30 hover:bg-violet-500/15"
+            aria-label="Back"
+          >
+            ←
+          </button>
+          <span>{`${typeInfo.label.toUpperCase()} / DETAILS`}</span>
+        </div>
+
+        <DetailHero
+          item={{ ...item, originalData: item.originalData || {}, imageUrl: item.imageUrl || item.poster || FALLBACK_IMAGE }}
+          type={type}
+          onBack={() => navigate(-1)}
+          saved={saved}
+          onToggleSaved={handleToggleSaved}
+          onShare={handleShare}
+          onPrimaryAction={handlePrimaryAction}
+          primaryActionLabel={primaryActionLabel}
+          primaryActionDisabled={!primaryActionLink}
+          onJumpSimilar={scrollToSimilar}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-light-bg via-transparent to-transparent dark:from-dark-bg" />
-        <div className="absolute inset-0 bg-gradient-to-r from-light-bg via-transparent dark:from-dark-bg" />
 
-        {/* Back Button */}
-        <button
-          onClick={() => navigate(-1)}
-          className="absolute left-4 top-4 z-10 rounded-full bg-black/40 p-2 text-white backdrop-blur transition hover:bg-black/60 dark:hover:bg-white/20"
-        >
-          <ArrowLeft size={24} />
-        </button>
+        <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+          <section className="rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-[0_24px_80px_-46px_rgba(96,69,190,0.8)]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-violet-300/80">Overview</p>
+            <h2 className="mt-3 text-2xl font-semibold text-slate-50">Story and summary</h2>
+            <p className="mt-4 text-sm leading-8 text-slate-300">{overviewText}</p>
+          </section>
 
-        {/* Badges */}
-        <div className="absolute right-4 top-4 z-10 flex flex-wrap gap-2">
-          {rating >= 8 && (
-            <span className="rounded-full bg-yellow-500/90 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white backdrop-blur">
-              <span className="flex items-center gap-1">
-                <Star size={12} className="fill-current" /> Top Rated
-              </span>
-            </span>
-          )}
-          {rating >= 7.5 && (
-            <span className="rounded-full bg-blue-500/90 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white backdrop-blur">
-              <span className="flex items-center gap-1">
-                <TrendingUp size={12} /> Popular
-              </span>
-            </span>
-          )}
+          <aside className="space-y-5">
+            <div className="rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-[0_24px_80px_-46px_rgba(96,69,190,0.8)]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-violet-300/80">Key Details</p>
+              <div className="mt-5 grid grid-cols-2 gap-3 xl:grid-cols-1">
+                {keyDetails.map((detail) => (
+                  <DetailMetaCard key={detail.label} label={detail.label} value={detail.value} />
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-[0_24px_80px_-46px_rgba(96,69,190,0.8)]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-violet-300/80">Quick Hint</p>
+              <p className="mt-3 text-sm leading-7 text-slate-300">
+                {getTypeSpecificHint(item, type)}
+              </p>
+            </div>
+          </aside>
+        </div>
+
+        <div ref={similarSectionRef} className="mt-8 rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-[0_24px_80px_-46px_rgba(96,69,190,0.8)]">
+          <SimilarAtmosphere items={similar} loading={similarLoading} type={type} onViewAll={handleViewAll} />
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid gap-8 md:grid-cols-3">
-          {/* Left Column - Poster Card */}
-          <div className="md:col-span-1">
-            <div className="sticky top-8">
-              <div className="overflow-hidden rounded-xl shadow-2xl">
-                <img
-                  src={posterImage}
-                  alt={data?.title}
-                  className="aspect-[2/3] w-full object-cover"
-                />
-              </div>
-
-              {/* Action Buttons */}
-              <div className="mt-6 flex flex-col gap-3">
-                <button
-                  onClick={handleToggleFavorite}
-                  className={`flex items-center justify-center gap-2 rounded-lg px-4 py-3 font-semibold transition ${
-                    isFavorite
-                      ? 'bg-primary/10 text-primary'
-                      : 'bg-surface-container-high text-light-text dark:bg-surface-container-low dark:text-dark-text hover:bg-surface-container-highest dark:hover:bg-surface-container-highest'
-                  }`}
-                >
-                  <Heart size={20} className={isFavorite ? 'fill-current' : ''} />
-                  {isFavorite ? 'Added to Favorites' : 'Add to Favorites'}
-                </button>
-
-                <button
-                  onClick={handleShare}
-                  className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 font-semibold text-white transition hover:bg-primary/90"
-                >
-                  <Share2 size={20} />
-                  Share
-                </button>
-              </div>
-
-              {/* Quick Info Box */}
-              <div className="mt-6 space-y-4 rounded-lg bg-surface-container-lowest p-4 dark:bg-surface-container-low">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-widest text-light-text/60 dark:text-dark-text/60">
-                    Type
-                  </p>
-                  <p className="mt-1 font-semibold text-light-text dark:text-dark-text">
-                    {mediaLabel}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-widest text-light-text/60 dark:text-dark-text/60">
-                    Year
-                  </p>
-                  <p className="mt-1 font-semibold text-light-text dark:text-dark-text">
-                    {year}
-                  </p>
-                </div>
-
-                {rating > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-widest text-light-text/60 dark:text-dark-text/60">
-                      Rating
-                    </p>
-                    <div className="mt-2 flex items-center gap-2">
-                      <div className="flex items-center gap-1">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            size={16}
-                            className={
-                              i < Math.round(rating / 2)
-                                ? 'fill-yellow-500 text-yellow-500'
-                                : 'text-light-text/20 dark:text-dark-text/20'
-                            }
-                          />
-                        ))}
-                      </div>
-                      <span className="font-bold text-light-text dark:text-dark-text">
-                        {rating.toFixed(1)}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column - Details */}
-          <div className="md:col-span-2 space-y-8">
-            {/* Title Section */}
-            <div>
-              <h1 className="mb-3 text-4xl font-bold text-light-text dark:text-dark-text md:text-5xl">
-                {data?.title}
-              </h1>
-              {data?.subtitle && (
-                <p className="text-lg text-light-text/70 dark:text-dark-text/70">
-                  {data.subtitle}
-                </p>
-              )}
-            </div>
-
-            {/* Metadata Grid */}
-            <div className="grid gap-4 sm:grid-cols-2">
-              {data?.genres && data.genres.length > 0 && (
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-widest text-light-text/60 dark:text-dark-text/60">
-                    Genres
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {(Array.isArray(data.genres)
-                      ? data.genres
-                      : typeof data.genres === 'string'
-                        ? data.genres.split(',')
-                        : []
-                    )
-                      .slice(0, 5)
-                      .map((genre, idx) => (
-                        <span
-                          key={idx}
-                          className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"
-                        >
-                          {typeof genre === 'string' ? genre.trim() : genre}
-                        </span>
-                      ))}
-                  </div>
-                </div>
-              )}
-
-              {(data?.director || data?.author || data?.artist || data?.developer) && (
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-widest text-light-text/60 dark:text-dark-text/60">
-                    {data?.director ? 'Director' : data?.author ? 'Author' : data?.artist ? 'Artist' : 'Developer'}
-                  </p>
-                  <p className="mt-2 font-medium text-light-text dark:text-dark-text">
-                    {data?.director || data?.author || data?.artist || data?.developer || 'N/A'}
-                  </p>
-                </div>
-              )}
-
-              {data?.duration && (
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-widest text-light-text/60 dark:text-dark-text/60">
-                    Duration
-                  </p>
-                  <p className="mt-2 font-medium text-light-text dark:text-dark-text">
-                    {data.duration}
-                  </p>
-                </div>
-              )}
-
-              {data?.language && (
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-widest text-light-text/60 dark:text-dark-text/60">
-                    Language
-                  </p>
-                  <p className="mt-2 font-medium text-light-text dark:text-dark-text">
-                    {data.language}
-                  </p>
-                </div>
-              )}
-
-              {data?.publisher && (
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-widest text-light-text/60 dark:text-dark-text/60">
-                    Publisher
-                  </p>
-                  <p className="mt-2 font-medium text-light-text dark:text-dark-text">
-                    {data.publisher}
-                  </p>
-                </div>
-              )}
-
-              {data?.album && (
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-widest text-light-text/60 dark:text-dark-text/60">
-                    Album
-                  </p>
-                  <p className="mt-2 font-medium text-light-text dark:text-dark-text">
-                    {data.album}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Description */}
-            {data?.description && (
-              <div>
-                <h2 className="mb-3 text-xl font-bold text-light-text dark:text-dark-text">
-                  Overview
-                </h2>
-                <p className="leading-relaxed text-light-text/80 dark:text-dark-text/80">
-                  {data.description}
-                </p>
-              </div>
-            )}
-
-            {/* Cast / Contributors */}
-            {data?.cast && data.cast.length > 0 && (
-              <div>
-                <h2 className="mb-4 text-xl font-bold text-light-text dark:text-dark-text">
-                  Cast
-                </h2>
-                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-                  {data.cast.slice(0, 6).map((member, idx) => (
-                    <div
-                      key={idx}
-                      className="overflow-hidden rounded-lg bg-surface-container-lowest dark:bg-surface-container-low"
-                    >
-                      {member.image && (
-                        <img
-                          src={member.image}
-                          alt={member.name}
-                          className="aspect-square w-full object-cover"
-                        />
-                      )}
-                      <div className="p-3">
-                        <p className="font-semibold text-light-text dark:text-dark-text">
-                          {member.name}
-                        </p>
-                        {member.role && (
-                          <p className="text-sm text-light-text/60 dark:text-dark-text/60">
-                            {member.role}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Keywords/Tags */}
-            {data?.keywords && data.keywords.length > 0 && (
-              <div>
-                <h2 className="mb-3 text-xl font-bold text-light-text dark:text-dark-text">
-                  Keywords
-                </h2>
-                <div className="flex flex-wrap gap-2">
-                  {data.keywords.slice(0, 15).map((keyword, idx) => (
-                    <span
-                      key={idx}
-                      className="rounded-full border border-outline-variant bg-surface-container-lowest px-4 py-2 text-sm font-medium text-light-text dark:border-outline-variant/30 dark:bg-surface-container-low dark:text-dark-text/80"
-                    >
-                      #{keyword}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Toast Notification */}
       {toast.visible && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast({ ...toast, visible: false })}
-        />
+        <Toast message={toast.message} type={toast.type} onClose={() => setToast((current) => ({ ...current, visible: false }))} />
       )}
     </div>
   );
-};
+}
 
 export default DetailsPage;

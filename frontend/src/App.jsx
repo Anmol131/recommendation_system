@@ -126,7 +126,7 @@ function App() {
           <Route path="/explore" element={<ExplorePage />} />
           <Route path="/recommend" element={<RecommendationPage />} />
           
-  @@          <Route path="/details/:mediaType/:id" element={<DetailsPage />} />
+          <Route path="/details/:type/:id" element={<DetailsPage />} />
   @@          
           <Route
             path="/profile"
