@@ -72,6 +72,7 @@ function App() {
           <Route path="/terms" element={<Navigate to="/termsofservice" replace />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/login/admin" element={<Navigate to="/admin/login" replace />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/verify-otp" element={<VerifyOtpPage />} />
           <Route path="/explore" element={<ExplorePage />} />

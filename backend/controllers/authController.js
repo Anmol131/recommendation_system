@@ -3,8 +3,8 @@ const User = require('../models/User');
 const { sendOTPEmail } = require('../services/emailService');
 const { generateOTP, getOTPExpiry } = require('../utils/otpHelper');
 
-const generateToken = (id) => {
-	return jwt.sign({ id }, process.env.JWT_SECRET, {
+const generateToken = (id, role = 'user') => {
+	return jwt.sign({ id, role }, process.env.JWT_SECRET, {
 		expiresIn: process.env.JWT_EXPIRE,
 	});
 };

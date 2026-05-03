@@ -7,8 +7,8 @@ const Game = require('../models/Game');
 const Music = require('../models/Music');
 const bcrypt = require('bcryptjs');
 
-const generateToken = (id) => {
-	return jwt.sign({ id }, process.env.JWT_SECRET, {
+const generateToken = (id, role = 'user') => {
+	return jwt.sign({ id, role }, process.env.JWT_SECRET, {
 		expiresIn: process.env.JWT_EXPIRE,
 	});
 };
@@ -31,7 +31,7 @@ const adminLogin = async (req, res) => {
 		const user = await User.findOne({ email: email.toLowerCase() });
 
 		if (!user || user.role !== 'admin') {
-			return res.status(401).json({ success: false, message: 'Invalid admin credentials' });
+			return res.status(403).json({ success: false, message: 'Admin access required' });
 		}
 
 		if (!user.isVerified) {
@@ -43,7 +43,8 @@ const adminLogin = async (req, res) => {
 			return res.status(401).json({ success: false, message: 'Invalid credentials' });
 		}
 
-		const token = generateToken(user._id);
+		// Generate token with admin role
+		const token = generateToken(user._id, 'admin');
 
 		return res.status(200).json({
 			success: true,
@@ -55,6 +56,30 @@ const adminLogin = async (req, res) => {
 	} catch (error) {
 		console.error('Admin login error:', error);
 		return res.status(500).json({ success: false, message: 'Failed to login' });
+	}
+};
+
+// Get Current Admin User
+const getAdminMe = async (req, res) => {
+	try {
+		// req.user is set by the protect middleware
+		const user = await User.findById(req.user._id).select('-password');
+
+		if (!user) {
+			return res.status(401).json({ success: false, message: 'User not found' });
+		}
+
+		if (user.role !== 'admin') {
+			return res.status(403).json({ success: false, message: 'Admin access required' });
+		}
+
+		return res.status(200).json({
+			success: true,
+			data: sanitizeUser(user),
+		});
+	} catch (error) {
+		console.error('Get admin me error:', error);
+		return res.status(500).json({ success: false, message: 'Failed to fetch admin user' });
 	}
 };
 
@@ -472,6 +497,7 @@ const logSearch = async (req, res) => {
 
 module.exports = {
 	adminLogin,
+	getAdminMe,
 	getDashboardStats,
 	getAllContent,
 	getContentById,

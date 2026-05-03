@@ -19,6 +19,7 @@ const protect = async (req, res, next) => {
 		}
 
 		req.user = user;
+		req.decoded = decoded;
 		next();
 	} catch (error) {
 		return res.status(401).json({ success: false, message: 'Not authorized, token invalid' });
@@ -31,7 +32,8 @@ const adminOnly = async (req, res, next) => {
 			return res.status(401).json({ success: false, message: 'Not authorized, no user' });
 		}
 
-		if (req.user.role !== 'admin') {
+		// Check both the decoded token role and the user's role in database
+		if (req.decoded?.role !== 'admin' || req.user.role !== 'admin') {
 			return res.status(403).json({ success: false, message: 'Forbidden, admin access required' });
 		}
 

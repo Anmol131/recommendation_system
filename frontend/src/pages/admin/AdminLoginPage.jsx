@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, LogIn } from 'lucide-react';
 import * as api from '../../api/endpoints';
 import Toast from '../../components/Toast';
-import { useAuth } from '../../context/AuthContext';
+import { useAdminAuth } from '../../context/AdminAuthContext';
 
 function AdminLoginPage() {
   const navigate = useNavigate();
-  const { user, login, isLoading } = useAuth();
+  const { adminUser, adminLoading, adminLogin } = useAdminAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -16,11 +16,12 @@ function AdminLoginPage() {
   const [error, setError] = useState('');
   const [showToast, setShowToast] = useState(false);
 
+  // Only redirect if admin is already authenticated
   useEffect(() => {
-    if (user && user.role === 'admin') {
+    if (adminUser && !adminLoading) {
       navigate('/admin/dashboard');
     }
-  }, [user, navigate]);
+  }, [adminUser, adminLoading, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -37,12 +38,12 @@ function AdminLoginPage() {
     setError('');
 
     try {
-      // First call API admin login endpoint
+      // Call API admin login endpoint
       const response = await api.adminLogin(formData.email, formData.password);
 
       if (response.success && response.data) {
-        // Then use the auth context to store it
-        await login(response.data);
+        // Use the admin auth context to store it
+        await adminLogin(response.data);
         setShowToast(true);
         setTimeout(() => {
           navigate('/admin/dashboard');
@@ -143,11 +144,7 @@ function AdminLoginPage() {
   );
 }
 
-// Add to endpoints if not already there
-if (!api.adminLogin) {
-  api.adminLogin = async (email, password) => {
-    const { data } = await api.instance.post('/admin/login', { email, password });
-    return data;
+export default AdminLoginPage;
   };
 }
 

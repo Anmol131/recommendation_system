@@ -11,9 +11,21 @@ const instance = axios.create({
 // Request interceptor to add authorization token
 instance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    const requestUrl = config.url || '';
+    const isAdminRoute = requestUrl.startsWith('/admin') && !requestUrl.includes('/admin/login');
+
+    if (isAdminRoute) {
+      // For admin routes, use adminToken
+      const adminToken = localStorage.getItem('adminToken');
+      if (adminToken) {
+        config.headers.Authorization = `Bearer ${adminToken}`;
+      }
+    } else {
+      // For regular routes, use normal token
+      const token = localStorage.getItem('token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
@@ -33,12 +45,19 @@ instance.interceptors.response.use(
         requestUrl.includes('/auth/register') ||
         requestUrl.includes('/auth/verify-otp') ||
         requestUrl.includes('/auth/resend-otp') ||
-        requestUrl.includes('/admin/login');
+        requestUrl.includes('/admin/login') ||
+        requestUrl.includes('/admin/me');
 
       if (!isAuthRequest) {
-        localStorage.removeItem('token');
-        const isAdminArea = window.location.pathname.startsWith('/admin');
-        window.location.href = isAdminArea ? '/admin/login' : '/login';
+        const isAdminRoute = requestUrl.startsWith('/admin');
+        if (isAdminRoute) {
+          localStorage.removeItem('adminToken');
+          localStorage.removeItem('adminUser');
+          window.location.href = '/admin/login';
+        } else {
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);

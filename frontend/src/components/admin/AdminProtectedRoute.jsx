@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAdminAuth } from '../../context/AdminAuthContext';
 
 function AdminProtectedRoute({ children }) {
-  const { user, isLoading } = useAuth();
+  const { adminUser, adminLoading, adminLogout } = useAdminAuth();
 
-  if (isLoading) {
+  if (adminLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -16,12 +16,15 @@ function AdminProtectedRoute({ children }) {
     );
   }
 
-  if (!user) {
+  if (!adminUser) {
     return <Navigate to="/admin/login" replace />;
   }
 
-  if (user.role !== 'admin') {
-    return <Navigate to="/" replace />;
+  // Verify admin role
+  if (adminUser.role !== 'admin') {
+    // Clear invalid admin token and redirect
+    adminLogout();
+    return <Navigate to="/admin/login" replace />;
   }
 
   return children;

@@ -1,6 +1,7 @@
 const express = require('express');
 const {
 	adminLogin,
+	getAdminMe,
 	getDashboardStats,
 	getAllContent,
 	getContentById,
@@ -16,6 +17,9 @@ const router = express.Router();
 
 // Admin auth routes (no protection for login)
 router.post('/login', adminLogin);
+
+// Get current admin user (requires valid admin token)
+router.get('/me', protect, adminOnly, getAdminMe);
 
 // Protected admin routes (requires authentication + admin role)
 router.get('/dashboard', protect, adminOnly, getDashboardStats);

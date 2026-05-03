@@ -170,6 +170,11 @@ export const adminLogin = async (email, password) => {
   return data;
 };
 
+export const getAdminMe = async () => {
+  const { data } = await instance.get('/admin/me');
+  return data;
+};
+
 export const getAdminDashboard = async () => {
   const { data } = await instance.get('/admin/dashboard');
   return data;
