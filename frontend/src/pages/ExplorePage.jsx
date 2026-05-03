@@ -136,15 +136,11 @@ function ExplorePage() {
   useEffect(() => {
     const urlQuery = (searchParams.get('q') || '').trim();
     const urlType = (searchParams.get('type') || '').trim().toLowerCase();
+    const nextCategory = ['all', 'movies', 'books', 'games', 'music'].includes(urlType) ? urlType : 'all';
 
-    setQuery(urlQuery);
-    setAppliedQuery(urlQuery);
-
-    if (['all', 'movies', 'books', 'games', 'music'].includes(urlType)) {
-      setActiveCategory(urlType);
-    } else if (!urlType) {
-      setActiveCategory('all');
-    }
+    setQuery((current) => (current !== urlQuery ? urlQuery : current));
+    setAppliedQuery((current) => (current !== urlQuery ? urlQuery : current));
+    setActiveCategory((current) => (current !== nextCategory ? nextCategory : current));
   }, [searchParams]);
 
   useEffect(() => {
@@ -267,8 +263,12 @@ function ExplorePage() {
     if (activeCategory !== 'all') {
       nextParams.set('type', activeCategory);
     }
-    setSearchParams(nextParams, { replace: true });
-  }, [activeCategory, appliedQuery, setSearchParams]);
+
+    const currentParams = new URLSearchParams(searchParams);
+    if (nextParams.toString() !== currentParams.toString()) {
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [activeCategory, appliedQuery, searchParams, setSearchParams]);
 
   const availableGenres = useMemo(() => {
     const setOfGenres = new Set();
