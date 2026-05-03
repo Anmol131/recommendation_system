@@ -150,9 +150,15 @@ export const updatePreferences = async (preferences) => {
 
 export const updateAvatar = (avatar) => instance.put('/user/avatar', { avatar }).then((r) => r.data);
 
-export const updateBio = (bio) => instance.put('/user/bio', { bio }).then((r) => r.data);
+export const updateUsername = async (name) => {
+  const { data } = await instance.put('/user/profile/username', { name });
+  return data;
+};
 
-export const updatePassword = (payload) => instance.put('/user/change-password', payload).then((r) => r.data);
+export const updatePassword = async (currentPassword, newPassword) => {
+  const { data } = await instance.put('/user/profile/password', { currentPassword, newPassword });
+  return data;
+};
 
 export const changePassword = updatePassword;
 

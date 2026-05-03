@@ -4,6 +4,8 @@ const {
   updatePreferences,
   updateAvatar,
   updateBio,
+  updateUsername,
+  updatePassword,
   addHistory,
   getHistory,
   getFavorites,
@@ -21,6 +23,8 @@ router.get('/profile', getProfile);
 router.put('/preferences', updatePreferences);
 router.put('/avatar', protect, updateAvatar);
 router.put('/bio', protect, updateBio);
+router.put('/profile/username', updateUsername);
+router.put('/profile/password', updatePassword);
 router.post('/history', addHistory);
 router.get('/history', getHistory);
 router.get('/favorites', (req, res, next) => {
