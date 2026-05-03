@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Search, ChevronLeft, ChevronRight, Download, Trash2 } from 'lucide-react';
 import AdminLayout from '../../layouts/AdminLayout';
+import ConfirmDialog from '../../components/admin/ConfirmDialog';
+import Toast from '../../components/Toast';
 import * as api from '../../api/endpoints';
 
 function AdminSearchLogsPage() {
@@ -13,6 +15,9 @@ function AdminSearchLogsPage() {
   const [endDate, setEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({});
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [toast, setToast] = useState({ message: '', type: 'success', visible: false });
 
   const TYPES = [
     { value: '', label: 'All Types' },
@@ -96,15 +101,39 @@ function AdminSearchLogsPage() {
   };
 
   const handleDelete = async (logId, logQuery) => {
-    if (window.confirm(`Delete log: "${logQuery}"?`)) {
-      try {
-        await api.deleteAdminSearchLog(logId);
-        setLogs(logs.filter((log) => log._id !== logId));
-      } catch (err) {
-        setError('Failed to delete search log');
-        console.error(err);
-      }
+    setDeleteTarget({ id: logId, query: logQuery });
+    setDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+
+    try {
+      await api.deleteAdminSearchLog(deleteTarget.id);
+      setLogs(logs.filter((log) => log._id !== deleteTarget.id));
+      setToast({
+        message: `Log deleted successfully`,
+        type: 'success',
+        visible: true,
+      });
+      setTimeout(() => setToast({ ...toast, visible: false }), 3000);
+    } catch (err) {
+      setToast({
+        message: 'Failed to delete search log',
+        type: 'error',
+        visible: true,
+      });
+      setTimeout(() => setToast({ ...toast, visible: false }), 3000);
+      console.error(err);
+    } finally {
+      setDialogOpen(false);
+      setDeleteTarget(null);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setDialogOpen(false);
+    setDeleteTarget(null);
   };
 
   const hasFilters = typeFilter || searchQuery || startDate || endDate;
@@ -302,6 +331,27 @@ function AdminSearchLogsPage() {
           )}
         </div>
       </div>
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={dialogOpen}
+        title="Delete Search Log"
+        message={`Are you sure you want to delete the log: "${deleteTarget?.query}"?`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        isDanger={true}
+      />
+
+      {/* Toast Notification */}
+      {toast.visible && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ ...toast, visible: false })}
+        />
+      )}
     </AdminLayout>
   );
 }
