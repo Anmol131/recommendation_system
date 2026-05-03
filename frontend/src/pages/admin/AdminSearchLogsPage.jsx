@@ -109,22 +109,40 @@ function AdminSearchLogsPage() {
     if (!deleteTarget) return;
 
     try {
-      await api.deleteAdminSearchLog(deleteTarget.id);
-      setLogs(logs.filter((log) => log._id !== deleteTarget.id));
-      setToast({
-        message: `Log deleted successfully`,
-        type: 'success',
-        visible: true,
-      });
-      setTimeout(() => setToast({ ...toast, visible: false }), 3000);
+      // Check if token exists
+      const adminToken = localStorage.getItem('adminToken');
+      if (!adminToken) {
+        throw new Error('Admin token not found. Please login again.');
+      }
+
+      console.log('Deleting log:', deleteTarget.id);
+      const response = await api.deleteAdminSearchLog(deleteTarget.id);
+      console.log('Delete response:', response);
+      
+      if (response.success || response.message) {
+        setLogs(logs.filter((log) => log._id !== deleteTarget.id));
+        setToast({
+          message: `Log deleted successfully`,
+          type: 'success',
+          visible: true,
+        });
+        setTimeout(() => setToast({ ...toast, visible: false }), 3000);
+      } else {
+        throw new Error('Unexpected response format');
+      }
     } catch (err) {
+      console.error('Full error object:', err);
+      const errorMsg = 
+        err.response?.data?.message || 
+        err.message || 
+        'Failed to delete search log';
+      
       setToast({
-        message: 'Failed to delete search log',
+        message: errorMsg,
         type: 'error',
         visible: true,
       });
-      setTimeout(() => setToast({ ...toast, visible: false }), 3000);
-      console.error(err);
+      setTimeout(() => setToast({ ...toast, visible: false }), 4000);
     } finally {
       setDialogOpen(false);
       setDeleteTarget(null);
