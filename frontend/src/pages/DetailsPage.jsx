@@ -30,6 +30,15 @@ const makeSearchUrl = (platform, query) => {
   return `https://www.google.com/search?q=${encoded}`;
 };
 
+const normalizeImdbId = (imdbId) => {
+  if (!imdbId) return '';
+  const raw = String(imdbId).trim();
+  if (/^tt\d+$/i.test(raw)) return raw.toLowerCase();
+  const digits = raw.replace(/\D/g, '');
+  if (!digits) return '';
+  return `tt${digits.padStart(7, '0')}`;
+};
+
 const getActionButtons = (item = {}, type) => {
   const title = cleanTitleForSearch(item.title || item.name || '');
   const year = item.year || item.releaseDate || '';
@@ -43,8 +52,9 @@ const getActionButtons = (item = {}, type) => {
   };
 
   if (type === 'movie') {
-    const imdbUrl = direct.imdbId
-      ? `https://www.imdb.com/title/${direct.imdbId}`
+    const normalizedImdbId = normalizeImdbId(direct.imdbId);
+    const imdbUrl = normalizedImdbId
+      ? `https://www.imdb.com/title/${normalizedImdbId}`
       : makeSearchUrl('google', `${searchTitle} ${year} IMDb`);
 
     return [
