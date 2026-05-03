@@ -2,13 +2,14 @@
 import { Search, Sparkles, Star } from 'lucide-react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import * as endpoints from '../api/endpoints';
+import { normalizeType, typeToLabel } from '../utils/typeNormalizer';
 
 const CATEGORY_TABS = [
   { key: 'all', label: 'All' },
   { key: 'movies', label: 'Movies' },
-  { key: 'books', label: 'Books' },
   { key: 'games', label: 'Games' },
   { key: 'music', label: 'Music' },
+  { key: 'books', label: 'Books' },
 ];
 
 const YEAR_OPTIONS = ['2020 - Present', '2010 - 2019', 'Classic Era'];
@@ -90,18 +91,21 @@ const parseId = (item, type) => {
   return item?.trackId ?? item?.id ?? item?._id;
 };
 
-const mapMedia = (rawItems, type) => rawItems.map((item, index) => ({
-  id: parseId(item, type) || `${type}-${index}`,
-  type,
-  typeLabel: TYPE_LABEL[type],
-  title: parseTitle(item),
-  rating: parseRating(item),
-  meta: parseMeta(item, type),
-  image: parseImage(item),
-  genres: parseGenres(item),
-  year: parseYear(item),
-  source: item,
-}));
+const mapMedia = (rawItems, type) => rawItems.map((item, index) => {
+  const normalizedType = normalizeType(type);
+  return {
+    id: parseId(item, normalizedType) || `${normalizedType}-${index}`,
+    type: normalizedType,
+    typeLabel: typeToLabel(normalizedType),
+    title: parseTitle(item),
+    rating: parseRating(item),
+    meta: parseMeta(item, normalizedType),
+    image: parseImage(item),
+    genres: parseGenres(item),
+    year: parseYear(item),
+    source: item,
+  };
+});
 
 const matchesYearBucket = (itemYear, selectedYears) => {
   if (selectedYears.length === 0) return true;
@@ -138,11 +142,25 @@ function ExplorePage() {
     const params = new URLSearchParams(location.search);
     const urlQuery = (params.get('q') || '').trim();
     const urlType = (params.get('type') || '').trim().toLowerCase();
-    const nextCategory = ['all', 'movies', 'books', 'games', 'music'].includes(urlType) ? urlType : 'all';
+    
+    // Normalize URL type to match CATEGORY_TABS keys
+    let nextCategory = 'all';
+    if (urlType) {
+      const tabKeys = ['all', 'movies', 'books', 'games', 'music'];
+      if (tabKeys.includes(urlType)) {
+        nextCategory = urlType;
+      }
+    }
 
-    setQuery((current) => (current !== urlQuery ? urlQuery : current));
-    setAppliedQuery((current) => (current !== urlQuery ? urlQuery : current));
-    setActiveCategory((current) => (current !== nextCategory ? nextCategory : current));
+    if (query !== urlQuery) {
+      setQuery(urlQuery);
+    }
+    if (appliedQuery !== urlQuery) {
+      setAppliedQuery(urlQuery);
+    }
+    if (activeCategory !== nextCategory) {
+      setActiveCategory(nextCategory);
+    }
   }, [location.search]);
 
   useEffect(() => {
@@ -165,9 +183,12 @@ function ExplorePage() {
       try {
         let fetchedItems = [];
         let fetchedTotal = 0;
+        
+        console.log('[ExplorePage] Loading data for activeCategory:', activeCategory, 'appliedQuery:', appliedQuery, 'page:', page);
 
         if (activeCategory === 'all') {
           if (appliedQuery) {
+            console.log('[ExplorePage] Searching all types with query:', appliedQuery);
             const [moviesRes, booksRes, gamesRes, musicRes] = await Promise.allSettled([
               SEARCH_REQUESTS.movies(appliedQuery),
               SEARCH_REQUESTS.books(appliedQuery),
@@ -184,7 +205,10 @@ function ExplorePage() {
 
             fetchedItems = [...movies, ...books, ...games, ...music];
             fetchedTotal = fetchedItems.length;
+            
+            console.log('[ExplorePage] Search results - movies:', movies.length, 'books:', books.length, 'games:', games.length, 'music:', music.length, 'total:', fetchedTotal);
           } else {
+            console.log('[ExplorePage] Browsing all types with limit per type:', 4);
             const limitPerType = 4;
             const [moviesRes, booksRes, gamesRes, musicRes] = await Promise.allSettled([
               LIST_REQUESTS.movies(page, limitPerType),
@@ -212,6 +236,8 @@ function ExplorePage() {
               unwrapTotal(gamesPayload, games.length),
               unwrapTotal(musicPayload, music.length),
             ].reduce((sum, value) => sum + value, 0);
+            
+            console.log('[ExplorePage] Browse results - movies:', movies.length, 'books:', books.length, 'games:', games.length, 'music:', music.length, 'total:', fetchedTotal);
           }
         } else {
           const typeMap = {
@@ -220,27 +246,44 @@ function ExplorePage() {
             games: 'game',
             music: 'music',
           };
-          const resolvedType = typeMap[activeCategory];
+          const normalizedType = typeMap[activeCategory];
+          console.log('[ExplorePage] Loading specific type - activeCategory:', activeCategory, 'normalizedType:', normalizedType);
 
           if (appliedQuery) {
+            console.log('[ExplorePage] Searching type:', normalizedType, 'with query:', appliedQuery);
             const payload = await SEARCH_REQUESTS[activeCategory](appliedQuery);
             if (fetchTokenRef.current !== token) return;
 
-            fetchedItems = mapMedia(unwrapItems(payload), resolvedType);
+            fetchedItems = mapMedia(unwrapItems(payload), normalizedType);
             fetchedTotal = fetchedItems.length;
+            
+            console.log('[ExplorePage] Search type results - type:', normalizedType, 'count:', fetchedItems.length);
           } else {
+            console.log('[ExplorePage] Browse type:', normalizedType, 'with page:', page, 'limit: 16');
             const payload = await LIST_REQUESTS[activeCategory](page, 16);
             if (fetchTokenRef.current !== token) return;
 
-            fetchedItems = mapMedia(unwrapItems(payload), resolvedType);
+            fetchedItems = mapMedia(unwrapItems(payload), normalizedType);
             fetchedTotal = unwrapTotal(payload, fetchedItems.length);
+            
+            console.log('[ExplorePage] Browse type results - type:', normalizedType, 'count:', fetchedItems.length, 'total:', fetchedTotal);
           }
         }
 
-        setItems((current) => (isFirstPage ? fetchedItems : [...current, ...fetchedItems]));
+        // Client-side filtering by type (defensive - backend should handle this)
+        const displayItems = activeCategory !== 'all' 
+          ? fetchedItems.filter(item => normalizeType(activeCategory) === item.type)
+          : fetchedItems;
+        
+        if (displayItems.length < fetchedItems.length) {
+          console.log('[ExplorePage] Filtered items - before:', fetchedItems.length, 'after:', displayItems.length);
+        }
+
+        setItems((current) => (isFirstPage ? displayItems : [...current, ...displayItems]));
         setTotalItems(fetchedTotal);
       } catch (fetchError) {
         if (fetchTokenRef.current !== token) return;
+        console.error('[ExplorePage] Fetch error:', fetchError);
         if (page === 1) {
           setItems([]);
           setTotalItems(0);
@@ -268,26 +311,50 @@ function ExplorePage() {
 
     const currentParams = new URLSearchParams(location.search);
     if (nextParams.toString() !== currentParams.toString()) {
+      console.log('[ExplorePage] Updating URL - activeCategory:', activeCategory, 'query:', appliedQuery, 'params:', nextParams.toString());
       setSearchParams(nextParams, { replace: true });
     }
   }, [activeCategory, appliedQuery, location.search, setSearchParams]);
 
   const availableGenres = useMemo(() => {
     const setOfGenres = new Set();
-    items.forEach((item) => {
+    
+    // Filter items by type if a specific type is selected
+    const itemsToUse = activeCategory !== 'all' 
+      ? items.filter(item => normalizeType(activeCategory) === item.type)
+      : items;
+    
+    itemsToUse.forEach((item) => {
       item.genres.forEach((genre) => {
         if (genre) setOfGenres.add(genre);
       });
     });
-    return ['All', ...Array.from(setOfGenres).sort((a, b) => a.localeCompare(b)).slice(0, 16)];
-  }, [items]);
+    
+    const genres = ['All', ...Array.from(setOfGenres).sort((a, b) => a.localeCompare(b)).slice(0, 16)];
+    console.log('[ExplorePage] Available genres for type:', activeCategory, 'count:', genres.length - 1);
+    return genres;
+  }, [items, activeCategory]);
 
-  const filteredItems = useMemo(() => items.filter((item) => {
-    const genreMatch = activeGenre === 'All' || item.genres.includes(activeGenre);
-    const ratingMatch = minRating <= 0 || (item.rating !== null && item.rating >= minRating);
-    const yearMatch = matchesYearBucket(item.year, selectedYears);
-    return genreMatch && ratingMatch && yearMatch;
-  }), [activeGenre, items, minRating, selectedYears]);
+  const filteredItems = useMemo(() => {
+    let result = items;
+    
+    // Filter by type
+    if (activeCategory !== 'all') {
+      const normalizedCategory = normalizeType(activeCategory);
+      result = result.filter(item => item.type === normalizedCategory);
+    }
+    
+    // Filter by genre, rating, year
+    result = result.filter((item) => {
+      const genreMatch = activeGenre === 'All' || item.genres.includes(activeGenre);
+      const ratingMatch = minRating <= 0 || (item.rating !== null && item.rating >= minRating);
+      const yearMatch = matchesYearBucket(item.year, selectedYears);
+      return genreMatch && ratingMatch && yearMatch;
+    });
+    
+    console.log('[ExplorePage] Filtered items - activeType:', activeCategory, 'genre:', activeGenre, 'minRating:', minRating, 'result count:', result.length);
+    return result;
+  }, [activeGenre, items, minRating, selectedYears, activeCategory]);
 
   const canLoadMore = useMemo(() => {
     if (appliedQuery) return false;
