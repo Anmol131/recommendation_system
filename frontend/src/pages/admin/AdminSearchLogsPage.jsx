@@ -34,17 +34,19 @@ function AdminSearchLogsPage() {
       const response = await api.getAdminSearchLogs({
         page: currentPage,
         limit: 20,
+        search: searchQuery || undefined,
         type: typeFilter,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
       });
 
-      if (response.success) {
-        setLogs(response.data.logs);
-        setPagination(response.data.pagination);
-      } else {
-        setError('Failed to fetch search logs');
-      }
+      const logsData = response?.logs || response?.data?.logs || [];
+      const total = response?.total ?? response?.data?.pagination?.total ?? 0;
+      const page = response?.page ?? response?.data?.pagination?.page ?? 1;
+      const totalPages = response?.totalPages ?? response?.data?.pagination?.totalPages ?? 1;
+
+      setLogs(logsData);
+      setPagination({ total, page, totalPages });
     } catch (err) {
       setError('Error loading search logs');
       console.error(err);

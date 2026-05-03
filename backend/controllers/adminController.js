@@ -375,10 +375,32 @@ const deleteContent = async (req, res) => {
 // Get search logs
 const getSearchLogs = async (req, res) => {
 	try {
-		const { page = 1, limit = 20, type = '', startDate, endDate } = req.query;
-		const skip = (page - 1) * limit;
+		const {
+			page = 1,
+			limit = 20,
+			type = '',
+			search = '',
+			startDate,
+			endDate,
+		} = req.query;
+		const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+		const limitNum = Math.max(parseInt(limit, 10) || 20, 1);
+		const skip = (pageNum - 1) * limitNum;
 
 		let query = {};
+
+		console.log('[admin] fetching search logs:', {
+			page: pageNum,
+			limit: limitNum,
+			type,
+			search,
+			startDate,
+			endDate,
+		});
+
+		if (search) {
+			query.query = { $regex: search, $options: 'i' };
+		}
 
 		if (type) {
 			query.detectedType = type;
@@ -401,19 +423,15 @@ const getSearchLogs = async (req, res) => {
 			.populate('userId', 'name email')
 			.sort({ createdAt: -1 })
 			.skip(skip)
-			.limit(parseInt(limit));
+			.limit(limitNum);
+
+		const totalPages = Math.ceil(total / limitNum) || 1;
 
 		return res.status(200).json({
-			success: true,
-			data: {
-				logs,
-				pagination: {
-					total,
-					page: parseInt(page),
-					limit: parseInt(limit),
-					totalPages: Math.ceil(total / limit),
-				},
-			},
+			logs,
+			total,
+			page: pageNum,
+			totalPages,
 		});
 	} catch (error) {
 		console.error('Get search logs error:', error);

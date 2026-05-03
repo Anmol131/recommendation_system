@@ -9,7 +9,6 @@ const searchLogSchema = new mongoose.Schema(
 		},
 		detectedType: {
 			type: String,
-			enum: ['movie', 'book', 'music', 'game', 'unknown'],
 			default: 'unknown',
 			index: true,
 		},
@@ -25,6 +24,10 @@ const searchLogSchema = new mongoose.Schema(
 			ref: 'User',
 			index: true,
 		},
+		createdAt: {
+			type: Date,
+			default: Date.now,
+		},
 		userAgent: {
 			type: String,
 		},
@@ -32,12 +35,10 @@ const searchLogSchema = new mongoose.Schema(
 			type: String,
 		},
 	},
-	{
-		timestamps: true,
-	}
+	{}
 );
 
 // Index for time-based queries
 searchLogSchema.index({ createdAt: -1 });
 
-module.exports = mongoose.model('SearchLog', searchLogSchema);
+module.exports = mongoose.model('SearchLog', searchLogSchema, 'searchlogs');
