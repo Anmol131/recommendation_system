@@ -236,6 +236,14 @@ function DetailsPage() {
     navigate(typeInfo.explore);
   };
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/explore');
+    }
+  };
+
   const scrollToSimilar = () => {
     similarSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -328,7 +336,7 @@ function DetailsPage() {
           <div className="border-b border-white/5 px-6 py-5 sm:px-8">
             <button
               type="button"
-              onClick={() => navigate(-1)}
+              onClick={handleBack}
               className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-violet-400/30 hover:bg-violet-500/15"
             >
               <ChevronLeft size={16} />

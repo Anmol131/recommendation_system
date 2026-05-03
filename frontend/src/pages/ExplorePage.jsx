@@ -1,6 +1,6 @@
 ﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, Sparkles, Star } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import * as endpoints from '../api/endpoints';
 
 const CATEGORY_TABS = [
@@ -115,7 +115,8 @@ const matchesYearBucket = (itemYear, selectedYears) => {
 
 function ExplorePage() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const [, setSearchParams] = useSearchParams();
 
   const [activeCategory, setActiveCategory] = useState('all');
   const [query, setQuery] = useState('');
@@ -134,14 +135,15 @@ function ExplorePage() {
   const fetchTokenRef = useRef(0);
 
   useEffect(() => {
-    const urlQuery = (searchParams.get('q') || '').trim();
-    const urlType = (searchParams.get('type') || '').trim().toLowerCase();
+    const params = new URLSearchParams(location.search);
+    const urlQuery = (params.get('q') || '').trim();
+    const urlType = (params.get('type') || '').trim().toLowerCase();
     const nextCategory = ['all', 'movies', 'books', 'games', 'music'].includes(urlType) ? urlType : 'all';
 
     setQuery((current) => (current !== urlQuery ? urlQuery : current));
     setAppliedQuery((current) => (current !== urlQuery ? urlQuery : current));
     setActiveCategory((current) => (current !== nextCategory ? nextCategory : current));
-  }, [searchParams]);
+  }, [location.search]);
 
   useEffect(() => {
     setPage(1);
@@ -264,11 +266,11 @@ function ExplorePage() {
       nextParams.set('type', activeCategory);
     }
 
-    const currentParams = new URLSearchParams(searchParams);
+    const currentParams = new URLSearchParams(location.search);
     if (nextParams.toString() !== currentParams.toString()) {
       setSearchParams(nextParams, { replace: true });
     }
-  }, [activeCategory, appliedQuery, searchParams, setSearchParams]);
+  }, [activeCategory, appliedQuery, location.search, setSearchParams]);
 
   const availableGenres = useMemo(() => {
     const setOfGenres = new Set();
