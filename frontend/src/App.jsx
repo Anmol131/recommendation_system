@@ -51,34 +51,16 @@ function ProtectedRoute({ children }) {
 }
 
 function App() {
+  const location = useLocation();
+  const isAdminPage = location.pathname.startsWith('/admin');
+
   return (
     <div className="min-h-screen bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text transition-colors duration-300">
       <ScrollToTopOnRouteChange />
-      <Navbar />
-      <main className="pt-0">
+      {!isAdminPage && <Navbar />}
+      <main className={!isAdminPage ? "pt-0" : ""}>
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/search" element={<Navigate to="/explore" replace />} />
-          <Route path="/movies" element={<Navigate to="/explore?type=movies" replace />} />
-          <Route path="/movies/:id" element={<Navigate to="/explore?type=movies" replace />} />
-          <Route path="/books" element={<Navigate to="/explore?type=books" replace />} />
-          <Route path="/books/:isbn" element={<Navigate to="/explore?type=books" replace />} />
-          <Route path="/games" element={<Navigate to="/explore?type=games" replace />} />
-          <Route path="/games/:id" element={<Navigate to="/explore?type=games" replace />} />
-          <Route path="/music" element={<Navigate to="/explore?type=music" replace />} />
-          <Route path="/music/:trackId" element={<Navigate to="/explore?type=music" replace />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/termsofservice" element={<TermsOfServicePage />} />
-          <Route path="/terms" element={<Navigate to="/termsofservice" replace />} />
-          <Route path="/privacy" element={<PrivacyPolicyPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/login/admin" element={<Navigate to="/admin/login" replace />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/verify-otp" element={<VerifyOtpPage />} />
-          <Route path="/explore" element={<ExplorePage />} />
-          <Route path="/recommend" element={<RecommendationPage />} />
-          
-          {/* Admin Routes */}
+          {/* Admin Routes - No Navbar/Footer */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route
             path="/admin/dashboard"
@@ -120,6 +102,28 @@ function App() {
               </AdminProtectedRoute>
             )}
           />
+
+          {/* Normal User Routes - With Navbar/Footer */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/search" element={<Navigate to="/explore" replace />} />
+          <Route path="/movies" element={<Navigate to="/explore?type=movies" replace />} />
+          <Route path="/movies/:id" element={<Navigate to="/explore?type=movies" replace />} />
+          <Route path="/books" element={<Navigate to="/explore?type=books" replace />} />
+          <Route path="/books/:isbn" element={<Navigate to="/explore?type=books" replace />} />
+          <Route path="/games" element={<Navigate to="/explore?type=games" replace />} />
+          <Route path="/games/:id" element={<Navigate to="/explore?type=games" replace />} />
+          <Route path="/music" element={<Navigate to="/explore?type=music" replace />} />
+          <Route path="/music/:trackId" element={<Navigate to="/explore?type=music" replace />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/termsofservice" element={<TermsOfServicePage />} />
+          <Route path="/terms" element={<Navigate to="/termsofservice" replace />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/login/admin" element={<Navigate to="/admin/login" replace />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/verify-otp" element={<VerifyOtpPage />} />
+          <Route path="/explore" element={<ExplorePage />} />
+          <Route path="/recommend" element={<RecommendationPage />} />
           
           <Route
             path="/profile"
@@ -147,7 +151,7 @@ function App() {
           />
         </Routes>
       </main>
-      <SiteFooter />
+      {!isAdminPage && <SiteFooter />}
     </div>
   );
 }
