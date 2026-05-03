@@ -2,7 +2,7 @@
 import { Search, Sparkles, Star } from 'lucide-react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import * as endpoints from '../api/endpoints';
-import { normalizeType, typeToLabel } from '../utils/typeNormalizer';
+import { normalizeType, typeToLabel, normalizeTypeForUI, normalizeTypeForAPI } from '../utils/typeNormalizer';
 
 const CATEGORY_TABS = [
   { key: 'all', label: 'All' },
@@ -120,9 +120,8 @@ const matchesYearBucket = (itemYear, selectedYears) => {
 function ExplorePage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [activeCategory, setActiveCategory] = useState('all');
   const [query, setQuery] = useState('');
   const [appliedQuery, setAppliedQuery] = useState('');
   const [activeGenre, setActiveGenre] = useState('All');
@@ -138,19 +137,12 @@ function ExplorePage() {
 
   const fetchTokenRef = useRef(0);
 
+  // Derive selectedType from URL
+  const selectedType = normalizeTypeForUI(searchParams.get("type") || "all");
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const urlQuery = (params.get('q') || '').trim();
-    const urlType = (params.get('type') || '').trim().toLowerCase();
-    
-    // Normalize URL type to match CATEGORY_TABS keys
-    let nextCategory = 'all';
-    if (urlType) {
-      const tabKeys = ['all', 'movies', 'books', 'games', 'music'];
-      if (tabKeys.includes(urlType)) {
-        nextCategory = urlType;
-      }
-    }
 
     if (query !== urlQuery) {
       setQuery(urlQuery);
@@ -158,14 +150,11 @@ function ExplorePage() {
     if (appliedQuery !== urlQuery) {
       setAppliedQuery(urlQuery);
     }
-    if (activeCategory !== nextCategory) {
-      setActiveCategory(nextCategory);
-    }
   }, [location.search]);
 
   useEffect(() => {
     setPage(1);
-  }, [activeCategory, appliedQuery]);
+  }, [selectedType, appliedQuery]);
 
   useEffect(() => {
     const token = Date.now();
@@ -184,9 +173,9 @@ function ExplorePage() {
         let fetchedItems = [];
         let fetchedTotal = 0;
         
-        console.log('[ExplorePage] Loading data for activeCategory:', activeCategory, 'appliedQuery:', appliedQuery, 'page:', page);
+        console.log('[ExplorePage] Loading data for selectedType:', selectedType, 'appliedQuery:', appliedQuery, 'page:', page);
 
-        if (activeCategory === 'all') {
+        if (selectedType === 'all') {
           if (appliedQuery) {
             console.log('[ExplorePage] Searching all types with query:', appliedQuery);
             const [moviesRes, booksRes, gamesRes, musicRes] = await Promise.allSettled([
@@ -246,12 +235,12 @@ function ExplorePage() {
             games: 'game',
             music: 'music',
           };
-          const normalizedType = typeMap[activeCategory];
-          console.log('[ExplorePage] Loading specific type - activeCategory:', activeCategory, 'normalizedType:', normalizedType);
+          const normalizedType = typeMap[selectedType];
+          console.log('[ExplorePage] Loading specific type - selectedType:', selectedType, 'normalizedType:', normalizedType);
 
           if (appliedQuery) {
             console.log('[ExplorePage] Searching type:', normalizedType, 'with query:', appliedQuery);
-            const payload = await SEARCH_REQUESTS[activeCategory](appliedQuery);
+            const payload = await SEARCH_REQUESTS[selectedType](appliedQuery);
             if (fetchTokenRef.current !== token) return;
 
             fetchedItems = mapMedia(unwrapItems(payload), normalizedType);
@@ -260,7 +249,7 @@ function ExplorePage() {
             console.log('[ExplorePage] Search type results - type:', normalizedType, 'count:', fetchedItems.length);
           } else {
             console.log('[ExplorePage] Browse type:', normalizedType, 'with page:', page, 'limit: 16');
-            const payload = await LIST_REQUESTS[activeCategory](page, 16);
+            const payload = await LIST_REQUESTS[selectedType](page, 16);
             if (fetchTokenRef.current !== token) return;
 
             fetchedItems = mapMedia(unwrapItems(payload), normalizedType);
@@ -271,8 +260,8 @@ function ExplorePage() {
         }
 
         // Client-side filtering by type (defensive - backend should handle this)
-        const displayItems = activeCategory !== 'all' 
-          ? fetchedItems.filter(item => normalizeType(activeCategory) === item.type)
+        const displayItems = selectedType !== 'all' 
+          ? fetchedItems.filter(item => normalizeType(selectedType) === item.type)
           : fetchedItems;
         
         if (displayItems.length < fetchedItems.length) {
@@ -298,30 +287,14 @@ function ExplorePage() {
     };
 
     loadData();
-  }, [activeCategory, appliedQuery, page]);
-
-  useEffect(() => {
-    const nextParams = new URLSearchParams();
-    if (appliedQuery) {
-      nextParams.set('q', appliedQuery);
-    }
-    if (activeCategory !== 'all') {
-      nextParams.set('type', activeCategory);
-    }
-
-    const currentParams = new URLSearchParams(location.search);
-    if (nextParams.toString() !== currentParams.toString()) {
-      console.log('[ExplorePage] Updating URL - activeCategory:', activeCategory, 'query:', appliedQuery, 'params:', nextParams.toString());
-      setSearchParams(nextParams, { replace: true });
-    }
-  }, [activeCategory, appliedQuery, location.search, setSearchParams]);
+  }, [selectedType, appliedQuery, page]);
 
   const availableGenres = useMemo(() => {
     const setOfGenres = new Set();
     
     // Filter items by type if a specific type is selected
-    const itemsToUse = activeCategory !== 'all' 
-      ? items.filter(item => normalizeType(activeCategory) === item.type)
+    const itemsToUse = selectedType !== 'all' 
+      ? items.filter(item => normalizeType(selectedType) === item.type)
       : items;
     
     itemsToUse.forEach((item) => {
@@ -331,16 +304,16 @@ function ExplorePage() {
     });
     
     const genres = ['All', ...Array.from(setOfGenres).sort((a, b) => a.localeCompare(b)).slice(0, 16)];
-    console.log('[ExplorePage] Available genres for type:', activeCategory, 'count:', genres.length - 1);
+    console.log('[ExplorePage] Available genres for type:', selectedType, 'count:', genres.length - 1);
     return genres;
-  }, [items, activeCategory]);
+  }, [items, selectedType]);
 
   const filteredItems = useMemo(() => {
     let result = items;
     
     // Filter by type
-    if (activeCategory !== 'all') {
-      const normalizedCategory = normalizeType(activeCategory);
+    if (selectedType !== 'all') {
+      const normalizedCategory = normalizeType(selectedType);
       result = result.filter(item => item.type === normalizedCategory);
     }
     
@@ -352,9 +325,9 @@ function ExplorePage() {
       return genreMatch && ratingMatch && yearMatch;
     });
     
-    console.log('[ExplorePage] Filtered items - activeType:', activeCategory, 'genre:', activeGenre, 'minRating:', minRating, 'result count:', result.length);
+    console.log('[ExplorePage] Filtered items - activeType:', selectedType, 'genre:', activeGenre, 'minRating:', minRating, 'result count:', result.length);
     return result;
-  }, [activeGenre, items, minRating, selectedYears, activeCategory]);
+  }, [activeGenre, items, minRating, selectedYears, selectedType]);
 
   const canLoadMore = useMemo(() => {
     if (appliedQuery) return false;
@@ -452,12 +425,20 @@ function ExplorePage() {
         <div className="mb-16 flex justify-center">
           <div className="hide-scrollbar flex items-center gap-1 overflow-x-auto rounded-full bg-surface-container-low p-1.5">
             {CATEGORY_TABS.map((tab) => {
-              const isActive = tab.key === activeCategory;
+              const isActive = tab.key === selectedType;
               return (
                 <button
                   key={tab.key}
                   type="button"
-                  onClick={() => setActiveCategory(tab.key)}
+                  onClick={() => {
+                    const newParams = new URLSearchParams(searchParams);
+                    if (tab.key === 'all') {
+                      newParams.delete('type');
+                    } else {
+                      newParams.set('type', tab.key);
+                    }
+                    setSearchParams(newParams);
+                  }}
                   className={[
                     'rounded-full px-8 py-2.5 text-sm transition-all active:scale-95',
                     isActive
