@@ -150,6 +150,11 @@ export const updatePreferences = async (preferences) => {
 
 export const updateAvatar = (avatar) => instance.put('/user/avatar', { avatar }).then((r) => r.data);
 
+export const updateBio = async (bio) => {
+  const { data } = await instance.put('/user/profile/bio', { bio });
+  return data;
+};
+
 export const updateUsername = async (name) => {
   const { data } = await instance.put('/user/profile/username', { name });
   return data;

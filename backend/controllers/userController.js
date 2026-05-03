@@ -83,7 +83,12 @@ const updateAvatar = async (req, res) => {
 
 const updateBio = async (req, res) => {
   try {
+    console.log('Bio update route hit');
+    console.log('Body:', req.body);
+    console.log('User:', req.user?._id);
+
     if (typeof req.body?.bio !== 'string') {
+      console.log('Bio validation failed - not a string');
       return res.status(400).json({ success: false, message: 'Bio must be a string' });
     }
 
@@ -91,17 +96,22 @@ const updateBio = async (req, res) => {
     const bio = bioInput.trim();
 
     if (bio.length > 150) {
+      console.log('Bio validation failed - too long');
       return res.status(400).json({ success: false, message: 'Bio must be 150 characters or fewer' });
     }
 
     const user = await User.findById(req.user._id);
 
     if (!user) {
+      console.log('User not found:', req.user._id);
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
+    console.log('Updating bio from:', user.bio, 'to:', bio);
     user.bio = bio;
     await user.save();
+    
+    console.log('Bio updated successfully');
 
     const sanitizedUser = user.toObject();
     delete sanitizedUser.password;

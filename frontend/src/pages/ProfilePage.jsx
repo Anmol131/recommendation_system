@@ -169,15 +169,23 @@ function ProfilePage() {
 
     try {
       const trimmedBio = bioDraft.trim();
+      console.log('Updating bio:', trimmedBio);
+      
       const response = await endpoints.updateBio(trimmedBio);
       const data = toProfileData(response);
 
+      // Backend returns { success: true, user: sanitizedUser }
+      const updatedUser = data?.user || {};
+      const bioValue = updatedUser?.bio ?? trimmedBio;
+
       setProfile((current) => ({
         ...(current || {}),
-        bio: data?.bio ?? trimmedBio,
+        bio: bioValue,
       }));
+      
       setIsEditingBio(false);
     } catch (err) {
+      console.error('Bio update error:', err);
       setBioError(err?.response?.data?.message || 'Failed to update bio. Please try again.');
     } finally {
       setBioSaving(false);
