@@ -19,9 +19,9 @@ export default function SimilarAtmosphere({ items = [], loading = false, type, o
 
   return (
     <section className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-violet-300/80">Similar Atmosphere</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-violet-300/80">Similar Mood</p>
           <h2 className="mt-2 text-xl font-semibold text-slate-50 sm:text-2xl">Find more like this</h2>
         </div>
 
@@ -30,18 +30,18 @@ export default function SimilarAtmosphere({ items = [], loading = false, type, o
           onClick={onViewAll}
           className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-slate-100 transition hover:border-violet-400/30 hover:bg-violet-500/15"
         >
-          View All
+          Explore All
           <ArrowRight size={14} />
         </button>
       </div>
 
-      <div className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:thin]">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {(loading ? Array.from({ length: 4 }) : cards).map((item, index) => {
           if (loading) {
             return (
               <div
                 key={`similar-skeleton-${index}`}
-                className="min-w-[210px] flex-1 animate-pulse overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5"
+                className="animate-pulse overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5"
               >
                 <div className="aspect-[2/3] bg-slate-800/70" />
                 <div className="space-y-3 p-4">
@@ -65,7 +65,7 @@ export default function SimilarAtmosphere({ items = [], loading = false, type, o
                   navigate(`/details/${item.type || type}/${item._id || item.id}`);
                 }
               }}
-              className="group min-w-[220px] overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5 text-left transition hover:-translate-y-1 hover:border-violet-400/30 disabled:cursor-default disabled:hover:translate-y-0"
+              className="group overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5 text-left transition hover:-translate-y-1 hover:border-violet-400/30 disabled:cursor-default disabled:hover:translate-y-0"
             >
               <div className="relative aspect-[2/3] overflow-hidden">
                 {isPlaceholder ? (

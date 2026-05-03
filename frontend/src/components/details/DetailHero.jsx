@@ -60,11 +60,11 @@ export default function DetailHero({
 
   return (
     <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#0b1220]/95 shadow-[0_30px_90px_-40px_rgba(96,69,190,0.8)] backdrop-blur">
-      <div className="flex items-center gap-3 px-5 pt-5 text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-400 sm:px-7">
+      <div className="flex flex-wrap items-center gap-2 px-5 pt-4 text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-400 sm:px-7">
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-100 transition hover:border-violet-400/40 hover:bg-violet-500/15 focus:outline-none focus:ring-2 focus:ring-violet-400/60"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-100 transition hover:border-violet-400/40 hover:bg-violet-500/15 focus:outline-none focus:ring-2 focus:ring-violet-400/60 sm:h-10 sm:w-10"
           aria-label="Go back"
         >
           ←
@@ -72,13 +72,13 @@ export default function DetailHero({
         <span>{typeLabel.toUpperCase()} / DETAILS</span>
       </div>
 
-      <div className="grid gap-8 px-5 pb-6 pt-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:px-7 lg:pb-8">
+      <div className="grid gap-8 px-5 pb-6 pt-4 lg:grid-cols-[360px_minmax(0,1fr)] lg:px-7 lg:pb-8">
         <div className="space-y-4">
-          <div className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-900 shadow-[0_24px_60px_-24px_rgba(15,23,42,0.7)]">
+          <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900 shadow-[0_36px_110px_-40px_rgba(15,23,42,0.75)]">
             <img
               src={imageUrl}
               alt={item?.title || 'Content image'}
-              className="aspect-[2/3] w-full object-cover"
+              className="h-full w-full min-h-[520px] object-cover"
             />
           </div>
 
@@ -108,7 +108,7 @@ export default function DetailHero({
             </div>
 
             <div className="space-y-3">
-              <h1 className="text-4xl font-semibold tracking-tight text-slate-50 sm:text-5xl">
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-50 sm:text-4xl lg:text-5xl">
                 {item?.title || 'Untitled'}
               </h1>
               <p className="max-w-3xl text-sm leading-7 text-slate-300 sm:text-base">
@@ -138,12 +138,12 @@ export default function DetailHero({
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={onPrimaryAction}
               disabled={primaryActionDisabled}
-              className="inline-flex items-center gap-2 rounded-full bg-violet-500 px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_35px_-16px_rgba(168,85,247,0.9)] transition hover:bg-violet-400 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-full bg-violet-500 px-6 py-3 text-sm font-semibold text-white shadow-[0_16px_35px_-16px_rgba(168,85,247,0.9)] transition hover:bg-violet-400 disabled:cursor-not-allowed disabled:opacity-50 sm:px-6 sm:py-3"
             >
               <Sparkles size={16} />
               {primaryActionLabel}
@@ -152,28 +152,19 @@ export default function DetailHero({
             <button
               type="button"
               onClick={onToggleSaved}
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:border-violet-400/30 hover:bg-violet-500/15"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-100 transition hover:border-violet-400/30 hover:bg-violet-500/15"
+              aria-label={saved ? 'Remove from watchlist' : 'Add to watchlist'}
             >
-              {saved ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
-              {saved ? 'Saved' : 'Add to Watchlist'}
-            </button>
-
-            <button
-              type="button"
-              onClick={onJumpSimilar}
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:border-violet-400/30 hover:bg-violet-500/15"
-            >
-              <Heart size={16} />
-              Recommend Similar
+              {saved ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
             </button>
 
             <button
               type="button"
               onClick={onShare}
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:border-violet-400/30 hover:bg-violet-500/15"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-100 transition hover:border-violet-400/30 hover:bg-violet-500/15"
+              aria-label="Share details"
             >
-              <Share2 size={16} />
-              Share
+              <Share2 size={18} />
             </button>
           </div>
         </div>
