@@ -30,61 +30,103 @@ const makeSearchUrl = (platform, query) => {
   return `https://www.google.com/search?q=${encoded}`;
 };
 
-const getActionButtons = (item = {}, type, onScrollSimilar) => {
+const getActionButtons = (item = {}, type) => {
   const title = cleanTitleForSearch(item.title || item.name || '');
   const year = item.year || item.releaseDate || '';
   const author = item.author || item.artist || item.director || '';
   const artist = item.artist || '';
-  const director = item.director || '';
   const searchTitle = title;
-  const build = (platform, query) => ({ url: makeSearchUrl(platform, query), variant: 'secondary' });
   const direct = {
     trailer: item.trailer || null,
     previewLink: item.previewLink || null,
-    spotifyUrl: item.spotifyUrl || item.originalData?.spotifyUrl || null,
-    website: item.originalData?.website || item.originalData?.url || item.originalData?.link || null,
+    imdbId: item.imdbId || item.originalData?.imdbId || null,
   };
 
   if (type === 'movie') {
+    const imdbUrl = direct.imdbId
+      ? `https://www.imdb.com/title/${direct.imdbId}`
+      : makeSearchUrl('google', `${searchTitle} ${year} IMDb`);
+
     return [
-      { label: 'Watch Trailer', url: direct.trailer || makeSearchUrl('youtube', `${searchTitle} ${year} trailer`), variant: 'primary' },
-      build('youtube', `${searchTitle} ${year} review`),
-      build('google', `${searchTitle} ${year} IMDb`),
-      { label: 'Recommend Similar', action: onScrollSimilar, variant: 'secondary' },
+      {
+        label: 'Watch Trailer',
+        url: direct.trailer || makeSearchUrl('youtube', `${searchTitle} ${year} trailer`),
+        variant: 'primary',
+      },
+      {
+        label: 'Watch Review',
+        url: makeSearchUrl('youtube', `${searchTitle} ${year} movie review`),
+        variant: 'secondary',
+      },
+      {
+        label: 'IMDb Search',
+        url: imdbUrl,
+        variant: 'secondary',
+      },
     ];
   }
 
   if (type === 'book') {
     return [
-      { label: 'Read Preview', url: direct.previewLink || makeSearchUrl('googleBooks', `${searchTitle} ${author} preview`), variant: 'primary' },
-      build('youtube', `${searchTitle} ${author} book review`),
-      build('google', `${searchTitle} ${author} book`),
-      { label: 'Recommend Similar', action: onScrollSimilar, variant: 'secondary' },
+      {
+        label: 'Read Preview',
+        url: direct.previewLink || makeSearchUrl('googleBooks', `${searchTitle} ${author} preview`),
+        variant: 'primary',
+      },
+      {
+        label: 'Book Review',
+        url: makeSearchUrl('youtube', `${searchTitle} ${author} book review`),
+        variant: 'secondary',
+      },
+      {
+        label: 'Google Books',
+        url: makeSearchUrl('googleBooks', `${searchTitle} ${author}`),
+        variant: 'secondary',
+      },
     ];
   }
 
   if (type === 'music') {
     return [
-      { label: 'Listen on YouTube', url: direct.previewLink || direct.spotifyUrl || makeSearchUrl('youtube', `${searchTitle} ${artist}`), variant: 'primary' },
-      build('google', `${searchTitle} ${artist} lyrics`),
-      { url: direct.spotifyUrl || makeSearchUrl('spotify', `${searchTitle} ${artist}`), label: 'Spotify Search', variant: 'secondary' },
-      { label: 'Recommend Similar', action: onScrollSimilar, variant: 'secondary' },
+      {
+        label: 'Listen on YouTube',
+        url: makeSearchUrl('youtube', `${searchTitle} ${artist}`),
+        variant: 'primary',
+      },
+      {
+        label: 'Lyrics',
+        url: makeSearchUrl('google', `${searchTitle} ${artist} lyrics`),
+        variant: 'secondary',
+      },
+      {
+        label: 'Spotify Search',
+        url: makeSearchUrl('spotify', `${searchTitle} ${artist}`),
+        variant: 'secondary',
+      },
     ];
   }
 
   if (type === 'game') {
     return [
-      { label: 'Watch Trailer', url: direct.trailer || makeSearchUrl('youtube', `${searchTitle} game trailer`), variant: 'primary' },
-      build('youtube', `${searchTitle} gameplay`),
-      build('youtube', `${searchTitle} game review`),
-      build('google', `${searchTitle} game official`),
-      { label: 'Recommend Similar', action: onScrollSimilar, variant: 'secondary' },
+      {
+        label: 'Watch Trailer',
+        url: direct.trailer || makeSearchUrl('youtube', `${searchTitle} game trailer`),
+        variant: 'primary',
+      },
+      {
+        label: 'Watch Gameplay',
+        url: makeSearchUrl('youtube', `${searchTitle} gameplay`),
+        variant: 'secondary',
+      },
+      {
+        label: 'Game Review',
+        url: makeSearchUrl('youtube', `${searchTitle} game review`),
+        variant: 'secondary',
+      },
     ];
   }
 
-  return [
-    { label: 'Recommend Similar', action: onScrollSimilar, variant: 'primary' },
-  ];
+  return [];
 };
 
 function DetailsPage() {
@@ -188,7 +230,7 @@ function DetailsPage() {
     similarSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const actionButtons = useMemo(() => getActionButtons(item || {}, type, scrollToSimilar), [item, type, scrollToSimilar]);
+  const actionButtons = useMemo(() => getActionButtons(item || {}, type), [item, type]);
 
   const retry = () => setRetryCount((count) => count + 1);
 
@@ -319,20 +361,18 @@ function DetailsPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
-                  {actionButtons.map((button, idx) => (
-                    <button
-                      key={`${button.label || 'action'}-${idx}`}
-                      type="button"
-                      onClick={() => {
-                        if (button.action) return button.action();
-                        if (button.url) window.open(button.url, '_blank', 'noopener,noreferrer');
-                      }}
-                      disabled={!button.url && !button.action}
-                      className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition ${button.variant === 'primary' ? 'bg-violet-500 text-white shadow-[0_18px_50px_-30px_rgba(168,85,247,0.9)] hover:bg-violet-400' : 'border border-white/10 bg-white/5 text-slate-100 hover:border-violet-400/30 hover:bg-violet-500/15'} disabled:cursor-not-allowed disabled:opacity-60`}
-                    >
-                      {button.label || 'More'}
-                    </button>
-                  ))}
+                  {actionButtons
+                    .filter((button) => button.label && button.url)
+                    .map((button, idx) => (
+                      <button
+                        key={`${button.label}-${idx}`}
+                        type="button"
+                        onClick={() => window.open(button.url, '_blank', 'noopener,noreferrer')}
+                        className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition ${button.variant === 'primary' ? 'bg-violet-500 text-white shadow-[0_18px_50px_-30px_rgba(168,85,247,0.9)] hover:bg-violet-400' : 'border border-white/10 bg-white/5 text-slate-100 hover:border-violet-400/30 hover:bg-violet-500/15'}`}
+                      >
+                        {button.label}
+                      </button>
+                    ))}
 
                   <button
                     type="button"
