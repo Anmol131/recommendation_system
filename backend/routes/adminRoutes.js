@@ -10,6 +10,7 @@ const {
 	deleteContent,
 	getSearchLogs,
 	logSearch,
+	deleteSearchLog,
 } = require('../controllers/adminController');
 const { protect, adminOnly } = require('../middleware/adminAuthMiddleware');
 
@@ -34,5 +35,6 @@ router.delete('/content/:type/:id', protect, adminOnly, deleteContent);
 // Search logs routes
 router.get('/search-logs', protect, adminOnly, getSearchLogs);
 router.post('/search-logs', logSearch); // Can be called from AI service without auth
+router.delete('/search-logs/:id', protect, adminOnly, deleteSearchLog);
 
 module.exports = router;

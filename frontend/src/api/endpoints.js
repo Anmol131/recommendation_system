@@ -217,3 +217,8 @@ export const logSearch = async (payload) => {
   const { data } = await instance.post('/admin/search-logs', payload);
   return data;
 };
+
+export const deleteAdminSearchLog = async (id) => {
+  const { data } = await instance.delete(`/admin/search-logs/${id}`);
+  return data;
+};

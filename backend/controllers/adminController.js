@@ -495,6 +495,31 @@ const logSearch = async (req, res) => {
 	}
 };
 
+// Delete search log
+const deleteSearchLog = async (req, res) => {
+	try {
+		const { id } = req.params;
+
+		if (!id) {
+			return res.status(400).json({ success: false, message: 'Search log ID is required' });
+		}
+
+		const searchLog = await SearchLog.findByIdAndDelete(id);
+
+		if (!searchLog) {
+			return res.status(404).json({ success: false, message: 'Search log not found' });
+		}
+
+		return res.status(200).json({
+			success: true,
+			message: 'Search log deleted successfully',
+		});
+	} catch (error) {
+		console.error('Delete search log error:', error);
+		return res.status(500).json({ success: false, message: 'Failed to delete search log' });
+	}
+};
+
 module.exports = {
 	adminLogin,
 	getAdminMe,
@@ -506,4 +531,5 @@ module.exports = {
 	deleteContent,
 	getSearchLogs,
 	logSearch,
+	deleteSearchLog,
 };

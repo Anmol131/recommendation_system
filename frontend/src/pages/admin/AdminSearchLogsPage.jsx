@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Search, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Download, Trash2 } from 'lucide-react';
 import AdminLayout from '../../layouts/AdminLayout';
 import * as api from '../../api/endpoints';
 
@@ -93,6 +93,18 @@ function AdminSearchLogsPage() {
     setStartDate('');
     setEndDate('');
     setCurrentPage(1);
+  };
+
+  const handleDelete = async (logId, logQuery) => {
+    if (window.confirm(`Delete log: "${logQuery}"?`)) {
+      try {
+        await api.deleteAdminSearchLog(logId);
+        setLogs(logs.filter((log) => log._id !== logId));
+      } catch (err) {
+        setError('Failed to delete search log');
+        console.error(err);
+      }
+    }
   };
 
   const hasFilters = typeFilter || searchQuery || startDate || endDate;
@@ -214,6 +226,7 @@ function AdminSearchLogsPage() {
                       <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Results</th>
                       <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">User</th>
                       <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Date</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -244,6 +257,15 @@ function AdminSearchLogsPage() {
                         <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
                           {new Date(log.createdAt).toLocaleDateString()} <br />
                           <span className="text-xs text-gray-500">{new Date(log.createdAt).toLocaleTimeString()}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <button
+                            onClick={() => handleDelete(log._id, log.query)}
+                            className="text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 p-2 rounded transition-colors"
+                            title="Delete log"
+                          >
+                            <Trash2 size={18} />
+                          </button>
                         </td>
                       </tr>
                     ))}
