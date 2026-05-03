@@ -56,6 +56,12 @@ const userSchema = new mongoose.Schema(
 		otpExpiry: {
 			type: Date,
 		},
+		// NEW: ADMIN PANEL
+		role: {
+			type: String,
+			enum: ['user', 'admin'],
+			default: 'user',
+		},
 		preferences: {
 			movies: {
 				type: [String],

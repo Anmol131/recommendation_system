@@ -15,6 +15,12 @@ import ChangePasswordPage from './pages/ChangePasswordPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import RecommendationPage from './pages/RecommendationPage';
+import AdminLoginPage from './pages/admin/AdminLoginPage';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import AdminContentListPage from './pages/admin/AdminContentListPage';
+import AdminContentFormPage from './pages/admin/AdminContentFormPage';
+import AdminSearchLogsPage from './pages/admin/AdminSearchLogsPage';
+import AdminProtectedRoute from './components/admin/AdminProtectedRoute';
 
 function ScrollToTopOnRouteChange() {
   const location = useLocation();
@@ -70,6 +76,49 @@ function App() {
           <Route path="/verify-otp" element={<VerifyOtpPage />} />
           <Route path="/explore" element={<ExplorePage />} />
           <Route path="/recommend" element={<RecommendationPage />} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route
+            path="/admin/dashboard"
+            element={(
+              <AdminProtectedRoute>
+                <AdminDashboardPage />
+              </AdminProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/content"
+            element={(
+              <AdminProtectedRoute>
+                <AdminContentListPage />
+              </AdminProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/content/add"
+            element={(
+              <AdminProtectedRoute>
+                <AdminContentFormPage />
+              </AdminProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/content/edit/:id"
+            element={(
+              <AdminProtectedRoute>
+                <AdminContentFormPage />
+              </AdminProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/search-logs"
+            element={(
+              <AdminProtectedRoute>
+                <AdminSearchLogsPage />
+              </AdminProtectedRoute>
+            )}
+          />
           
           <Route
             path="/profile"

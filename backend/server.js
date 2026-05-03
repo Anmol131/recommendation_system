@@ -19,6 +19,7 @@ app.get('/', (req, res) => {
 // Routes
 app.use('/api/ai', require('./routes/aiRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/movies', require('./routes/movieRoutes'));
 app.use('/api/books', require('./routes/bookRoutes'));
 app.use('/api/games', require('./routes/gameRoutes'));

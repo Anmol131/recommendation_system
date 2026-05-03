@@ -161,3 +161,54 @@ export const analyzeQuery = async (query, topN = 5) => {
   });
   return data;
 };
+
+// ─────────────────────────────────────────
+// ADMIN
+// ─────────────────────────────────────────
+export const adminLogin = async (email, password) => {
+  const { data } = await instance.post('/admin/login', { email, password });
+  return data;
+};
+
+export const getAdminDashboard = async () => {
+  const { data } = await instance.get('/admin/dashboard');
+  return data;
+};
+
+export const getAdminContent = async (params = {}) => {
+  const { data } = await instance.get('/admin/content', { params });
+  return data;
+};
+
+export const getAdminContentById = async (id) => {
+  const { data } = await instance.get(`/admin/content/${id}`);
+  return data;
+};
+
+export const createAdminContent = async (payload) => {
+  const { data } = await instance.post('/admin/content', payload);
+  return data;
+};
+
+export const updateAdminContent = async (id, payload) => {
+  const type = payload && payload.type;
+  if (!type) throw new Error('Payload must include `type` for admin content update');
+  const { data } = await instance.put(`/admin/content/${type}/${id}`, payload);
+  return data;
+};
+
+export const deleteAdminContent = async (type, id) => {
+  if (!type) throw new Error('Type is required to delete admin content');
+  const { data } = await instance.delete(`/admin/content/${type}/${id}`);
+  return data;
+};
+
+export const getAdminSearchLogs = async (params = {}) => {
+  const { data } = await instance.get('/admin/search-logs', { params });
+  return data;
+};
+
+export const logSearch = async (payload) => {
+  const { data } = await instance.post('/admin/search-logs', payload);
+  return data;
+};

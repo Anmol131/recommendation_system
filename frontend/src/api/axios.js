@@ -27,8 +27,19 @@ instance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      const requestUrl = error.config?.url || '';
+      const isAuthRequest =
+        requestUrl.includes('/auth/login') ||
+        requestUrl.includes('/auth/register') ||
+        requestUrl.includes('/auth/verify-otp') ||
+        requestUrl.includes('/auth/resend-otp') ||
+        requestUrl.includes('/admin/login');
+
+      if (!isAuthRequest) {
+        localStorage.removeItem('token');
+        const isAdminArea = window.location.pathname.startsWith('/admin');
+        window.location.href = isAdminArea ? '/admin/login' : '/login';
+      }
     }
     return Promise.reject(error);
   }
