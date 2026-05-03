@@ -103,15 +103,19 @@ const updateBio = async (req, res) => {
     user.bio = bio;
     await user.save();
 
-    return res.status(200).json({ success: true, data: { bio: user.bio } });
+    const sanitizedUser = user.toObject();
+    delete sanitizedUser.password;
+
+    return res.status(200).json({ success: true, user: sanitizedUser });
   } catch (error) {
+    console.error('updateBio error:', error);
     return res.status(500).json({ success: false, message: 'Failed to update bio' });
   }
 };
 
 const updateUsername = async (req, res) => {
   try {
-    const { name } = req.body;
+    const name = typeof req.body.name === 'string' ? req.body.name : req.body.username;
 
     if (!name || typeof name !== 'string') {
       return res.status(400).json({ success: false, message: 'Name is required and must be a string' });
@@ -134,8 +138,9 @@ const updateUsername = async (req, res) => {
     const sanitizedUser = user.toObject();
     delete sanitizedUser.password;
 
-    return res.status(200).json({ success: true, data: sanitizedUser });
+    return res.status(200).json({ success: true, user: sanitizedUser });
   } catch (error) {
+    console.error('updateUsername error:', error);
     return res.status(500).json({ success: false, message: 'Failed to update username' });
   }
 };
@@ -143,6 +148,10 @@ const updateUsername = async (req, res) => {
 const updatePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
+
+    if (typeof currentPassword !== 'string' || typeof newPassword !== 'string') {
+      return res.status(400).json({ success: false, message: 'Current password and new password are required' });
+    }
 
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ success: false, message: 'Current password and new password are required' });
@@ -168,6 +177,7 @@ const updatePassword = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Password updated successfully' });
   } catch (error) {
+    console.error('updatePassword error:', error);
     return res.status(500).json({ success: false, message: 'Failed to update password' });
   }
 };

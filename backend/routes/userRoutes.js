@@ -23,8 +23,9 @@ router.get('/profile', getProfile);
 router.put('/preferences', updatePreferences);
 router.put('/avatar', protect, updateAvatar);
 router.put('/bio', protect, updateBio);
-router.put('/profile/username', updateUsername);
-router.put('/profile/password', updatePassword);
+router.put('/profile/bio', protect, updateBio);
+router.put('/profile/username', protect, updateUsername);
+router.put('/profile/password', protect, updatePassword);
 router.post('/history', addHistory);
 router.get('/history', getHistory);
 router.get('/favorites', (req, res, next) => {
