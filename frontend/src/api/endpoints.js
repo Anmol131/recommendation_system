@@ -165,6 +165,26 @@ export const getHistory = async () => {
   const { data } = await instance.get('/user/history');
   return data;
 };
+
+export const getFavorites = async () => {
+  const { data } = await instance.get('/user/favorites');
+  return data;
+};
+
+export const addFavorite = async (favoriteData) => {
+  const { data } = await instance.post('/user/favorites', favoriteData);
+  return data;
+};
+
+export const removeFavorite = async (itemType, itemId) => {
+  const { data } = await instance.delete(`/user/favorites/${itemType}/${itemId}`);
+  return data;
+};
+
+export const checkFavorite = async (itemType, itemId) => {
+  const { data } = await instance.get(`/user/favorites/check/${itemType}/${itemId}`);
+  return data;
+};
 export const analyzeQuery = async (query, topN = 5) => {
   const { data } = await instance.get('/ai/analyze', {
     params: { query, top_n: topN },

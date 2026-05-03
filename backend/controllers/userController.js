@@ -164,6 +164,149 @@ const getHistory = async (req, res) => {
   }
 };
 
+const getFavorites = async (req, res) => {
+  try {
+    console.log('getFavorites called for user:', req.user._id);
+    const user = await User.findById(req.user._id).select('favorites');
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const sortedFavorites = [...user.favorites].sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
+
+    return res.status(200).json({ success: true, data: sortedFavorites });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch user favorites' });
+  }
+};
+
+const addFavorite = async (req, res) => {
+  try {
+    console.log('addFavorite called for user:', req.user._id, 'body:', req.body);
+    const { itemId, itemType, title, imageUrl, year, rating, genre } = req.body;
+
+    if (!itemId || !itemType || !title) {
+      return res.status(400).json({
+        success: false,
+        message: 'itemId, itemType, and title are required',
+      });
+    }
+
+    const allowedTypes = ['movie', 'book', 'game', 'music'];
+
+    if (!allowedTypes.includes(itemType)) {
+      return res.status(400).json({ success: false, message: 'Invalid itemType' });
+    }
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Check if already exists
+    const existingIndex = user.favorites.findIndex(fav => fav.itemId === itemId && fav.itemType === itemType);
+
+    if (existingIndex !== -1) {
+      return res.status(200).json({
+        success: true,
+        message: 'Already in favorites',
+        data: user.favorites[existingIndex]
+      });
+    }
+
+    const newFavorite = {
+      itemId,
+      itemType,
+      title,
+      imageUrl: imageUrl || '',
+      year: year || '',
+      rating: rating || null,
+      genre: genre || '',
+      savedAt: new Date()
+    };
+
+    user.favorites.push(newFavorite);
+    await user.save();
+
+    return res.status(201).json({ success: true, data: newFavorite });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to add favorite' });
+  }
+};
+
+const removeFavorite = async (req, res) => {
+  try {
+    console.log('removeFavorite called for user:', req.user._id, 'params:', req.params);
+    const { itemType, itemId } = req.params;
+
+    if (!itemType || !itemId) {
+      return res.status(400).json({
+        success: false,
+        message: 'itemType and itemId are required',
+      });
+    }
+
+    const allowedTypes = ['movie', 'book', 'game', 'music'];
+
+    if (!allowedTypes.includes(itemType)) {
+      return res.status(400).json({ success: false, message: 'Invalid itemType' });
+    }
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const initialLength = user.favorites.length;
+    user.favorites = user.favorites.filter(fav => !(fav.itemId === itemId && fav.itemType === itemType));
+
+    if (user.favorites.length === initialLength) {
+      return res.status(404).json({ success: false, message: 'Favorite not found' });
+    }
+
+    await user.save();
+
+    return res.status(200).json({ success: true, message: 'Favorite removed' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to remove favorite' });
+  }
+};
+
+const checkFavorite = async (req, res) => {
+  try {
+    console.log('checkFavorite called for user:', req.user._id, 'params:', req.params);
+    const { itemType, itemId } = req.params;
+
+    if (!itemType || !itemId) {
+      return res.status(400).json({
+        success: false,
+        message: 'itemType and itemId are required',
+      });
+    }
+
+    const allowedTypes = ['movie', 'book', 'game', 'music'];
+
+    if (!allowedTypes.includes(itemType)) {
+      return res.status(400).json({ success: false, message: 'Invalid itemType' });
+    }
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const isFavorite = user.favorites.some(fav => fav.itemId === itemId && fav.itemType === itemType);
+
+    return res.status(200).json({ success: true, isFavorite });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to check favorite status' });
+  }
+};
+
 module.exports = {
   getProfile,
   updatePreferences,
@@ -171,4 +314,8 @@ module.exports = {
   updateBio,
   addHistory,
   getHistory,
+  getFavorites,
+  addFavorite,
+  removeFavorite,
+  checkFavorite,
 };

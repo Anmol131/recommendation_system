@@ -93,6 +93,24 @@ const userSchema = new mongoose.Schema(
 			type: [historySchema],
 			default: [],
 		},
+		favorites: [
+			{
+				itemId: String,
+				itemType: {
+					type: String,
+					enum: ["movie", "book", "music", "game"]
+				},
+				title: String,
+				imageUrl: String,
+				year: String,
+				rating: Number,
+				genre: String,
+				savedAt: {
+					type: Date,
+					default: Date.now
+				}
+			}
+		],
 	},
 	{
 		timestamps: true,

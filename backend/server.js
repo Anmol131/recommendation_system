@@ -26,6 +26,7 @@ app.use('/api/books', require('./routes/bookRoutes'));
 app.use('/api/games', require('./routes/gameRoutes'));
 app.use('/api/music', require('./routes/musicRoutes'));
 app.use('/api/user', require('./routes/userRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

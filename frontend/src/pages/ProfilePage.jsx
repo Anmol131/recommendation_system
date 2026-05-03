@@ -150,6 +150,8 @@ function ProfilePage() {
   const [bioDraft, setBioDraft] = useState('');
   const [bioSaving, setBioSaving] = useState(false);
   const [bioError, setBioError] = useState('');
+  const [favorites, setFavorites] = useState([]);
+  const [favoritesLoading, setFavoritesLoading] = useState(true);
 
   const loadProfile = async () => {
     setLoading(true);
@@ -167,8 +169,23 @@ function ProfilePage() {
     }
   };
 
+  const loadFavorites = async () => {
+    setFavoritesLoading(true);
+    try {
+      const response = await endpoints.getFavorites();
+      const data = response?.data || [];
+      setFavorites(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.warn('Failed to load favorites:', err);
+      setFavorites([]);
+    } finally {
+      setFavoritesLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadProfile();
+    loadFavorites();
   }, []);
 
   useEffect(() => {
@@ -417,6 +434,68 @@ function ProfilePage() {
                             </div>
                             <span className="text-[10px] font-bold uppercase tracking-tighter text-light-text/50 dark:text-dark-text/50">
                               {formatAddedLabel(item?.date)}
+                            </span>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+
+            <section>
+              <header className="mb-8 flex items-center justify-between">
+                <h2 className="text-3xl font-bold tracking-tight text-on-surface">My Favorites</h2>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-light-text/40 dark:text-dark-text/40">
+                  {favorites.length} ITEMS
+                </span>
+              </header>
+
+              {favoritesLoading ? (
+                <div className="rounded-3xl bg-surface-container-low p-8 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
+                  <div className="h-64 animate-pulse rounded-3xl bg-surface-container-low" />
+                </div>
+              ) : favorites.length === 0 ? (
+                <div className="rounded-3xl bg-surface-container-low p-8 text-sm text-light-text dark:text-dark-text/95 shadow-[0_20px_40px_-10px_rgba(62,37,72,0.06)]">
+                  No favorites saved yet. Start exploring and save your favorite movies, books, music, and games!
+                </div>
+              ) : (
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {favorites.map((item, index) => {
+                    const image = item.imageUrl || null;
+                    return (
+                      <article
+                        key={`${item?.itemId || 'favorite'}-${item?.savedAt || index}-${index}`}
+                        onClick={() => navigate(`/details/${item.itemType}/${item.itemId}`)}
+                        className="group cursor-pointer overflow-hidden rounded-3xl bg-white shadow-[0_20px_40px_-10px_rgba(62,37,72,0.08)] transition-all duration-300 hover:shadow-[0_20px_40px_-10px_rgba(62,37,72,0.14)]"
+                      >
+                        <div className="relative aspect-[16/9] w-full overflow-hidden">
+                          {image ? (
+                            <img
+                              src={image}
+                              alt={item.title}
+                              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                            />
+                          ) : (
+                            <EmptyImage label={item.genre || 'Favorite'} />
+                          )}
+                          <span className="absolute right-4 top-4 rounded-full bg-white/70 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-on-surface backdrop-blur-md">
+                            {item.itemType}
+                          </span>
+                        </div>
+                        <div className="p-6">
+                          <h3 className="mb-2 text-xl font-bold text-on-surface">{item.title}</h3>
+                          <p className="mb-6 line-clamp-2 text-sm leading-relaxed text-light-text dark:text-dark-text/95">
+                            {item.genre && item.year ? `${item.genre} • ${item.year}` : item.genre || item.year || 'No details available'}
+                          </p>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-xs font-bold text-primary">
+                              <Star className="h-4 w-4 fill-current" />
+                              Favorite
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-tighter text-light-text/50 dark:text-dark-text/50">
+                              {formatAddedLabel(item?.savedAt)}
                             </span>
                           </div>
                         </div>
