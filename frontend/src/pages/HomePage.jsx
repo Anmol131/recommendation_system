@@ -3,7 +3,8 @@ import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
-  Search,
+  Compass,
+  Sparkles,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import * as endpoints from '../api/endpoints';
@@ -135,7 +136,6 @@ const getSummary = (item, type) => {
 function HomePage() {
   const navigate = useNavigate();
 
-  const [searchQuery, setSearchQuery] = useState('');
   const [trendingItems, setTrendingItems] = useState([]);
   const [recommendedItems, setRecommendedItems] = useState([]);
   const [loadingTrending, setLoadingTrending] = useState(true);
@@ -195,13 +195,12 @@ function HomePage() {
     loadRecommended();
   }, []);
 
-  const handleSearchSubmit = (event) => {
-    event.preventDefault();
-    const trimmed = searchQuery.trim();
-    if (!trimmed) {
-      return;
-    }
-    navigate(`/explore?q=${encodeURIComponent(trimmed)}`);
+  const handleExplore = () => {
+    navigate('/explore');
+  };
+
+  const handleRecommend = () => {
+    navigate('/recommend');
   };
 
   const scrollTrending = (direction) => {
@@ -233,24 +232,54 @@ function HomePage() {
               Dive into a curated universe of movies, books, games, and music tailored to your unique taste.
             </p>
 
-            <form onSubmit={handleSearchSubmit} className="group relative mx-auto mt-12 w-full max-w-3xl">
-              <div className="relative flex items-center rounded-2xl bg-light-surface dark:bg-dark-surface px-8 py-4 shadow-lg dark:shadow-lg border border-light-surface-alt dark:border-dark-surface-alt transition-all group-focus-within:shadow-xl group-focus-within:border-primary">
-                <Search size={22} className="mr-4 text-light-text-secondary dark:text-dark-text-secondary flex-shrink-0" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Search for your next discovery..."
-                  className="w-full border-none bg-transparent text-light-text dark:text-dark-text placeholder:text-light-text-secondary dark:placeholder:text-dark-text-secondary focus:outline-none focus:ring-0 text-lg"
-                />
+            <div className="group relative mx-auto mt-12 w-full max-w-4xl space-y-6">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <button
-                  type="submit"
-                  className="ml-4 flex-shrink-0 rounded-lg bg-gradient-to-r from-primary to-secondary px-8 py-2 font-semibold text-white shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95"
+                  type="button"
+                  onClick={handleExplore}
+                  className="inline-flex items-center justify-center rounded-xl border border-primary/30 bg-light-surface-alt dark:bg-dark-surface-alt px-6 py-3 font-semibold text-primary transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10"
                 >
-                  Find
+                  Explore Library
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRecommend}
+                  className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-primary to-secondary px-6 py-3 font-semibold text-white shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.01] active:scale-95"
+                >
+                  AI Recommend
                 </button>
               </div>
-            </form>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => navigate('/explore')}
+                  className="rounded-2xl border border-primary/20 bg-light-surface/95 p-5 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md dark:border-primary/25 dark:bg-dark-surface/90"
+                >
+                  <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-primary dark:bg-primary/20">
+                    <Compass size={20} />
+                  </div>
+                  <h3 className="text-lg font-semibold text-light-text dark:text-dark-text">Explore</h3>
+                  <p className="mt-1 text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                    Browse movies, books, games, and music manually.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => navigate('/recommend')}
+                  className="rounded-2xl border border-secondary/25 bg-light-surface/95 p-5 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md dark:border-secondary/35 dark:bg-dark-surface/90"
+                >
+                  <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-secondary/15 text-secondary dark:bg-secondary/20">
+                    <Sparkles size={20} />
+                  </div>
+                  <h3 className="text-lg font-semibold text-light-text dark:text-dark-text">AI Recommend</h3>
+                  <p className="mt-1 text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                     AI Recommend for natural language recommendations.
+                  </p>
+                </button>
+              </div>
+            </div>
           </div>
         </section>
 
