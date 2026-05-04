@@ -1,6 +1,6 @@
 ﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, Sparkles, Star } from 'lucide-react';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import * as endpoints from '../api/endpoints';
 import { normalizeType, typeToLabel, normalizeTypeForUI } from '../utils/typeNormalizer';
 import { useToast } from '../context/ToastContext';
@@ -121,10 +121,11 @@ const matchesYearBucket = (itemYear, selectedYears) => {
 
 function ExplorePage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [query, setQuery] = useState('');
+  // searchInput: draft state for the input field (allows normal editing/backspace)
+  const [searchInput, setSearchInput] = useState('');
+  // appliedQuery: the actual submitted query from URL (used for fetches)
   const [appliedQuery, setAppliedQuery] = useState('');
   const [activeGenre, setActiveGenre] = useState('All');
   const [minRating, setMinRating] = useState(0);
@@ -149,17 +150,13 @@ function ExplorePage() {
   // Derive selectedType from URL
   const selectedType = normalizeTypeForUI(searchParams.get("type") || "all");
 
+  // Sync searchInput and appliedQuery from URL only (not on every keystroke)
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const urlQuery = (params.get('q') || '').trim();
-
-    if (query !== urlQuery) {
-      setQuery(urlQuery);
-    }
-    if (appliedQuery !== urlQuery) {
-      setAppliedQuery(urlQuery);
-    }
-  }, [location.search, query, appliedQuery]);
+    const urlQuery = (searchParams.get('q') || '').trim();
+    // Sync input to URL query on page load or when URL changes
+    setSearchInput(urlQuery);
+    setAppliedQuery(urlQuery);
+  }, [searchParams]);
 
   useEffect(() => {
     setPage(1);
@@ -370,15 +367,31 @@ function ExplorePage() {
 
   const handleBrowseSearch = (e) => {
     e.preventDefault();
-    setAppliedQuery(query.trim());
-    setPage(1);
-    if (query.trim()) {
+    const trimmed = searchInput.trim();
+    
+    const params = new URLSearchParams(searchParams);
+    if (trimmed) {
+      params.set('q', trimmed);
+    } else {
+      params.delete('q');
+    }
+    
+    setSearchParams(params);
+    
+    if (trimmed) {
       toastApiRef.current.show({ message: 'Search started', type: 'info', toastId: 'explore-search-started' });
     }
   };
 
+  const handleClearSearch = () => {
+    setSearchInput('');
+    const params = new URLSearchParams(searchParams);
+    params.delete('q');
+    setSearchParams(params);
+  };
+
   const handleAiRecommend = () => {
-    const trimmed = query.trim();
+    const trimmed = searchInput.trim();
     if (!trimmed) {
       navigate('/recommend');
       return;
@@ -405,15 +418,15 @@ function ExplorePage() {
               <Search size={18} className="mr-3 text-on-surface/60 dark:text-white/60" />
               <input
                 type="text"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
                 placeholder="Search across all categories..."
                 className="w-full border-none bg-transparent font-medium text-on-surface dark:text-white placeholder:text-on-surface/50 dark:placeholder:text-white/50 focus:outline-none focus:ring-0"
               />
-              {query ? (
+              {searchInput ? (
                 <button
                   type="button"
-                  onClick={() => setQuery('')}
+                  onClick={handleClearSearch}
                   className="ml-2 text-on-surface/50 hover:text-on-surface dark:text-white/60 dark:hover:text-white transition-colors duration-200"
                   aria-label="Clear search"
                 >
