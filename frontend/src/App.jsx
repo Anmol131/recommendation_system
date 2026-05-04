@@ -144,7 +144,7 @@ function App() {
           <Route path="/recommend" element={<RecommendationPage />} />
           
           <Route path="/details/:type/:id" element={<DetailsPage />} />
-  @@          
+
           <Route
             path="/profile"
             element={(

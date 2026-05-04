@@ -167,6 +167,8 @@ const getDashboardStats = async (req, res) => {
 			Music.countDocuments(),
 			Game.countDocuments(),
 			User.countDocuments(),
+			User.countDocuments({ isVerified: true }),
+			User.countDocuments({ status: 'blocked' }),
 			User.countDocuments({ role: 'admin' }),
 			SearchLog.countDocuments(),
 		]);
