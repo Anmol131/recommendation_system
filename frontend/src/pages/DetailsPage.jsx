@@ -308,28 +308,28 @@ function DetailsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#050b16] px-4 py-8 text-slate-100 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-light-bg dark:bg-dark-bg px-4 py-8 text-light-text dark:text-dark-text sm:px-6 lg:px-8 transition-colors duration-300">
         <div className="mx-auto max-w-7xl animate-pulse space-y-6">
-          <div className="h-6 w-56 rounded-full bg-white/10" />
-          <div className="grid gap-8 rounded-[2rem] border border-white/10 bg-white/5 p-5 lg:grid-cols-[400px_minmax(0,1fr)] lg:p-7">
+          <div className="h-6 w-56 rounded-full bg-light-surface-alt dark:bg-dark-surface-alt" />
+          <div className="grid gap-8 rounded-[2rem] border border-light-surface-alt bg-light-surface p-5 lg:grid-cols-[400px_minmax(0,1fr)] lg:p-7 dark:border-dark-surface-alt dark:bg-dark-surface">
             <div className="space-y-4">
-              <div className="aspect-[2/3] rounded-[2rem] bg-slate-800/80" />
+              <div className="aspect-[2/3] rounded-[2rem] bg-light-surface-alt dark:bg-dark-surface-alt" />
             </div>
             <div className="space-y-4 py-2">
-              <div className="h-8 w-40 rounded-full bg-slate-800/80" />
-              <div className="h-14 w-3/4 rounded-2xl bg-slate-800/80" />
+              <div className="h-8 w-40 rounded-full bg-light-surface-alt dark:bg-dark-surface-alt" />
+              <div className="h-14 w-3/4 rounded-2xl bg-light-surface-alt dark:bg-dark-surface-alt" />
               <div className="flex gap-3 pt-4">
-                <div className="h-11 w-36 rounded-full bg-slate-800/80" />
-                <div className="h-11 w-36 rounded-full bg-slate-800/80" />
-                <div className="h-11 w-36 rounded-full bg-slate-800/80" />
+                <div className="h-11 w-36 rounded-full bg-light-surface-alt dark:bg-dark-surface-alt" />
+                <div className="h-11 w-36 rounded-full bg-light-surface-alt dark:bg-dark-surface-alt" />
+                <div className="h-11 w-36 rounded-full bg-light-surface-alt dark:bg-dark-surface-alt" />
               </div>
               <div className="space-y-3 pt-6">
-                <div className="h-6 w-24 rounded-full bg-slate-800/80" />
-                <div className="h-20 w-full rounded-xl bg-slate-800/80" />
-                <div className="h-6 w-20 rounded-full bg-slate-800/80" />
+                <div className="h-6 w-24 rounded-full bg-light-surface-alt dark:bg-dark-surface-alt" />
+                <div className="h-20 w-full rounded-xl bg-light-surface-alt dark:bg-dark-surface-alt" />
+                <div className="h-6 w-20 rounded-full bg-light-surface-alt dark:bg-dark-surface-alt" />
                 <div className="grid gap-3 sm:grid-cols-2">
                   {Array.from({ length: 6 }).map((_, index) => (
-                    <div key={index} className="h-16 rounded-xl bg-slate-800/80" />
+                    <div key={index} className="h-16 rounded-xl bg-light-surface-alt dark:bg-dark-surface-alt" />
                   ))}
                 </div>
               </div>
@@ -342,26 +342,26 @@ function DetailsPage() {
 
   if (error || !item) {
     return (
-      <div className="min-h-screen bg-[#050b16] px-4 py-8 text-slate-100 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-light-bg dark:bg-dark-bg px-4 py-8 text-light-text dark:text-dark-text sm:px-6 lg:px-8 transition-colors duration-300">
         <div className="mx-auto max-w-3xl">
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-violet-400/30 hover:bg-violet-500/15"
+            className="mb-6 inline-flex items-center gap-2 rounded-full border border-light-surface-alt bg-light-surface px-4 py-2 text-sm font-semibold text-light-text transition hover:border-primary/30 hover:bg-primary/5 dark:border-dark-surface-alt dark:bg-dark-surface dark:text-dark-text dark:hover:bg-dark-surface-alt"
           >
             Back
           </button>
 
-          <div className="rounded-[2rem] border border-white/10 bg-white/5 p-8 text-center shadow-[0_24px_80px_-40px_rgba(96,69,190,0.8)]">
+          <div className="rounded-[2rem] border border-light-surface-alt bg-light-surface p-8 text-center shadow-lg dark:border-dark-surface-alt dark:bg-dark-surface dark:text-dark-text dark:shadow-dark-lg">
             <AlertCircle className="mx-auto mb-4 text-rose-400" size={42} />
-            <h1 className="text-2xl font-semibold text-slate-50">Could not load details</h1>
-            <p className="mt-3 text-sm leading-7 text-slate-300">{error || 'The selected content is not available right now.'}</p>
+            <h1 className="text-2xl font-semibold text-light-text dark:text-dark-text">Could not load details</h1>
+            <p className="mt-3 text-sm leading-7 text-light-text-secondary dark:text-dark-text-secondary">{error || 'The selected content is not available right now.'}</p>
 
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <button
                 type="button"
                 onClick={retry}
-                className="inline-flex items-center gap-2 rounded-full bg-violet-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-400"
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-dark"
               >
                 <RefreshCw size={16} />
                 Retry
@@ -369,7 +369,7 @@ function DetailsPage() {
               <button
                 type="button"
                 onClick={() => navigate(-1)}
-                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:border-violet-400/30 hover:bg-violet-500/15"
+                className="inline-flex items-center gap-2 rounded-full border border-light-surface-alt bg-light-surface px-5 py-3 text-sm font-semibold text-light-text transition hover:border-primary/30 hover:bg-primary/5 dark:border-dark-surface-alt dark:bg-dark-surface dark:text-dark-text dark:hover:bg-dark-surface-alt"
               >
                 Go Back
               </button>
@@ -381,8 +381,8 @@ function DetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#040814] text-slate-100">
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_rgba(120,80,255,0.16),_transparent_35%),radial-gradient(circle_at_bottom_right,_rgba(68,56,255,0.12),_transparent_20%)]" />
+    <div className="min-h-screen bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text transition-colors duration-300">
+      <div className="absolute inset-0 -z-10 bg-transparent dark:bg-[radial-gradient(circle_at_top,_rgba(120,80,255,0.16),_transparent_35%),radial-gradient(circle_at_bottom_right,_rgba(68,56,255,0.12),_transparent_20%)]" />
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Back Button */}
@@ -390,7 +390,7 @@ function DetailsPage() {
           <button
             type="button"
             onClick={handleBack}
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-violet-400/30 hover:bg-violet-500/15"
+            className="inline-flex items-center gap-2 rounded-full border border-light-surface-alt bg-light-surface px-4 py-2 text-sm font-semibold text-light-text transition hover:border-primary/30 hover:bg-primary/5 dark:border-dark-surface-alt dark:bg-dark-surface dark:text-dark-text dark:hover:bg-dark-surface-alt"
           >
             <ChevronLeft size={16} />
             Back
@@ -398,11 +398,11 @@ function DetailsPage() {
         </div>
 
         {/* Main Hero Section - Split Layout */}
-        <section className="rounded-[2rem] border border-white/10 bg-[#09121f]/95 shadow-[0_30px_100px_-50px_rgba(80,61,255,0.35)] backdrop-blur overflow-hidden">
+        <section className="rounded-[2rem] border border-light-surface-alt bg-light-surface shadow-lg dark:border-dark-surface-alt dark:bg-dark-surface dark:shadow-dark-lg backdrop-blur overflow-hidden transition-colors duration-300">
           <div className="grid gap-8 lg:grid-cols-[400px_minmax(0,1fr)]">
             {/* Left Column - Poster */}
             <div className="relative">
-              <div className="aspect-[2/3] overflow-hidden rounded-l-[2rem] lg:rounded-l-[2rem] lg:rounded-r-none">
+              <div className="aspect-[2/3] overflow-hidden rounded-l-[2rem] lg:rounded-l-[2rem] lg:rounded-r-none bg-light-surface-alt dark:bg-dark-surface-alt">
                 <img
                   src={item?.imageUrl || item?.poster || item?.cover || item?.thumbnail || item?.background_image || FALLBACK_IMAGE}
                   alt={item?.title || 'Content artwork'}
@@ -423,7 +423,7 @@ function DetailsPage() {
                 ].filter(badge => badge.label).map((badge) => (
                   <span
                     key={badge.label}
-                    className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-200"
+                    className="rounded-full border border-light-surface-alt bg-light-surface-alt px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.35em] text-light-text-secondary dark:border-dark-surface-alt dark:bg-dark-surface-alt dark:text-dark-text-secondary"
                   >
                     {badge.label}
                   </span>
@@ -431,7 +431,7 @@ function DetailsPage() {
               </div>
 
               {/* Title */}
-              <h1 className="mb-3 text-3xl font-semibold tracking-tight text-slate-50 sm:text-4xl lg:text-5xl">
+              <h1 className="mb-3 text-3xl font-semibold tracking-tight text-light-text dark:text-dark-text sm:text-4xl lg:text-5xl">
                 {item?.title || 'Untitled'}
               </h1>
 
@@ -445,7 +445,7 @@ function DetailsPage() {
                       key={`${button.label}-${idx}`}
                       type="button"
                       onClick={() => window.open(button.url, '_blank', 'noopener,noreferrer')}
-                      className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition ${button.variant === 'primary' ? 'bg-violet-500 text-white shadow-[0_18px_50px_-30px_rgba(168,85,247,0.9)] hover:bg-violet-400' : 'border border-white/10 bg-white/5 text-slate-100 hover:border-violet-400/30 hover:bg-violet-500/15'}`}
+                      className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition ${button.variant === 'primary' ? 'bg-primary text-white shadow-lg shadow-primary/15 hover:bg-primary-dark' : 'border border-light-surface-alt bg-light-surface-alt text-light-text hover:border-primary/30 hover:bg-primary/5 dark:border-dark-surface-alt dark:bg-dark-surface-alt dark:text-dark-text dark:hover:bg-dark-surface'}`}
                     >
                       {button.label}
                     </button>
@@ -455,7 +455,7 @@ function DetailsPage() {
                   type="button"
                   onClick={handleToggleSaved}
                   disabled={favoriteLoading}
-                  className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-100 transition hover:border-violet-400/30 hover:bg-violet-500/15 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-light-surface-alt bg-light-surface-alt text-light-text transition hover:border-primary/30 hover:bg-primary/5 dark:border-dark-surface-alt dark:bg-dark-surface-alt dark:text-dark-text dark:hover:bg-dark-surface"
                   aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
                 >
                   {isFavorite ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
@@ -464,7 +464,7 @@ function DetailsPage() {
                 <button
                   type="button"
                   onClick={handleShare}
-                  className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-100 transition hover:border-violet-400/30 hover:bg-violet-500/15"
+                  className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-light-surface-alt bg-light-surface-alt text-light-text transition hover:border-primary/30 hover:bg-primary/5 dark:border-dark-surface-alt dark:bg-dark-surface-alt dark:text-dark-text dark:hover:bg-dark-surface"
                   aria-label="Share content"
                 >
                   <Share2 size={18} />
@@ -473,15 +473,15 @@ function DetailsPage() {
 
               {/* Overview Section */}
               <div className="mb-6">
-                <h2 className="mb-3 text-lg font-semibold text-slate-50">Overview</h2>
-                <p className="text-sm leading-7 text-slate-300 sm:text-base">
+                <h2 className="mb-3 text-lg font-semibold text-light-text dark:text-dark-text">Overview</h2>
+                <p className="text-sm leading-7 text-light-text-secondary dark:text-dark-text-secondary sm:text-base">
                   {item?.description || 'No overview available. Check similar mood suggestions below for more great recommendations.'}
                 </p>
               </div>
 
               {/* Details Section */}
               <div>
-                <h2 className="mb-4 text-lg font-semibold text-slate-50">Details</h2>
+                <h2 className="mb-4 text-lg font-semibold text-light-text dark:text-dark-text">Details</h2>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {[
                     { label: 'Type', value: typeInfo.label.slice(0, -1) || 'Content' },
@@ -515,9 +515,9 @@ function DetailsPage() {
                         ]
                       : []),
                   ].map((detail) => (
-                    <div key={detail.label} className="rounded-xl border border-white/10 bg-[#08111f]/90 p-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-400">{detail.label}</p>
-                      <p className="mt-2 text-sm font-semibold text-slate-100">{detail.value || 'N/A'}</p>
+                    <div key={detail.label} className="rounded-xl border border-light-surface-alt bg-light-surface-alt p-4 dark:border-dark-surface-alt dark:bg-dark-surface-alt">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-light-text-secondary dark:text-dark-text-secondary">{detail.label}</p>
+                      <p className="mt-2 text-sm font-semibold text-light-text dark:text-dark-text">{detail.value || 'N/A'}</p>
                     </div>
                   ))}
                 </div>
@@ -527,16 +527,16 @@ function DetailsPage() {
         </section>
 
         {/* Similar Mood Section - Below the hero */}
-        <section className="mt-10 rounded-[2rem] border border-white/10 bg-[#08101f]/95 p-6 shadow-[0_30px_100px_-60px_rgba(96,69,190,0.75)] backdrop-blur sm:p-8">
+        <section className="mt-10 rounded-[2rem] border border-light-surface-alt bg-light-surface p-6 shadow-lg dark:border-dark-surface-alt dark:bg-dark-surface dark:shadow-dark-lg backdrop-blur sm:p-8 transition-colors duration-300">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-violet-300/80">Similar Mood</p>
-              <h2 className="mt-2 text-xl font-semibold text-slate-50 sm:text-2xl">More titles with the same energy</h2>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-primary/80">Similar Mood</p>
+              <h2 className="mt-2 text-xl font-semibold text-light-text dark:text-dark-text sm:text-2xl">More titles with the same energy</h2>
             </div>
             <button
               type="button"
               onClick={handleViewAll}
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-slate-100 transition hover:border-violet-400/30 hover:bg-violet-500/15"
+              className="inline-flex items-center gap-2 rounded-full border border-light-surface-alt bg-light-surface-alt px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-light-text transition hover:border-primary/30 hover:bg-primary/5 dark:border-dark-surface-alt dark:bg-dark-surface-alt dark:text-dark-text dark:hover:bg-dark-surface"
             >
               Explore All
               <ArrowRight size={14} />
@@ -565,16 +565,16 @@ function DetailsPage() {
                   type="button"
                   disabled={card._placeholder}
                   onClick={() => !card._placeholder && navigate(`/details/${card.type || type}/${card._id || card.id}`)}
-                  className="group min-w-[280px] shrink-0 overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#091024] text-left transition hover:-translate-y-1 hover:border-violet-400/30 focus:outline-none focus:ring-2 focus:ring-violet-400/20 disabled:cursor-wait disabled:opacity-60 xl:min-w-0"
+                  className="group min-w-[280px] shrink-0 overflow-hidden rounded-[1.75rem] border border-light-surface-alt bg-light-surface text-left transition hover:-translate-y-1 hover:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-wait disabled:opacity-60 dark:border-dark-surface-alt dark:bg-dark-surface xl:min-w-0"
                 >
-                  <div className="relative overflow-hidden bg-slate-900">
+                  <div className="relative overflow-hidden bg-light-surface-alt dark:bg-dark-surface-alt">
                     <img src={imageUrl} alt={label} className="h-56 w-full object-cover transition duration-500 group-hover:scale-105" />
                   </div>
                   <div className="space-y-3 p-4">
-                    <h3 className="text-sm font-semibold text-slate-100">{label}</h3>
-                    <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500">{metadata}</p>
+                    <h3 className="text-sm font-semibold text-light-text dark:text-dark-text">{label}</h3>
+                    <p className="text-[11px] uppercase tracking-[0.3em] text-light-text-secondary dark:text-dark-text-secondary">{metadata}</p>
                     {!card._placeholder && (
-                      <span className="inline-flex items-center gap-2 text-xs font-semibold text-violet-300">
+                      <span className="inline-flex items-center gap-2 text-xs font-semibold text-primary">
                         <Sparkles size={12} />
                         Open details
                       </span>
