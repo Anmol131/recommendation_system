@@ -1,5 +1,6 @@
 const Movie = require('../models/Movie');
 const { searchMoviesWithFallback, getMovieDetails } = require('../services/tmdbService');
+const { escapeRegex, validateSearch, validatePagination } = require('../utils/inputSanitizer');
 
 const TMDB_MOVIE_GENRES = {
   28: "Action",
@@ -27,15 +28,23 @@ const mapTmdbIdToName = (id) => TMDB_MOVIE_GENRES[Number(id)] || null;
 
 const getMovies = async (req, res) => {
   try {
-    const page  = Math.max(parseInt(req.query.page,  10) || 1, 1);
-    const limit = Math.max(parseInt(req.query.limit, 10) || 20, 1);
+    const pagination = validatePagination(req.query.page, req.query.limit, 100);
+    if (!pagination.valid) {
+      return res.status(400).json({ success: false, message: pagination.error });
+    }
+    const page = pagination.page;
+    const limit = pagination.limit;
     const skip  = (page - 1) * limit;
 
     const query = {};
 
     // Genre filter
     if (req.query.genre) {
-      query.genres = { $regex: req.query.genre, $options: 'i' };
+      const genreValidation = validateSearch(req.query.genre, 50);
+      if (!genreValidation.valid) {
+        return res.status(400).json({ success: false, message: genreValidation.error });
+      }
+      query.genres = { $regex: escapeRegex(genreValidation.value), $options: 'i' };
     }
 
 		if (req.query.category === 'tv') {
@@ -104,7 +113,12 @@ const searchMovies = async (req, res) => {
 			return res.status(400).json({ success: false, message: 'Search query q is required' });
 		}
 
-		const results = await searchMoviesWithFallback(q);
+		const qValidation = validateSearch(q, 100);
+		if (!qValidation.valid) {
+			return res.status(400).json({ success: false, message: qValidation.error });
+		}
+
+		const results = await searchMoviesWithFallback(qValidation.value);
 
 		return res.status(200).json({ success: true, data: results });
 	} catch (error) {

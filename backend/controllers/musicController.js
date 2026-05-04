@@ -1,5 +1,6 @@
 const Music = require('../models/Music');
 const lastfmService = require('../services/lastfmService');
+const { escapeRegex, validateSearch, validatePagination } = require('../utils/inputSanitizer');
 
 // Spotify is disabled — requires premium subscription, always returns 403
 const SPOTIFY_ENABLED = false;
@@ -7,13 +8,21 @@ const SPOTIFY_ENABLED = false;
 // ─── GET /api/music ───────────────────────────────────────────────────────────
 const getMusic = async (req, res) => {
   try {
-    const page  = Math.max(parseInt(req.query.page,  10) || 1,  1);
-    const limit = Math.max(parseInt(req.query.limit, 10) || 20, 1);
+    const pagination = validatePagination(req.query.page, req.query.limit, 100);
+    if (!pagination.valid) {
+      return res.status(400).json({ success: false, message: pagination.error });
+    }
+    const page  = pagination.page;
+    const limit = pagination.limit;
 
     const query = {};
 
     if (req.query.genre) {
-      query.genres = { $regex: req.query.genre, $options: 'i' };
+      const genreValidation = validateSearch(req.query.genre, 50);
+      if (!genreValidation.valid) {
+        return res.status(400).json({ success: false, message: genreValidation.error });
+      }
+      query.genres = { $regex: escapeRegex(genreValidation.value), $options: 'i' };
     }
 
     const totalItems = await Music.countDocuments(query);
@@ -53,12 +62,23 @@ const searchMusic = async (req, res) => {
     const { q, page = 1, limit = 20 } = req.query;
     if (!q) return res.status(400).json({ success: false, message: 'Search query q is required' });
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const qValidation = validateSearch(q, 100);
+    if (!qValidation.valid) {
+      return res.status(400).json({ success: false, message: qValidation.error });
+    }
+
+    const pagination = validatePagination(page, limit, 100);
+    if (!pagination.valid) {
+      return res.status(400).json({ success: false, message: pagination.error });
+    }
+
+    const skip = (pagination.page - 1) * pagination.limit;
+    const qValue = qValidation.value;
 
     // 1. Try Last.fm first — fetch live results and upsert to MongoDB
     let lastfmResults = [];
     try {
-      const { results } = await lastfmService.searchTracks(q, parseInt(limit));
+      const { results } = await lastfmService.searchTracks(qValue, pagination.limit);
       lastfmResults = results.filter(Boolean); // remove nulls from skipped tracks
     } catch (err) {
       console.error('Last.fm search failed:', err.message);
@@ -67,9 +87,9 @@ const searchMusic = async (req, res) => {
     // 2. Always query MongoDB — combines seeded data + newly upserted Last.fm data
     const mongoQuery = {
       $or: [
-        { title:  { $regex: q, $options: 'i' } },
-        { artist: { $regex: q, $options: 'i' } },
-        { album:  { $regex: q, $options: 'i' } },
+        { title:  { $regex: escapeRegex(qValue), $options: 'i' } },
+        { artist: { $regex: escapeRegex(qValue), $options: 'i' } },
+        { album:  { $regex: escapeRegex(qValue), $options: 'i' } },
       ],
     };
 
@@ -77,10 +97,11 @@ const searchMusic = async (req, res) => {
       Music.find(mongoQuery)
         .sort({ popularity: -1 })
         .skip(skip)
-        .limit(parseInt(limit))
+        .limit(pagination.limit)
         .lean(),
       Music.countDocuments(mongoQuery),
     ]);
+
     // 3. If MongoDB has results use them (includes freshly upserted Last.fm data)
     //    If MongoDB is empty (cold start), fall back to raw Last.fm results
     const results = tracks.length > 0 ? tracks : lastfmResults;
@@ -90,8 +111,8 @@ const searchMusic = async (req, res) => {
       data: {
         items:       results,
         totalItems:  tracks.length > 0 ? total : lastfmResults.length,
-        totalPages:  Math.ceil((tracks.length > 0 ? total : lastfmResults.length) / limit),
-        currentPage: parseInt(page),
+        totalPages:  Math.ceil((tracks.length > 0 ? total : lastfmResults.length) / pagination.limit),
+        currentPage: pagination.page,
         source:      tracks.length > 0 ? 'mongodb' : 'lastfm',
       },
     });

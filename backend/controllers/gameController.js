@@ -1,19 +1,31 @@
 const Game = require('../models/Game');
+const { escapeRegex, validateSearch, validatePagination } = require('../utils/inputSanitizer');
 
 const getGames = async (req, res) => {
 	try {
-		const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-		const limit = Math.max(parseInt(req.query.limit, 10) || 20, 1);
+const pagination = validatePagination(req.query.page, req.query.limit, 100);
+	if (!pagination.valid) {
+		return res.status(400).json({ success: false, message: pagination.error });
+	}
+	const page = pagination.page;
+	const limit = pagination.limit;
 
-		const query = {};
+	const query = {};
 
-		if (req.query.platform) {
-			// Allow regex for multi-platform
-			query.platform = { $regex: req.query.platform, $options: 'i' };
+	if (req.query.platform) {
+		const platformValidation = validateSearch(req.query.platform, 50);
+		if (!platformValidation.valid) {
+			return res.status(400).json({ success: false, message: platformValidation.error });
 		}
+		query.platform = { $regex: escapeRegex(platformValidation.value), $options: 'i' };
+	}
 
-		if (req.query.genre) {
-			query.genres = req.query.genre;
+	if (req.query.genre) {
+		const genreValidation = validateSearch(req.query.genre, 50);
+		if (!genreValidation.valid) {
+			return res.status(400).json({ success: false, message: genreValidation.error });
+		}
+		query.genres = genreValidation.value;
 		}
 
 		// Sorting
@@ -61,14 +73,23 @@ const searchGames = async (req, res) => {
 			return res.status(400).json({ success: false, message: 'Search query q is required' });
 		}
 
+		const qValidation = validateSearch(q, 100);
+		if (!qValidation.valid) {
+			return res.status(400).json({ success: false, message: qValidation.error });
+		}
+
 		const query = {
 			$text: {
-				$search: q,
+				$search: qValidation.value,
 			},
 		};
 
 		if (platform) {
-			query.platform = platform;
+			const platformValidation = validateSearch(platform, 50);
+			if (!platformValidation.valid) {
+				return res.status(400).json({ success: false, message: platformValidation.error });
+			}
+			query.platform = platformValidation.value;
 		}
 
 		const games = await Game.find(query, { score: { $meta: 'textScore' } })

@@ -6,6 +6,7 @@ const Book = require('../models/Book');
 const Game = require('../models/Game');
 const Music = require('../models/Music');
 const bcrypt = require('bcryptjs');
+const { escapeRegex, validateSearch, validatePagination, validateType } = require('../utils/inputSanitizer');
 
 const generateToken = (id, role = 'user') => {
 	return jwt.sign({ id, role }, process.env.JWT_SECRET, {
@@ -59,10 +60,17 @@ const serializeUserDetail = (userDoc) => {
 const buildUserQuery = ({ search = '', role = '', status = '' } = {}) => {
 	const query = {};
 
-	if (search) {
+	const searchValidation = validateSearch(search, 100);
+	if (!searchValidation.valid) {
+		return { error: searchValidation.error };
+	}
+
+	const searchValue = searchValidation.value;
+	if (searchValue) {
+		const safeSearch = escapeRegex(searchValue);
 		query.$or = [
-			{ name: { $regex: search, $options: 'i' } },
-			{ email: { $regex: search, $options: 'i' } },
+			{ name: { $regex: safeSearch, $options: 'i' } },
+			{ email: { $regex: safeSearch, $options: 'i' } },
 		];
 	}
 
@@ -187,8 +195,12 @@ const getDashboardStats = async (req, res) => {
 const getAllUsers = async (req, res) => {
 	try {
 		const { page = 1, limit = 20, search = '', role = '', status = '' } = req.query;
-		const pageNum = Math.max(parseInt(page, 10) || 1, 1);
-		const limitNum = Math.max(parseInt(limit, 10) || 20, 1);
+		const pagination = validatePagination(page, limit, 100);
+		if (!pagination.valid) {
+			return res.status(400).json({ success: false, message: pagination.error });
+		}
+		const pageNum = pagination.page;
+		const limitNum = pagination.limit;
 		const skip = (pageNum - 1) * limitNum;
 		const searchValue = typeof search === 'string' ? search.trim() : '';
 		const roleValue = typeof role === 'string' ? role.trim() : '';
@@ -462,23 +474,38 @@ const normalizeGame = (doc) => ({
 const getAllContent = async (req, res) => {
 	try {
 		const { type, page = 1, limit = 25, search = '' } = req.query;
-		const pageNum = parseInt(page) || 1;
-		const lim = parseInt(limit) || 25;
+		const pagination = validatePagination(page, limit, 100);
+		if (!pagination.valid) {
+			return res.status(400).json({ success: false, message: pagination.error });
+		}
+		const pageNum = pagination.page;
+		const lim = pagination.limit;
 		const skip = (pageNum - 1) * lim;
 
-		const searchRegex = search ? new RegExp(search, 'i') : null;
+		const typeValidation = validateType(type);
+		if (!typeValidation.valid) {
+			return res.status(400).json({ success: false, message: typeValidation.error });
+		}
+		const typeValue = typeValidation.value === 'all' ? null : typeValidation.value;
 
-		// If a type is specified, query only that collection
-		if (type) {
+		const searchValidation = validateSearch(search, 100);
+		if (!searchValidation.valid) {
+			return res.status(400).json({ success: false, message: searchValidation.error });
+		}
+		const searchValue = searchValidation.value;
+		const searchRegex = searchValue ? new RegExp(escapeRegex(searchValue), 'i') : null;
+
+		// If a specific non-all type is requested, query only that collection
+		if (typeValue) {
 			let Model;
 			let normalize;
-			if (type === 'movie') {
+			if (typeValue === 'movie') {
 				Model = Movie; normalize = normalizeMovie;
-			} else if (type === 'book') {
+			} else if (typeValue === 'book') {
 				Model = Book; normalize = normalizeBook;
-			} else if (type === 'music') {
+			} else if (typeValue === 'music') {
 				Model = Music; normalize = normalizeMusic;
-			} else if (type === 'game') {
+			} else if (typeValue === 'game') {
 				Model = Game; normalize = normalizeGame;
 			} else {
 				return res.status(400).json({ success: false, message: 'Invalid type' });
@@ -690,9 +717,26 @@ const getSearchLogs = async (req, res) => {
 			startDate,
 			endDate,
 		} = req.query;
-		const pageNum = Math.max(parseInt(page, 10) || 1, 1);
-		const limitNum = Math.max(parseInt(limit, 10) || 20, 1);
+
+		const pagination = validatePagination(page, limit, 100);
+		if (!pagination.valid) {
+			return res.status(400).json({ success: false, message: pagination.error });
+		}
+		const pageNum = pagination.page;
+		const limitNum = pagination.limit;
 		const skip = (pageNum - 1) * limitNum;
+
+		const typeValidation = validateType(type);
+		if (!typeValidation.valid) {
+			return res.status(400).json({ success: false, message: typeValidation.error });
+		}
+		const typeValue = typeValidation.value === 'all' ? null : typeValidation.value;
+
+		const searchValidation = validateSearch(search, 100);
+		if (!searchValidation.valid) {
+			return res.status(400).json({ success: false, message: searchValidation.error });
+		}
+		const searchValue = searchValidation.value;
 
 		let query = {};
 
@@ -705,12 +749,12 @@ const getSearchLogs = async (req, res) => {
 			endDate,
 		});
 
-		if (search) {
-			query.query = { $regex: search, $options: 'i' };
+		if (searchValue) {
+			query.query = { $regex: escapeRegex(searchValue), $options: 'i' };
 		}
 
-		if (type) {
-			query.detectedType = type;
+		if (typeValue) {
+			query.detectedType = typeValue;
 		}
 
 		if (startDate || endDate) {

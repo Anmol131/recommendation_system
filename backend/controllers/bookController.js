@@ -1,19 +1,32 @@
 const Book = require('../models/Book');
 const { searchBooksWithFallback, getBookDetails } = require('../services/googleBooksService');
+const { escapeRegex, validateSearch, validatePagination, validateNumericRange } = require('../utils/inputSanitizer');
 
 const getBooks = async (req, res) => {
 	try {
-		const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-		const limit = Math.max(parseInt(req.query.limit, 10) || 20, 1);
+const pagination = validatePagination(req.query.page, req.query.limit, 100);
+	if (!pagination.valid) {
+		return res.status(400).json({ success: false, message: pagination.error });
+	}
+	const page = pagination.page;
+	const limit = pagination.limit;
 
-		const query = {};
+	const query = {};
 
-		if (req.query.author) {
-			query.author = { $regex: req.query.author, $options: 'i' };
+	if (req.query.author) {
+		const authorValidation = validateSearch(req.query.author, 50);
+		if (!authorValidation.valid) {
+			return res.status(400).json({ success: false, message: authorValidation.error });
 		}
+		query.author = { $regex: escapeRegex(authorValidation.value), $options: 'i' };
+	}
 
-		if (req.query.year) {
-			query.year = Number(req.query.year);
+	if (req.query.year) {
+		const yearValidation = validateNumericRange(req.query.year, 1900, new Date().getFullYear() + 1);
+		if (!yearValidation.valid) {
+			return res.status(400).json({ success: false, message: yearValidation.error });
+		}
+		query.year = yearValidation.value;
 		}
 
 		// Sorting
@@ -61,7 +74,12 @@ const searchBooks = async (req, res) => {
 			return res.status(400).json({ success: false, message: 'Search query q is required' });
 		}
 
-		const results = await searchBooksWithFallback(q);
+		const qValidation = validateSearch(q, 100);
+		if (!qValidation.valid) {
+			return res.status(400).json({ success: false, message: qValidation.error });
+		}
+
+		const results = await searchBooksWithFallback(qValidation.value);
 
 		return res.status(200).json({ success: true, data: results });
 	} catch (error) {
