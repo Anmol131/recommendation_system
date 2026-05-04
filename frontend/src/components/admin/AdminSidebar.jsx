@@ -1,12 +1,13 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BarChart3, FileText, Search } from 'lucide-react';
+import { BarChart3, FileText, Search, Users } from 'lucide-react';
 
 function AdminSidebar({ isOpen, mobileMenuOpen, onMobileClose }) {
   const location = useLocation();
 
   const menuItems = [
     { path: '/admin/dashboard', label: 'Dashboard', icon: BarChart3 },
+    { path: '/admin/users', label: 'Users', icon: Users },
     { path: '/admin/content', label: 'Manage Content', icon: FileText },
     { path: '/admin/search-logs', label: 'Search Logs', icon: Search },
   ];

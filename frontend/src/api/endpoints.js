@@ -221,6 +221,31 @@ export const getAdminDashboard = async () => {
   return data;
 };
 
+export const getAdminUsers = async (params = {}) => {
+  const { data } = await instance.get('/admin/users', { params });
+  return data;
+};
+
+export const getAdminUserById = async (id) => {
+  const { data } = await instance.get(`/admin/users/${id}`);
+  return data;
+};
+
+export const updateAdminUser = async (id, payload) => {
+  const { data } = await instance.put(`/admin/users/${id}`, payload);
+  return data;
+};
+
+export const deleteAdminUser = async (id) => {
+  const { data } = await instance.delete(`/admin/users/${id}`);
+  return data;
+};
+
+export const updateAdminUserRole = async (id, payload) => {
+  const { data } = await instance.patch(`/admin/users/${id}/role`, payload);
+  return data;
+};
+
 export const getAdminContent = async (params = {}) => {
   const { data } = await instance.get('/admin/content', { params });
   return data;

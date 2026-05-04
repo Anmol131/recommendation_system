@@ -18,6 +18,7 @@ import RecommendationPage from './pages/RecommendationPage';
 import DetailsPage from './pages/DetailsPage';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminContentListPage from './pages/admin/AdminContentListPage';
 import AdminContentFormPage from './pages/admin/AdminContentFormPage';
 import AdminSearchLogsPage from './pages/admin/AdminSearchLogsPage';
@@ -76,6 +77,14 @@ function App() {
             element={(
               <AdminProtectedRoute>
                 <AdminDashboardPage />
+              </AdminProtectedRoute>
+            )}
+          />
+          <Route
+            path="/admin/users"
+            element={(
+              <AdminProtectedRoute>
+                <AdminUsersPage />
               </AdminProtectedRoute>
             )}
           />

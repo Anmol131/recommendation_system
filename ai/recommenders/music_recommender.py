@@ -340,6 +340,7 @@ class MusicRecommender(BaseRecommender):
         results = []
 
         reference_track = None
+        exact_match_result = None  # Will hold the exact matched track if found
         reference_artist_names = []
         reference_album_words = set()
         reference_genres = []
@@ -424,7 +425,30 @@ class MusicRecommender(BaseRecommender):
                 reference_track_id = reference_track.get("trackId")
                 current_track_id = track.get("trackId")
 
+                # Include exact match as first result
                 if reference_track_id and current_track_id == reference_track_id:
+                    exact_match_result = {
+                        "trackId": reference_track.get("trackId"),
+                        "title": reference_track.get("title"),
+                        "type": "music",
+                        "artist": reference_track.get("artist"),
+                        "album": reference_track.get("album"),
+                        "genre": reference_track.get("genre"),
+                        "genres": reference_track.get("genres", []),
+                        "popularity": reference_track.get("popularity"),
+                        "explicit": reference_track.get("explicit"),
+                        "durationSec": reference_track.get("durationSec"),
+                        "cover": reference_track.get("cover"),
+                        "previewUrl": reference_track.get("previewUrl"),
+                        "spotifyUrl": reference_track.get("spotifyUrl"),
+                        "enriched": reference_track.get("enriched"),
+                        "lastfmId": reference_track.get("lastfmId"),
+                        "lastfmUrl": reference_track.get("lastfmUrl"),
+                        "albumArt": reference_track.get("albumArt"),
+                        "score": 10000,  # Very high score to put it first
+                        "reasons": ["Exact title match for your query"],
+                        "matchType": "exact",
+                    }
                     continue
 
                 if title_lower == str(reference_track.get("title", "")).lower():
@@ -623,4 +647,11 @@ class MusicRecommender(BaseRecommender):
                 )
 
         results.sort(key=lambda x: x["score"], reverse=True)
+        
+        # Add exact match at the beginning if found
+        if exact_match_result:
+            # Remove any duplicate of the exact match from results
+            results = [r for r in results if r.get("trackId") != exact_match_result.get("trackId")]
+            results = [exact_match_result] + results
+        
         return results[:top_n]

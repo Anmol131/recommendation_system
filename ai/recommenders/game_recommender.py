@@ -140,6 +140,7 @@ class GameRecommender(BaseRecommender):
         platform_preference = self._detect_platform_preference(cleaned_query)
 
         results = []
+        exact_match_result = None  # Will hold the exact matched game if found
 
         reference_game = None
         reference_genres = []
@@ -231,7 +232,29 @@ class GameRecommender(BaseRecommender):
                 reference_game_id = reference_game.get("gameId")
                 current_game_id = game.get("gameId")
 
+                # Include exact match as first result
                 if reference_game_id and current_game_id == reference_game_id:
+                    exact_match_result = {
+                        "gameId": reference_game.get("gameId"),
+                        "title": reference_game.get("title", ""),
+                        "type": "game",
+                        "genres": self._parse_genres(reference_game.get("genres", [])),
+                        "platform": reference_game.get("platform"),
+                        "pcPlatform": reference_game.get("pcPlatform"),
+                        "releaseYear": reference_game.get("releaseYear"),
+                        "image": reference_game.get("image"),
+                        "developer": reference_game.get("developer"),
+                        "rating": reference_game.get("rating"),
+                        "totalReviews": reference_game.get("totalReviews"),
+                        "recommendations": reference_game.get("recommendations"),
+                        "installs": reference_game.get("installs"),
+                        "source": reference_game.get("source"),
+                        "description": reference_game.get("description"),
+                        "enriched": reference_game.get("enriched"),
+                        "score": 10000,  # Very high score to put it first
+                        "reasons": ["Exact title match for your query"],
+                        "matchType": "exact",
+                    }
                     continue
 
                 if title_lower == str(reference_game.get("title", "")).lower():
@@ -357,4 +380,11 @@ class GameRecommender(BaseRecommender):
                 )
 
         results.sort(key=lambda x: x["score"], reverse=True)
+        
+        # Add exact match at the beginning if found
+        if exact_match_result:
+            # Remove any duplicate of the exact match from results
+            results = [r for r in results if r.get("gameId") != exact_match_result.get("gameId")]
+            results = [exact_match_result] + results
+        
         return results[:top_n]

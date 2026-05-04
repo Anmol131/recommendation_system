@@ -122,6 +122,7 @@ class MovieRecommender:
             return []
 
         understanding = query_data.get("external_understanding", {}) or {}
+        exact_match_result = None
 
         scored_results = []
         for doc in docs:
@@ -132,6 +133,23 @@ class MovieRecommender:
                 understanding=understanding,
             )
 
+            # Check for exact title match (special case for "similar_content" intent)
+            if intent == "similar_content" and score <= 0 and understanding.get("resolved_entity"):
+                resolved_entity = str(understanding.get("resolved_entity", "")).strip()
+                normalized_entity = self._normalize_text(resolved_entity)
+                normalized_title = self._normalize_text(doc.get("title") or "")
+                
+                if normalized_entity and normalized_title == normalized_entity:
+                    # Found exact match!
+                    exact_match_result = self._format_result(
+                        doc,
+                        10000,  # High score to sort first
+                        ["Exact title match for your query"],
+                    )
+                    if "matchType" not in exact_match_result:
+                        exact_match_result["matchType"] = "exact"
+                    continue
+
             if score <= 0:
                 continue
 
@@ -139,6 +157,11 @@ class MovieRecommender:
             scored_results.append(result)
 
         scored_results.sort(key=lambda item: item.get("score", 0), reverse=True)
+        
+        # Prepend exact match if found
+        if exact_match_result:
+            scored_results = [exact_match_result] + scored_results
+        
         return scored_results[:top_n]
 
     # ---------------------------------------------------------------------

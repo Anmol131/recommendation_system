@@ -19,6 +19,63 @@ const sanitizeUser = (userDoc) => {
 	return user;
 };
 
+const isValidObjectId = (id) => require('mongoose').Types.ObjectId.isValid(id);
+
+const serializeUserSummary = (userDoc) => {
+	const user = sanitizeUser(userDoc);
+	const favorites = Array.isArray(user.favorites) ? user.favorites : [];
+
+	return {
+		_id: user._id,
+		name: user.name,
+		email: user.email,
+		role: user.role,
+		favoritesCount: favorites.length,
+		createdAt: user.createdAt,
+		updatedAt: user.updatedAt,
+	};
+};
+
+const serializeUserDetail = (userDoc) => {
+	const user = sanitizeUser(userDoc);
+	const favorites = Array.isArray(user.favorites) ? user.favorites : [];
+	const recentFavorites = [...favorites]
+		.sort((a, b) => new Date(b.savedAt || 0) - new Date(a.savedAt || 0))
+		.slice(0, 5);
+
+	return {
+		_id: user._id,
+		name: user.name,
+		email: user.email,
+		role: user.role,
+		bio: user.bio || '',
+		favoritesCount: favorites.length,
+		createdAt: user.createdAt,
+		updatedAt: user.updatedAt,
+		recentFavorites,
+	};
+};
+
+const buildUserQuery = ({ search = '', role = '', status = '' } = {}) => {
+	const query = {};
+
+	if (search) {
+		query.$or = [
+			{ name: { $regex: search, $options: 'i' } },
+			{ email: { $regex: search, $options: 'i' } },
+		];
+	}
+
+	if (role) {
+		if (!['user', 'admin'].includes(role)) {
+			return { error: 'Invalid role filter' };
+		}
+		query.role = role;
+	}
+
+	return { query };
+};
+
 // Admin Login
 const adminLogin = async (req, res) => {
 	try {
@@ -92,6 +149,9 @@ const getDashboardStats = async (req, res) => {
 			totalMusic,
 			totalGames,
 			totalUsers,
+			activeUsers,
+			blockedUsers,
+			adminUsers,
 			totalSearchLogs,
 		] = await Promise.all([
 			Movie.countDocuments(),
@@ -99,6 +159,7 @@ const getDashboardStats = async (req, res) => {
 			Music.countDocuments(),
 			Game.countDocuments(),
 			User.countDocuments(),
+			User.countDocuments({ role: 'admin' }),
 			SearchLog.countDocuments(),
 		]);
 
@@ -113,12 +174,233 @@ const getDashboardStats = async (req, res) => {
 				totalGames,
 				totalContent,
 				totalUsers,
+				adminUsers,
 				totalSearchLogs,
 			},
 		});
 	} catch (error) {
 		console.error('Dashboard stats error:', error);
 		return res.status(500).json({ success: false, message: 'Failed to fetch dashboard stats' });
+	}
+};
+
+const getAllUsers = async (req, res) => {
+	try {
+		const { page = 1, limit = 20, search = '', role = '', status = '' } = req.query;
+		const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+		const limitNum = Math.max(parseInt(limit, 10) || 20, 1);
+		const skip = (pageNum - 1) * limitNum;
+		const searchValue = typeof search === 'string' ? search.trim() : '';
+		const roleValue = typeof role === 'string' ? role.trim() : '';
+		const statusValue = typeof status === 'string' ? status.trim() : '';
+		const filters = buildUserQuery({ search: searchValue, role: roleValue, status: statusValue });
+
+		if (filters.error) {
+			return res.status(400).json({ success: false, message: filters.error });
+		}
+
+		const query = filters.query || {};
+		const [total, users] = await Promise.all([
+			User.countDocuments(query),
+			User.find(query)
+				.sort({ createdAt: -1 })
+				.skip(skip)
+				.limit(limitNum)
+				.select('-password')
+				.lean(),
+		]);
+
+		return res.status(200).json({
+			success: true,
+			data: {
+				users: users.map((user) => ({
+					_id: user._id,
+					name: user.name,
+					email: user.email,
+					role: user.role,
+					bio: user.bio || '',
+					favoritesCount: Array.isArray(user.favorites) ? user.favorites.length : 0,
+					createdAt: user.createdAt,
+					updatedAt: user.updatedAt,
+				})),
+				total,
+				page: pageNum,
+				totalPages: Math.ceil(total / limitNum) || 1,
+			},
+		});
+	} catch (error) {
+		console.error('Get all users error:', error);
+		return res.status(500).json({ success: false, message: 'Failed to fetch users' });
+	}
+};
+
+const getUserById = async (req, res) => {
+	try {
+		const { id } = req.params;
+		if (!isValidObjectId(id)) {
+			return res.status(400).json({ success: false, message: 'Invalid user ID' });
+		}
+
+		const user = await User.findById(id).select('-password');
+		if (!user) {
+			return res.status(404).json({ success: false, message: 'User not found' });
+		}
+
+		return res.status(200).json({
+			success: true,
+			data: {
+				user: serializeUserDetail(user),
+			},
+		});
+	} catch (error) {
+		console.error('Get user by id error:', error);
+		return res.status(500).json({ success: false, message: 'Failed to fetch user' });
+	}
+};
+
+const updateUser = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const { name, email, role } = req.body || {};
+
+		if (!isValidObjectId(id)) {
+			return res.status(400).json({ success: false, message: 'Invalid user ID' });
+		}
+
+		const user = await User.findById(id);
+		if (!user) {
+			return res.status(404).json({ success: false, message: 'User not found' });
+		}
+
+		const updates = {};
+		if (typeof name === 'string') {
+			const trimmedName = name.trim();
+			if (trimmedName.length < 2 || trimmedName.length > 50) {
+				return res.status(400).json({ success: false, message: 'Name must be between 2 and 50 characters' });
+			}
+			updates.name = trimmedName;
+		}
+
+		if (typeof email === 'string') {
+			const normalizedEmail = email.trim().toLowerCase();
+			if (!normalizedEmail) {
+				return res.status(400).json({ success: false, message: 'Email is required' });
+			}
+			const existingEmailUser = await User.findOne({ email: normalizedEmail, _id: { $ne: id } });
+			if (existingEmailUser) {
+				return res.status(400).json({ success: false, message: 'Email already in use' });
+			}
+			updates.email = normalizedEmail;
+		}
+
+		if (typeof role === 'string') {
+			if (!['user', 'admin'].includes(role)) {
+				return res.status(400).json({ success: false, message: 'Invalid role' });
+			}
+
+			if (String(req.user._id) === String(id) && role !== 'admin') {
+				return res.status(403).json({ success: false, message: 'You cannot remove your own admin role' });
+			}
+
+			if (user.role === 'admin' && role === 'user') {
+				const adminCount = await User.countDocuments({ role: 'admin' });
+				if (adminCount <= 1) {
+					return res.status(403).json({ success: false, message: 'Cannot remove last admin' });
+				}
+			}
+
+			updates.role = role;
+		}
+
+		Object.assign(user, updates);
+		await user.save();
+
+		return res.status(200).json({
+			success: true,
+			message: 'User updated successfully',
+			data: { user: serializeUserSummary(user) },
+		});
+	} catch (error) {
+		console.error('Update user error:', error);
+		return res.status(500).json({ success: false, message: 'Failed to update user' });
+	}
+};
+
+const updateUserRole = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const { role } = req.body || {};
+
+		if (!isValidObjectId(id)) {
+			return res.status(400).json({ success: false, message: 'Invalid user ID' });
+		}
+
+		if (!['user', 'admin'].includes(role)) {
+			return res.status(400).json({ success: false, message: 'Invalid role' });
+		}
+
+		const user = await User.findById(id);
+		if (!user) {
+			return res.status(404).json({ success: false, message: 'User not found' });
+		}
+
+		if (String(req.user._id) === String(id) && role !== 'admin') {
+			return res.status(403).json({ success: false, message: 'You cannot remove your own admin role' });
+		}
+
+		if (user.role === 'admin' && role === 'user') {
+			const adminCount = await User.countDocuments({ role: 'admin' });
+			if (adminCount <= 1) {
+				return res.status(403).json({ success: false, message: 'Cannot remove last admin' });
+			}
+		}
+
+		user.role = role;
+		await user.save();
+
+		return res.status(200).json({
+			success: true,
+			message: 'User role updated successfully',
+			data: { user: serializeUserSummary(user) },
+		});
+	} catch (error) {
+		console.error('Update user role error:', error);
+		return res.status(500).json({ success: false, message: 'Failed to update user role' });
+	}
+};
+
+const deleteUser = async (req, res) => {
+	try {
+		const { id } = req.params;
+		if (!isValidObjectId(id)) {
+			return res.status(400).json({ success: false, message: 'Invalid user ID' });
+		}
+
+		if (String(req.user._id) === String(id)) {
+			return res.status(403).json({ success: false, message: 'Cannot delete yourself' });
+		}
+
+		const user = await User.findById(id);
+		if (!user) {
+			return res.status(404).json({ success: false, message: 'User not found' });
+		}
+
+		if (user.role === 'admin') {
+			const adminCount = await User.countDocuments({ role: 'admin' });
+			if (adminCount <= 1) {
+				return res.status(403).json({ success: false, message: 'Cannot remove last admin' });
+			}
+		}
+
+		await User.findByIdAndDelete(id);
+
+		return res.status(200).json({
+			success: true,
+			message: 'User deleted successfully',
+		});
+	} catch (error) {
+		console.error('Delete user error:', error);
+		return res.status(500).json({ success: false, message: 'Failed to delete user' });
 	}
 };
 
@@ -524,6 +806,11 @@ module.exports = {
 	adminLogin,
 	getAdminMe,
 	getDashboardStats,
+	getAllUsers,
+	getUserById,
+	updateUser,
+	deleteUser,
+	updateUserRole,
 	getAllContent,
 	getContentById,
 	createContent,

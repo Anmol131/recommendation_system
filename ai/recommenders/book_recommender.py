@@ -144,6 +144,7 @@ class BookRecommender(BaseRecommender):
         query_words = set(cleaned_query.split())
 
         results = []
+        exact_match_result = None  # Will hold the exact matched book if found
 
         reference_book = None
         reference_author = None
@@ -220,7 +221,27 @@ class BookRecommender(BaseRecommender):
                 reference_isbn = reference_book.get("isbn")
                 current_isbn = book.get("isbn")
 
+                # Include exact match as first result
                 if reference_isbn and current_isbn == reference_isbn:
+                    exact_match_result = {
+                        "isbn": reference_book.get("isbn"),
+                        "title": reference_book.get("title", ""),
+                        "type": "book",
+                        "author": reference_book.get("author"),
+                        "year": reference_book.get("year"),
+                        "publisher": reference_book.get("publisher"),
+                        "cover": reference_book.get("cover"),
+                        "avgRating": reference_book.get("avgRating"),
+                        "ratingCount": reference_book.get("ratingCount"),
+                        "description": reference_book.get("description"),
+                        "pageCount": reference_book.get("pageCount"),
+                        "lang": reference_book.get("lang"),
+                        "categories": reference_book.get("categories", []),
+                        "enriched": reference_book.get("enriched"),
+                        "score": 10000,  # Very high score to put it first
+                        "reasons": ["Exact title match for your query"],
+                        "matchType": "exact",
+                    }
                     continue
 
                 if title_lower == str(reference_book.get("title", "")).lower():
@@ -342,4 +363,11 @@ class BookRecommender(BaseRecommender):
                 )
 
         results.sort(key=lambda x: x["score"], reverse=True)
+        
+        # Add exact match at the beginning if found
+        if exact_match_result:
+            # Remove any duplicate of the exact match from results
+            results = [r for r in results if r.get("isbn") != exact_match_result.get("isbn")]
+            results = [exact_match_result] + results
+        
         return results[:top_n]

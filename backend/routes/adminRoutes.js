@@ -3,6 +3,11 @@ const {
 	adminLogin,
 	getAdminMe,
 	getDashboardStats,
+	getAllUsers,
+	getUserById,
+	updateUser,
+	deleteUser,
+	updateUserRole,
 	getAllContent,
 	getContentById,
 	createContent,
@@ -24,6 +29,13 @@ router.get('/me', protect, adminOnly, getAdminMe);
 
 // Protected admin routes (requires authentication + admin role)
 router.get('/dashboard', protect, adminOnly, getDashboardStats);
+
+// User management routes
+router.get('/users', protect, adminOnly, getAllUsers);
+router.get('/users/:id', protect, adminOnly, getUserById);
+router.put('/users/:id', protect, adminOnly, updateUser);
+router.delete('/users/:id', protect, adminOnly, deleteUser);
+router.patch('/users/:id/role', protect, adminOnly, updateUserRole);
 
 // Content management routes
 router.get('/content', protect, adminOnly, getAllContent);
