@@ -53,9 +53,15 @@ instance.interceptors.response.use(
         if (isAdminRoute) {
           localStorage.removeItem('adminToken');
           localStorage.removeItem('adminUser');
+          window.dispatchEvent(new CustomEvent('vibeify:auth-expired', {
+            detail: { message: 'Admin session expired. Please log in again.', type: 'error' },
+          }));
           window.location.href = '/admin/login';
         } else {
           localStorage.removeItem('token');
+          window.dispatchEvent(new CustomEvent('vibeify:auth-expired', {
+            detail: { message: 'Your session expired. Please log in again.', type: 'error' },
+          }));
           window.location.href = '/login';
         }
       }

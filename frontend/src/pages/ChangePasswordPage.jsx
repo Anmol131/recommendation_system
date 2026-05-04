@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ArrowRight, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import * as endpoints from '../api/endpoints';
+import { useToast } from '../context/ToastContext';
 
 const STRENGTH_META = {
   1: { label: 'Weak', color: 'bg-red-500' },
@@ -33,20 +34,11 @@ function ChangePasswordPage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
 
   const [error, setError] = useState('');
-  const [successToast, setSuccessToast] = useState('');
+  const toastApi = useToast();
   const [submitting, setSubmitting] = useState(false);
 
   const strengthLevel = useMemo(() => getStrengthLevel(newPassword), [newPassword]);
   const strengthMeta = STRENGTH_META[strengthLevel];
-
-  useEffect(() => {
-    if (!successToast) {
-      return undefined;
-    }
-
-    const timer = window.setTimeout(() => setSuccessToast(''), 2600);
-    return () => window.clearTimeout(timer);
-  }, [successToast]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -86,14 +78,16 @@ function ChangePasswordPage() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      setSuccessToast('Password updated!');
+      toastApi.show({ message: 'Password changed successfully', type: 'success' });
     } catch (err) {
       const serverMessage = err?.response?.data?.message || 'Could not update password. Please try again.';
       if (/current password|invalid credentials|incorrect/i.test(serverMessage)) {
         setError('Current password is incorrect.');
+        toastApi.show({ message: 'Current password is incorrect', type: 'error' });
         return;
       }
       setError(serverMessage);
+      toastApi.show({ message: serverMessage, type: 'error' });
     } finally {
       setSubmitting(false);
     }
@@ -101,12 +95,6 @@ function ChangePasswordPage() {
 
   return (
     <div className="min-h-[calc(100vh-64px)] bg-light-bg dark:bg-dark-bg px-6 pb-20 pt-14 text-light-text dark:text-dark-text md:px-10 lg:px-12 transition-colors duration-300">
-      {successToast && (
-        <div className="fixed right-6 top-24 z-[80] rounded-xl bg-light-surface dark:bg-dark-surface px-4 py-3 text-sm font-semibold text-primary dark:text-primary-light ambient-shadow">
-          {successToast}
-        </div>
-      )}
-
       <main className="mx-auto w-full max-w-2xl">
         <section className="mb-10">
           <h1 className="text-5xl font-bold tracking-tight text-light-text dark:text-dark-text md:text-6xl">Security</h1>

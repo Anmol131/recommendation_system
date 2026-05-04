@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { analyzeQuery } from '../api/endpoints';
 import RecommendationCard from '../components/RecommendationCard';
+import { useToast } from '../context/ToastContext';
+import { handleApiError } from '../utils/handleApiError';
 
 const EXAMPLE_QUERIES = [
   'Recommend me action movies like John Wick',
@@ -18,10 +20,12 @@ export default function RecommendationPage() {
   const [error, setError] = useState('');
   const [data, setData] = useState(null);
   const lastAutoQueryRef = useRef('');
+  const toastApi = useToast();
 
   const runSearch = useCallback(async (searchQuery) => {
     if (!searchQuery.trim()) {
       setError('Please enter a query.');
+      toastApi.show({ message: 'Please enter what you want to discover', type: 'info' });
       setData(null);
       return;
     }
@@ -29,15 +33,22 @@ export default function RecommendationPage() {
     try {
       setLoading(true);
       setError('');
+      const loadingToastId = toastApi.showLoading({ message: 'Generating recommendations...' });
       const result = await analyzeQuery(searchQuery, 5);
       setData(result);
+      toastApi.update({ id: loadingToastId, message: 'Recommendations ready', type: 'success' });
+      if (!result?.results?.length) {
+        toastApi.show({ message: 'No recommendations found', type: 'info' });
+      }
     } catch (err) {
-      setError(err?.response?.data?.message || err.message || 'Something went wrong.');
+      const message = handleApiError(err, 'Failed to generate recommendations');
+      setError(message);
       setData(null);
+      toastApi.show({ message, type: 'error' });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toastApi]);
 
   useEffect(() => {
     const incomingQuery = (searchParams.get('query') || '').trim();

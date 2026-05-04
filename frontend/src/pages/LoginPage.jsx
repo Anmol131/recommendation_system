@@ -3,10 +3,13 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { Chrome, Lock, Mail } from 'lucide-react';
 import * as endpoints from '../api/endpoints';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import { handleApiError } from '../utils/handleApiError';
 
 function LoginPage() {
   const navigate = useNavigate();
   const { login, isAuthenticated, loading } = useAuth();
+  const toastApi = useToast();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,9 +28,12 @@ function LoginPage() {
     try {
       const authPayload = await endpoints.login({ email, password });
       await login(authPayload);
+      toastApi.show({ message: 'Login successful', type: 'success' });
       navigate('/');
     } catch (apiError) {
-      setError(apiError.response?.data?.message || 'Login failed. Please try again.');
+      const msg = handleApiError(apiError, 'Login failed. Please try again.');
+      setError(msg);
+      toastApi.show({ message: msg, type: 'error' });
     } finally {
       setSubmitting(false);
     }

@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import * as api from '../api/endpoints';
+import { useToast } from './ToastContext';
 
 const AdminAuthContext = createContext();
 const ADMIN_TOKEN_STORAGE_KEY = 'adminToken';
@@ -24,6 +25,7 @@ export const AdminAuthProvider = ({ children }) => {
   const [adminUser, setAdminUser] = useState(null);
   const [adminToken, setAdminToken] = useState(null);
   const [adminLoading, setAdminLoading] = useState(true);
+  const toastApi = useToast();
 
   // Restore admin auth session on app load
   useEffect(() => {
@@ -58,6 +60,7 @@ export const AdminAuthProvider = ({ children }) => {
           localStorage.removeItem(ADMIN_USER_STORAGE_KEY);
           setAdminToken(null);
           setAdminUser(null);
+          toastApi.show({ message: 'Admin session expired. Please log in again.', type: 'error' });
         }
       } finally {
         if (!cancelled) {
@@ -71,7 +74,7 @@ export const AdminAuthProvider = ({ children }) => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [toastApi]);
 
   const adminLogin = useCallback(async (emailOrPayload, password) => {
     try {
@@ -101,7 +104,8 @@ export const AdminAuthProvider = ({ children }) => {
     localStorage.removeItem(ADMIN_USER_STORAGE_KEY);
     setAdminToken(null);
     setAdminUser(null);
-  }, []);
+    toastApi.show({ message: 'Admin logged out successfully', type: 'success' });
+  }, [toastApi]);
 
   const value = {
     adminUser,

@@ -14,10 +14,13 @@ import {
 } from 'lucide-react';
 import * as endpoints from '../api/endpoints';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import { handleApiError } from '../utils/handleApiError';
 
 function RegisterPage() {
   const navigate = useNavigate();
   const { isAuthenticated, loading } = useAuth();
+  const toastApi = useToast();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -57,9 +60,12 @@ function RegisterPage() {
 
     try {
       await endpoints.register({ name: trimmedName, email: trimmedEmail, password });
+      toastApi.show({ message: 'Account created successfully', type: 'success' });
       navigate('/verify-otp', { state: { email: trimmedEmail } });
     } catch (apiError) {
-      setError(apiError.response?.data?.message || 'Registration failed. Please try again.');
+      const msg = handleApiError(apiError, 'Registration failed. Please try again.');
+      setError(msg);
+      toastApi.show({ message: msg, type: 'error' });
     } finally {
       setSubmitting(false);
     }

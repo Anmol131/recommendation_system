@@ -2,7 +2,9 @@
 import { Search, Sparkles, Star } from 'lucide-react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import * as endpoints from '../api/endpoints';
-import { normalizeType, typeToLabel, normalizeTypeForUI, normalizeTypeForAPI } from '../utils/typeNormalizer';
+import { normalizeType, typeToLabel, normalizeTypeForUI } from '../utils/typeNormalizer';
+import { useToast } from '../context/ToastContext';
+import { handleApiError } from '../utils/handleApiError';
 
 const CATEGORY_TABS = [
   { key: 'all', label: 'All' },
@@ -134,6 +136,7 @@ function ExplorePage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
+  const toastApi = useToast();
 
   const fetchTokenRef = useRef(0);
 
@@ -150,7 +153,7 @@ function ExplorePage() {
     if (appliedQuery !== urlQuery) {
       setAppliedQuery(urlQuery);
     }
-  }, [location.search]);
+  }, [location.search, query, appliedQuery]);
 
   useEffect(() => {
     setPage(1);
@@ -270,6 +273,14 @@ function ExplorePage() {
 
         setItems((current) => (isFirstPage ? displayItems : [...current, ...displayItems]));
         setTotalItems(fetchedTotal);
+
+        if (appliedQuery && page === 1) {
+          if (displayItems.length === 0) {
+            toastApi.show({ message: 'No results found', type: 'info' });
+          } else {
+            toastApi.show({ message: 'Search completed', type: 'success' });
+          }
+        }
       } catch (fetchError) {
         if (fetchTokenRef.current !== token) return;
         console.error('[ExplorePage] Fetch error:', fetchError);
@@ -277,7 +288,9 @@ function ExplorePage() {
           setItems([]);
           setTotalItems(0);
         }
-        setError(fetchError?.response?.data?.message || 'Failed to load explore content.');
+        const message = handleApiError(fetchError, 'Failed to load explore content.');
+        setError(message);
+        toastApi.show({ message, type: 'error' });
       } finally {
         if (fetchTokenRef.current === token) {
           setLoading(false);
@@ -287,7 +300,7 @@ function ExplorePage() {
     };
 
     loadData();
-  }, [selectedType, appliedQuery, page]);
+  }, [selectedType, appliedQuery, page, toastApi]);
 
   const availableGenres = useMemo(() => {
     const setOfGenres = new Set();
@@ -347,6 +360,9 @@ function ExplorePage() {
     e.preventDefault();
     setAppliedQuery(query.trim());
     setPage(1);
+    if (query.trim()) {
+      toastApi.show({ message: 'Search started', type: 'info' });
+    }
   };
 
   const handleAiRecommend = () => {

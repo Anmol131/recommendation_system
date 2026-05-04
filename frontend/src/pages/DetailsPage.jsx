@@ -3,7 +3,7 @@ import { AlertCircle, ArrowRight, Bookmark, BookmarkCheck, ChevronLeft, Play, Re
 import { useNavigate, useParams } from 'react-router-dom';
 import * as endpoints from '../api/endpoints';
 import { useAuth } from '../context/AuthContext';
-import Toast from '../components/Toast';
+import { useToast } from '../context/ToastContext';
 
 const TYPE_COPY = {
   movie: { label: 'Movies', explore: '/explore?type=movies' },
@@ -155,7 +155,7 @@ function DetailsPage() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
-  const [toast, setToast] = useState({ message: '', type: 'info', visible: false });
+  const toastApi = useToast();
 
   const typeInfo = TYPE_COPY[type] || TYPE_COPY.movie;
 
@@ -221,20 +221,22 @@ function DetailsPage() {
     if (navigator.share) {
       try {
         await navigator.share({ title: item?.title || 'Vibeify', text: item?.title || 'Vibeify content', url });
+        toastApi.show({ message: 'Share link opened', type: 'success' });
         return;
       } catch (shareError) {
         if (shareError?.name !== 'AbortError') {
           console.error('Share failed:', shareError);
+          toastApi.show({ message: 'Share failed', type: 'error' });
         }
       }
     }
 
     try {
       await navigator.clipboard.writeText(url);
-      setToast({ message: 'Link copied to clipboard', type: 'success', visible: true });
-      setTimeout(() => setToast((current) => ({ ...current, visible: false })), 2500);
+      toastApi.show({ message: 'Link copied to clipboard', type: 'success' });
     } catch (clipboardError) {
       console.error('Clipboard copy failed:', clipboardError);
+      toastApi.show({ message: 'Share failed', type: 'error' });
     }
   };
 
@@ -242,12 +244,7 @@ function DetailsPage() {
     if (!item || favoriteLoading || authLoading) return;
 
     if (!isAuthenticated) {
-      setToast({
-        message: 'Please login to save favorites',
-        type: 'info',
-        visible: true,
-      });
-      setTimeout(() => setToast((current) => ({ ...current, visible: false })), 2500);
+      toastApi.show({ message: 'Please login to save favorites', type: 'info' });
       navigate('/login');
       return;
     }
@@ -258,11 +255,7 @@ function DetailsPage() {
         // Remove from favorites
         await endpoints.removeFavorite(type, id);
         setIsFavorite(false);
-        setToast({
-          message: 'Removed from favorites',
-          type: 'success',
-          visible: true,
-        });
+        toastApi.show({ message: 'Removed from favorites', type: 'success' });
       } else {
         // Add to favorites
         const favoriteData = {
@@ -276,36 +269,20 @@ function DetailsPage() {
         };
         await endpoints.addFavorite(favoriteData);
         setIsFavorite(true);
-        setToast({
-          message: 'Added to favorites',
-          type: 'success',
-          visible: true,
-        });
+        toastApi.show({ message: 'Added to favorites', type: 'success' });
       }
     } catch (error) {
       const status = error?.response?.status;
       const message = error?.response?.data?.message || 'Failed to update favorites';
 
       if (status === 401 || status === 403) {
-        setToast({
-          message: 'You must be logged in to save favorites. Redirecting to login...',
-          type: 'error',
-          visible: true,
-        });
-        setTimeout(() => {
-          setToast((current) => ({ ...current, visible: false }));
-          navigate('/login');
-        }, 2000);
+        toastApi.show({ message: 'You must be logged in to save favorites. Redirecting to login...', type: 'error' });
+        setTimeout(() => navigate('/login'), 1200);
       } else {
-        setToast({
-          message,
-          type: 'error',
-          visible: true,
-        });
+        toastApi.show({ message, type: 'error' });
       }
     } finally {
       setFavoriteLoading(false);
-      setTimeout(() => setToast((current) => ({ ...current, visible: false })), 2500);
     }
   };
 
@@ -610,9 +587,7 @@ function DetailsPage() {
         </section>
       </div>
 
-      {toast.visible && (
-        <Toast message={toast.message} type={toast.type} onClose={() => setToast((current) => ({ ...current, visible: false }))} />
-      )}
+      {/* toasts handled by global ToastProvider */}
     </div>
   );
 }

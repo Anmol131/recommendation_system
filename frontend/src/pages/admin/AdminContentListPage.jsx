@@ -3,7 +3,8 @@ import { Plus, Edit2, Trash2, Search, ChevronLeft, ChevronRight } from 'lucide-r
 import { Link } from 'react-router-dom';
 import AdminLayout from '../../layouts/AdminLayout';
 import * as api from '../../api/endpoints';
-import Toast from '../../components/Toast';
+import { useToast } from '../../context/ToastContext';
+import { handleApiError } from '../../utils/handleApiError';
 
 function AdminContentListPage() {
   const [content, setContent] = useState([]);
@@ -13,9 +14,7 @@ function AdminContentListPage() {
   const [typeFilter, setTypeFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({});
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastType, setToastType] = useState('success');
+  const toastApi = useToast();
 
   const CONTENT_TYPES = [
     { value: '', label: 'All Types' },
@@ -51,7 +50,9 @@ function AdminContentListPage() {
         setError('Failed to fetch content');
       }
     } catch (err) {
-      setError('Error loading content');
+      const msg = handleApiError(err, 'Error loading content');
+      setError(msg);
+      toastApi.show({ message: 'Content loaded failed', type: 'error' });
       console.error(err);
     } finally {
       setLoading(false);
@@ -66,19 +67,13 @@ function AdminContentListPage() {
     try {
       const response = await api.deleteAdminContent(item.type, item._id);
       if (response.success) {
-        setToastMessage('Content deleted successfully');
-        setToastType('success');
-        setShowToast(true);
+        toastApi.show({ message: 'Content deleted successfully', type: 'success' });
         fetchContent();
       } else {
-        setToastMessage('Failed to delete content');
-        setToastType('error');
-        setShowToast(true);
+        toastApi.show({ message: 'Failed to delete content', type: 'error' });
       }
     } catch (err) {
-      setToastMessage('Error deleting content');
-      setToastType('error');
-      setShowToast(true);
+      toastApi.show({ message: 'Error deleting content', type: 'error' });
     }
   };
 
@@ -255,7 +250,7 @@ function AdminContentListPage() {
         </div>
       </div>
 
-      {showToast && <Toast message={toastMessage} type={toastType} />}
+      {/* toasts handled by global ToastProvider */}
     </AdminLayout>
   );
 }

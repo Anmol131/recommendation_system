@@ -6,17 +6,20 @@ import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext';
 import { AdminAuthProvider } from './context/AdminAuthContext';
 import { ThemeProvider } from './context/ThemeContext.jsx';
+import { ToastProvider } from './context/ToastContext.jsx';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <AdminAuthProvider>
-          <ThemeProvider>
-            <App />
-          </ThemeProvider>
-        </AdminAuthProvider>
-      </AuthProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <AdminAuthProvider>
+            <ThemeProvider>
+              <App />
+            </ThemeProvider>
+          </AdminAuthProvider>
+        </AuthProvider>
+      </ToastProvider>
     </BrowserRouter>
   </StrictMode>
 );

@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Search, ChevronLeft, ChevronRight, Download, Trash2 } from 'lucide-react';
 import AdminLayout from '../../layouts/AdminLayout';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
-import Toast from '../../components/Toast';
+import { useToast } from '../../context/ToastContext';
+import { handleApiError } from '../../utils/handleApiError';
 import * as api from '../../api/endpoints';
 
 function AdminSearchLogsPage() {
@@ -17,7 +18,7 @@ function AdminSearchLogsPage() {
   const [pagination, setPagination] = useState({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [toast, setToast] = useState({ message: '', type: 'success', visible: false });
+  const toastApi = useToast();
 
   const TYPES = [
     { value: '', label: 'All Types' },
@@ -53,7 +54,9 @@ function AdminSearchLogsPage() {
       setLogs(logsData);
       setPagination({ total, page, totalPages });
     } catch (err) {
-      setError('Error loading search logs');
+      const message = handleApiError(err, 'Error loading search logs');
+      setError(message);
+      toastApi.show({ message: 'Search logs load failed', type: 'error' });
       console.error(err);
     } finally {
       setLoading(false);
@@ -62,7 +65,7 @@ function AdminSearchLogsPage() {
 
   const handleExport = () => {
     if (logs.length === 0) {
-      alert('No logs to export');
+      toastApi.show({ message: 'No logs found', type: 'info' });
       return;
     }
 
@@ -90,6 +93,7 @@ function AdminSearchLogsPage() {
     a.click();
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
+    toastApi.show({ message: 'Search logs exported successfully', type: 'success' });
   };
 
   const handleReset = () => {
@@ -121,12 +125,7 @@ function AdminSearchLogsPage() {
       
       if (response.success || response.message) {
         setLogs(logs.filter((log) => log._id !== deleteTarget.id));
-        setToast({
-          message: `Log deleted successfully`,
-          type: 'success',
-          visible: true,
-        });
-        setTimeout(() => setToast({ ...toast, visible: false }), 3000);
+        toastApi.show({ message: `Log deleted successfully`, type: 'success' });
       } else {
         throw new Error('Unexpected response format');
       }
@@ -136,13 +135,7 @@ function AdminSearchLogsPage() {
         err.response?.data?.message || 
         err.message || 
         'Failed to delete search log';
-      
-      setToast({
-        message: errorMsg,
-        type: 'error',
-        visible: true,
-      });
-      setTimeout(() => setToast({ ...toast, visible: false }), 4000);
+      toastApi.show({ message: errorMsg, type: 'error' });
     } finally {
       setDialogOpen(false);
       setDeleteTarget(null);
@@ -362,14 +355,7 @@ function AdminSearchLogsPage() {
         isDanger={true}
       />
 
-      {/* Toast Notification */}
-      {toast.visible && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast({ ...toast, visible: false })}
-        />
-      )}
+      {/* toasts handled by global ToastProvider */}
     </AdminLayout>
   );
 }

@@ -2,11 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { Film, BookOpen, Music, Gamepad2, FileText, Users, Search } from 'lucide-react';
 import AdminLayout from '../../layouts/AdminLayout';
 import * as api from '../../api/endpoints';
+import { useToast } from '../../context/ToastContext';
+import { handleApiError } from '../../utils/handleApiError';
 
 function AdminDashboardPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const toastApi = useToast();
 
   useEffect(() => {
     fetchStats();
@@ -18,11 +21,14 @@ function AdminDashboardPage() {
       const response = await api.getAdminDashboard();
       if (response.success) {
         setStats(response.data);
+        toastApi.show({ message: 'Dashboard stats refreshed', type: 'success' });
       } else {
         setError('Failed to fetch dashboard stats');
       }
     } catch (err) {
-      setError('Error loading dashboard');
+      const msg = handleApiError(err, 'Error loading dashboard');
+      setError(msg);
+      toastApi.show({ message: 'Dashboard stats load failed', type: 'error' });
       console.error(err);
     } finally {
       setLoading(false);

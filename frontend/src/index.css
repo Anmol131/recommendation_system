@@ -12,8 +12,42 @@ html {
   scroll-behavior: smooth;
 }
 
+:root {
+  --toast-bg: #ffffff;
+  --toast-text: #172033;
+  --toast-border: rgba(148, 163, 184, 0.35);
+
+  --toast-success-bg: #ecfdf5;
+  --toast-success-text: #065f46;
+  --toast-success-border: #34d399;
+
+  --toast-error-bg: #fef2f2;
+  --toast-error-text: #991b1b;
+  --toast-error-border: #f87171;
+
+  --toast-info-bg: #eff6ff;
+  --toast-info-text: #1e3a8a;
+  --toast-info-border: #60a5fa;
+}
+
 html.dark {
   color-scheme: dark;
+
+  --toast-bg: #111827;
+  --toast-text: #f8fafc;
+  --toast-border: rgba(148, 163, 184, 0.25);
+
+  --toast-success-bg: #052e1b;
+  --toast-success-text: #bbf7d0;
+  --toast-success-border: #22c55e;
+
+  --toast-error-bg: #3b0a0a;
+  --toast-error-text: #fecaca;
+  --toast-error-border: #ef4444;
+
+  --toast-info-bg: #0f172a;
+  --toast-info-text: #bfdbfe;
+  --toast-info-border: #3b82f6;
 }
 
 body {

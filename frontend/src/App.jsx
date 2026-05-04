@@ -22,6 +22,7 @@ import AdminContentListPage from './pages/admin/AdminContentListPage';
 import AdminContentFormPage from './pages/admin/AdminContentFormPage';
 import AdminSearchLogsPage from './pages/admin/AdminSearchLogsPage';
 import AdminProtectedRoute from './components/admin/AdminProtectedRoute';
+import { useToast } from './context/ToastContext';
 
 function ScrollToTopOnRouteChange() {
   const location = useLocation();
@@ -39,6 +40,13 @@ function ScrollToTopOnRouteChange() {
 
 function ProtectedRoute({ children }) {
   const { user, isLoading } = useAuth();
+  const toastApi = useToast();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      toastApi.show({ message: 'Please login to continue', type: 'info' });
+    }
+  }, [isLoading, user, toastApi]);
 
   if (isLoading) {
     return <div className="px-6 py-24 text-center text-muted">Loading...</div>;

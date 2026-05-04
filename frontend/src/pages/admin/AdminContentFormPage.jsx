@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
 import AdminLayout from '../../layouts/AdminLayout';
 import * as api from '../../api/endpoints';
-import Toast from '../../components/Toast';
+import { useToast } from '../../context/ToastContext';
+import { handleApiError } from '../../utils/handleApiError';
 
 function AdminContentFormPage() {
   const navigate = useNavigate();
@@ -26,9 +27,7 @@ function AdminContentFormPage() {
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(isEdit);
   const [error, setError] = useState('');
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastType, setToastType] = useState('success');
+  const toastApi = useToast();
 
   const CONTENT_TYPES = ['movie', 'book', 'music', 'game'];
   const LANGUAGES = ['English', 'Spanish', 'French', 'German', 'Hindi', 'Mandarin', 'Japanese', 'Korean', 'Other'];
@@ -59,9 +58,12 @@ function AdminContentFormPage() {
         });
       } else {
         setError('Failed to fetch content');
+        toastApi.show({ message: 'Content loaded failed', type: 'error' });
       }
     } catch (err) {
-      setError('Error loading content');
+      const msg = handleApiError(err, 'Error loading content');
+      setError(msg);
+      toastApi.show({ message: 'Content loaded failed', type: 'error' });
       console.error(err);
     } finally {
       setFetchLoading(false);
@@ -84,6 +86,7 @@ function AdminContentFormPage() {
     try {
       if (!formData.title) {
         setError('Title is required');
+        toastApi.show({ message: 'Title is required', type: 'error' });
         setLoading(false);
         return;
       }
@@ -106,17 +109,17 @@ function AdminContentFormPage() {
       }
 
       if (response.success) {
-        setToastMessage(isEdit ? 'Content updated successfully' : 'Content created successfully');
-        setToastType('success');
-        setShowToast(true);
+        toastApi.show({ message: isEdit ? 'Content updated successfully' : 'Content created successfully', type: 'success' });
         setTimeout(() => {
           navigate('/admin/content');
-        }, 1500);
+        }, 1200);
       } else {
         setError(response.message || 'Failed to save content');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Error saving content');
+      const msg = handleApiError(err, 'Error saving content');
+      setError(msg);
+      toastApi.show({ message: msg, type: 'error' });
       console.error(err);
     } finally {
       setLoading(false);
@@ -332,7 +335,7 @@ function AdminContentFormPage() {
         </div>
       </div>
 
-      {showToast && <Toast message={toastMessage} type={toastType} />}
+      {/* toasts handled by global ToastProvider */}
     </AdminLayout>
   );
 }

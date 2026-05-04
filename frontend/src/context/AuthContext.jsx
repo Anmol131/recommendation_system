@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import * as api from '../api/endpoints';
+import { useToast } from './ToastContext';
 
 const AuthContext = createContext();
 const AVATAR_STORAGE_KEY = 'vibeify_avatar';
@@ -26,6 +27,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const toastApi = useToast();
 
   const setUserAvatar = useCallback((avatarId) => {
     if (!avatarId) {
@@ -34,7 +36,7 @@ export const AuthProvider = ({ children }) => {
 
     localStorage.setItem(AVATAR_STORAGE_KEY, avatarId);
     setUser((current) => (current ? { ...current, avatar: avatarId } : { avatar: avatarId }));
-  }, []);
+  }, [toastApi]);
 
   const setUserBio = useCallback((bio) => {
     const safeBio = typeof bio === 'string' ? bio : '';
@@ -77,6 +79,7 @@ export const AuthProvider = ({ children }) => {
           localStorage.removeItem(AVATAR_STORAGE_KEY);
           setToken(null);
           setUser(null);
+          toastApi.show({ message: 'Your session expired. Please log in again.', type: 'error' });
         }
       } finally {
         if (!cancelled) {
@@ -132,7 +135,8 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem(AVATAR_STORAGE_KEY);
     setToken(null);
     setUser(null);
-  }, []);
+    toastApi.show({ message: 'Logged out successfully', type: 'success' });
+  }, [toastApi]);
 
   const value = {
     user,

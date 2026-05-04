@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, LogIn } from 'lucide-react';
 import * as api from '../../api/endpoints';
-import Toast from '../../components/Toast';
+import { useToast } from '../../context/ToastContext';
 import { useAdminAuth } from '../../context/AdminAuthContext';
 
 function AdminLoginPage() {
@@ -14,7 +14,7 @@ function AdminLoginPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showToast, setShowToast] = useState(false);
+  const toastApi = useToast();
 
   // Only redirect if admin is already authenticated
   useEffect(() => {
@@ -41,19 +41,20 @@ function AdminLoginPage() {
       // Call API admin login endpoint
       const response = await api.adminLogin(formData.email, formData.password);
 
-      if (response.success && response.data) {
+        if (response.success && response.data) {
         // Use the admin auth context to store it
         await adminLogin(response.data);
-        setShowToast(true);
-        setTimeout(() => {
-          navigate('/admin/dashboard');
-        }, 1500);
+          toastApi.show({ message: 'Admin login successful', type: 'success' });
+          setTimeout(() => {
+            navigate('/admin/dashboard');
+          }, 1200);
       } else {
         setError(response.message || 'Login failed');
       }
     } catch (err) {
       const message = err.response?.data?.message || 'Failed to login as admin. Please check your credentials.';
       setError(message);
+      toastApi.show({ message, type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -139,7 +140,7 @@ function AdminLoginPage() {
         </p>
       </div>
 
-      {showToast && <Toast message="Admin login successful!" type="success" />}
+      {/* toasts handled by global ToastProvider */}
     </div>
   );
 }

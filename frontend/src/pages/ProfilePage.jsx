@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Pencil, Settings, X } from 'lucide-react';
 import * as endpoints from '../api/endpoints';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import { handleApiError } from '../utils/handleApiError';
 import { AVATARS, AvatarDisplay } from '../constants/avatars';
 
 const fallbackGenres = {
@@ -78,6 +80,7 @@ function ProfilePage() {
   const [bioError, setBioError] = useState('');
   const [favorites, setFavorites] = useState([]);
   const [favoritesLoading, setFavoritesLoading] = useState(true);
+  const toastApi = useToast();
 
   // New states for username and password
   const [showRenameModal, setShowRenameModal] = useState(false);
@@ -100,7 +103,9 @@ function ProfilePage() {
       const data = toProfileData(response);
       setProfile(data || {});
     } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to load profile. Please try again.');
+      const msg = handleApiError(err, 'Failed to load profile. Please try again.');
+      setError(msg);
+      toastApi.show({ message: msg, type: 'error' });
       setProfile(null);
     } finally {
       setLoading(false);
@@ -114,7 +119,9 @@ function ProfilePage() {
       const data = response?.data || [];
       setFavorites(Array.isArray(data) ? data : []);
     } catch (err) {
+      const msg = handleApiError(err, 'Failed to load favorites');
       console.warn('Failed to load favorites:', err);
+      toastApi.show({ message: msg, type: 'error' });
       setFavorites([]);
     } finally {
       setFavoritesLoading(false);
@@ -158,6 +165,10 @@ function ProfilePage() {
       }));
       setUserAvatar(nextAvatar);
       setShowAvatarPicker(false);
+      toastApi.show({ message: 'Avatar updated successfully', type: 'success' });
+    } catch (err) {
+      const msg = handleApiError(err, 'Failed to update avatar. Please try again.');
+      toastApi.show({ message: msg, type: 'error' });
     } finally {
       setAvatarUpdating(false);
     }
@@ -184,9 +195,12 @@ function ProfilePage() {
       }));
       
       setIsEditingBio(false);
+      toastApi.show({ message: 'Bio updated successfully', type: 'success' });
     } catch (err) {
       console.error('Bio update error:', err);
-      setBioError(err?.response?.data?.message || 'Failed to update bio. Please try again.');
+      const msg = handleApiError(err, 'Failed to update bio. Please try again.');
+      setBioError(msg);
+      toastApi.show({ message: msg, type: 'error' });
     } finally {
       setBioSaving(false);
     }
@@ -212,13 +226,16 @@ function ProfilePage() {
       }));
 
       setModalSuccess('Username updated successfully!');
+      toastApi.show({ message: 'Username updated successfully', type: 'success' });
       setTimeout(() => {
         setShowRenameModal(false);
         setNewUsername('');
         setModalSuccess('');
       }, 1500);
     } catch (err) {
-      setModalError(err?.response?.data?.message || 'Failed to update username. Please try again.');
+      const msg = handleApiError(err, 'Failed to update username. Please try again.');
+      setModalError(msg);
+      toastApi.show({ message: msg, type: 'error' });
     } finally {
       setRenameLoading(false);
     }
@@ -248,6 +265,7 @@ function ProfilePage() {
       await endpoints.updatePassword(currentPassword, newPassword);
 
       setModalSuccess('Password updated successfully!');
+      toastApi.show({ message: 'Password updated successfully', type: 'success' });
       setTimeout(() => {
         setShowPasswordModal(false);
         setCurrentPassword('');
@@ -256,7 +274,9 @@ function ProfilePage() {
         setModalSuccess('');
       }, 1500);
     } catch (err) {
-      setModalError(err?.response?.data?.message || 'Failed to update password. Please try again.');
+      const msg = handleApiError(err, 'Failed to update password. Please try again.');
+      setModalError(msg);
+      toastApi.show({ message: msg, type: 'error' });
     } finally {
       setPasswordLoading(false);
     }
