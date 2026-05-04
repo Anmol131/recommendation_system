@@ -59,14 +59,34 @@ router.get('/analyze', optionalAuth, async (req, res) => {
 
     const aiResponse = await axios.get('http://localhost:8000/analyze', {
       params: { query, top_n },
+      timeout: 30000,
     });
 
     const payload = aiResponse.data || {};
+    const originalQuery = String(query || '').trim();
+    const cleanedQuery = payload.cleanedQuery || payload.cleaned_query || payload.clean_query || '';
+    const displayQuery = payload.displayQuery || payload.display_query || cleanedQuery || originalQuery;
+
+    payload.originalQuery = payload.originalQuery || originalQuery;
+    payload.cleanedQuery = cleanedQuery;
+    payload.displayQuery = displayQuery;
+    payload.parsedQuery = payload.parsedQuery || {
+      originalQuery,
+      displayQuery,
+      cleanedQuery,
+      intent: payload.intent,
+      content_types: payload.content_types,
+      keywords: payload.keywords,
+      tokens: payload.tokens,
+    };
+
     const results = Array.isArray(payload?.results) ? payload.results : [];
 
     try {
       const searchLog = await SearchLog.create({
-        query: String(query || '').trim(),
+        query: originalQuery,
+        cleanedQuery,
+        displayQuery,
         detectedType: pickDetectedType(payload),
         detectedIntent: pickDetectedIntent(payload),
         resultsCount: results.length,
@@ -87,6 +107,13 @@ router.get('/analyze', optionalAuth, async (req, res) => {
 
     return res.status(aiResponse.status).json(payload);
   } catch (error) {
+    if (error.code === 'ECONNABORTED' || error.message?.toLowerCase().includes('timeout')) {
+      return res.status(504).json({
+        success: false,
+        message: 'AI recommendation request timed out. Please try again.',
+      });
+    }
+
     if (error.response) {
       return res.status(error.response.status).json(error.response.data);
     }

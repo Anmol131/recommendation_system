@@ -1,6 +1,10 @@
 export function handleApiError(error, fallbackMessage = 'Something went wrong') {
   if (!error) return fallbackMessage;
 
+  if (error.code === 'ECONNABORTED' || error.message?.toLowerCase().includes('timeout')) {
+    return 'AI service took too long to respond. Try again with a shorter query.';
+  }
+
   // axios error with response
   const resp = error.response?.data;
   if (resp) {

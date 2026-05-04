@@ -201,7 +201,7 @@ export const analyzeQuery = async (query, topN = 5, ageGroup = null, interestMod
   if (ageGroup) params.age_group = ageGroup;
   if (interestMode) params.interest_mode = interestMode;
 
-  const { data } = await instance.get('/ai/analyze', { params });
+  const { data } = await instance.get('/ai/analyze', { params, timeout: 30000 });
   return data;
 };
 

@@ -382,6 +382,8 @@ def run_pipeline(query: str, top_n: int = 5) -> Dict:
 
     return {
         "query": query,
+        "original_query": query_data.get("original_query"),
+        "display_query": query_data.get("display_query"),
         "cleaned_query": query_data.get("cleaned_query"),
         "tokens": query_data.get("tokens", []),
         "keywords": query_data.get("keywords", []),

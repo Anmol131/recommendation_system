@@ -7,6 +7,12 @@ const searchLogSchema = new mongoose.Schema(
 			required: true,
 			index: true,
 		},
+		cleanedQuery: {
+			type: String,
+		},
+		displayQuery: {
+			type: String,
+		},
 		detectedType: {
 			type: String,
 			default: 'unknown',

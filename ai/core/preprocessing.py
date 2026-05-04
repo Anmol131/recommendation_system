@@ -233,6 +233,7 @@ def preprocess_query(query: str) -> Dict:
     Main preprocessing function.
     Returns a structured dictionary for later pipeline steps.
     """
+    display_query = sanitize_query(query)
     cleaned_query = normalize_text(query)
     tokens = tokenize(cleaned_query)
     keywords = remove_stopwords(tokens)
@@ -242,6 +243,7 @@ def preprocess_query(query: str) -> Dict:
 
     return {
         "original_query": query,
+        "display_query": display_query,
         "cleaned_query": cleaned_query,
         "tokens": tokens,
         "keywords": keywords,

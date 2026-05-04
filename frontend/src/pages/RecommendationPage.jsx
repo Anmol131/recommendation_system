@@ -24,6 +24,7 @@ export default function RecommendationPage() {
   const [interestMode, setInterestMode] = useState('mixed');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [retryQuery, setRetryQuery] = useState('');
   const [data, setData] = useState(null);
   const mountedRef = useRef(false);
   const lastAutoQueryRef = useRef('');
@@ -50,15 +51,27 @@ export default function RecommendationPage() {
     sessionStorage.removeItem(CACHE_KEY);
   }, []);
 
+  const sanitizeDisplayQuery = useCallback((value) => {
+    if (!value) return '';
+
+    let text = String(value);
+    text = text.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, ' ');
+    text = text.replace(/<[^>]+>/g, ' ');
+    text = text.replace(/\$[a-zA-Z_][a-zA-Z0-9_]*\b/g, ' ');
+    text = text.replace(/\.\*|[{}()|^\\$*+?<>]|\[|\]/g, ' ');
+    text = text.replace(/\s+/g, ' ').trim();
+    return text;
+  }, []);
+
   const runSearch = useCallback(async (searchQuery) => {
     if (!searchQuery.trim()) {
-      setError('Please enter a query.');
-      toastApi.show({ message: 'Please enter what you want to discover', type: 'info' });
+      setError('Please enter a valid recommendation query.');
+      toastApi.show({ message: 'Please enter a valid query', type: 'info' });
       setData(null);
+      setRetryQuery('');
       return;
     }
 
-    // Guard: if already loading, don't submit again
     if (loading) {
       return;
     }
@@ -66,6 +79,7 @@ export default function RecommendationPage() {
     try {
       setLoading(true);
       setError('');
+      setRetryQuery('');
       const loadingToastId = toastApi.showLoading({ message: 'Generating recommendations...' });
       const result = await analyzeQuery(searchQuery, 5, ageGroup === 'all' ? null : ageGroup, interestMode === 'mixed' ? null : interestMode);
       setData(result);
@@ -75,14 +89,24 @@ export default function RecommendationPage() {
         toastApi.show({ message: 'No recommendations found', type: 'info' });
       }
     } catch (err) {
-      const message = handleApiError(err, 'Failed to generate recommendations');
+      const isTimeout = err?.code === 'ECONNABORTED' || err?.message?.toLowerCase().includes('timeout') || err?.response?.status === 504;
+      const message = handleApiError(err, 'Failed to generate recommendations. Please try again.');
       setError(message);
       setData(null);
-      toastApi.show({ message, type: 'error' });
+      if (isTimeout) {
+        setRetryQuery(searchQuery);
+        toastApi.show({ message: 'AI request timed out', type: 'error' });
+      } else {
+        if (err?.response?.status === 400) {
+          toastApi.show({ message: 'Please enter a valid query', type: 'warning' });
+        } else {
+          toastApi.show({ message, type: 'error' });
+        }
+      }
     } finally {
       setLoading(false);
     }
-  }, [loading, toastApi, saveToCache]);
+  }, [ageGroup, interestMode, loading, saveToCache, toastApi]);
 
   // On mount, restore from cache if available
   useEffect(() => {
@@ -144,6 +168,10 @@ export default function RecommendationPage() {
   };
 
   const handleBrowseSearch = () => {
+    if (loading) {
+      return;
+    }
+
     const trimmed = query.trim();
     if (!trimmed) {
       navigate('/explore');
@@ -230,7 +258,8 @@ export default function RecommendationPage() {
                   <button
                     type="button"
                     onClick={handleBrowseSearch}
-                    className="inline-flex flex-1 items-center justify-center rounded-2xl border border-primary/30 bg-light-surface-alt px-5 py-3 text-sm font-semibold text-primary transition-all hover:bg-primary/10 dark:bg-dark-surface-alt"
+                    disabled={loading}
+                    className="inline-flex flex-1 items-center justify-center rounded-2xl border border-primary/30 bg-light-surface-alt px-5 py-3 text-sm font-semibold text-primary transition-all hover:bg-primary/10 dark:bg-dark-surface-alt disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     Search
                   </button>
@@ -276,7 +305,16 @@ export default function RecommendationPage() {
 
         {error ? (
           <section className="mb-8 rounded-2xl border border-red-300/80 bg-red-50 px-5 py-4 text-sm text-red-700 shadow-sm dark:border-red-800 dark:bg-red-950/35 dark:text-red-300">
-            Failed to generate recommendations. {error}
+            <p>{error}</p>
+            {retryQuery ? (
+              <button
+                type="button"
+                onClick={() => runSearch(retryQuery)}
+                className="mt-3 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 dark:bg-red-950 dark:text-red-200 dark:hover:bg-red-900"
+              >
+                Retry
+              </button>
+            ) : null}
           </section>
         ) : null}
 
@@ -359,7 +397,7 @@ export default function RecommendationPage() {
                   <h2 className="text-2xl font-bold text-on-surface dark:text-white">Top Matches</h2>
                   <p className="mt-1 text-sm text-light-text-secondary dark:text-dark-text-secondary">
                     {results.length > 0
-                      ? `Found ${results.length} recommendations for ${query.trim() || 'your query'}`
+                      ? `Found ${results.length} recommendations for ${data?.displayQuery || data?.cleanedQuery || sanitizeDisplayQuery(query) || 'your query'}`
                       : 'No recommendations found. Try a different query.'}
                   </p>
                 </div>
