@@ -137,8 +137,14 @@ function ExplorePage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
   const toastApi = useToast();
+  const toastApiRef = useRef(toastApi);
 
   const fetchTokenRef = useRef(0);
+
+  // Keep toastApi ref updated so async functions get latest
+  useEffect(() => {
+    toastApiRef.current = toastApi;
+  }, [toastApi]);
 
   // Derive selectedType from URL
   const selectedType = normalizeTypeForUI(searchParams.get("type") || "all");
@@ -176,6 +182,9 @@ function ExplorePage() {
         let fetchedItems = [];
         let fetchedTotal = 0;
         
+        if (selectedType === 'games') {
+          console.log('[ExplorePage:GAMES] Loading games - appliedQuery:', appliedQuery, 'page:', page, 'location:', window.location.search);
+        }
         console.log('[ExplorePage] Loading data for selectedType:', selectedType, 'appliedQuery:', appliedQuery, 'page:', page);
 
         if (selectedType === 'all') {
@@ -267,6 +276,9 @@ function ExplorePage() {
           ? fetchedItems.filter(item => normalizeType(selectedType) === item.type)
           : fetchedItems;
         
+        if (selectedType === 'games') {
+          console.log('[ExplorePage:GAMES] After filtering - fetchedItems:', fetchedItems.length, 'displayItems:', displayItems.length, 'itemTypes:', displayItems.slice(0, 5).map(x => x.type));
+        }
         if (displayItems.length < fetchedItems.length) {
           console.log('[ExplorePage] Filtered items - before:', fetchedItems.length, 'after:', displayItems.length);
         }
@@ -276,9 +288,9 @@ function ExplorePage() {
 
         if (appliedQuery && page === 1) {
           if (displayItems.length === 0) {
-            toastApi.show({ message: 'No results found', type: 'info' });
+            toastApiRef.current.show({ message: 'No results found', type: 'info', toastId: 'explore-no-results' });
           } else {
-            toastApi.show({ message: 'Search completed', type: 'success' });
+            toastApiRef.current.show({ message: 'Search completed', type: 'success', toastId: 'explore-search-completed' });
           }
         }
       } catch (fetchError) {
@@ -290,7 +302,7 @@ function ExplorePage() {
         }
         const message = handleApiError(fetchError, 'Failed to load explore content.');
         setError(message);
-        toastApi.show({ message, type: 'error' });
+        toastApiRef.current.show({ message, type: 'error', toastId: 'explore-fetch-error' });
       } finally {
         if (fetchTokenRef.current === token) {
           setLoading(false);
@@ -300,7 +312,7 @@ function ExplorePage() {
     };
 
     loadData();
-  }, [selectedType, appliedQuery, page, toastApi]);
+  }, [selectedType, appliedQuery, page]);
 
   const availableGenres = useMemo(() => {
     const setOfGenres = new Set();
@@ -361,7 +373,7 @@ function ExplorePage() {
     setAppliedQuery(query.trim());
     setPage(1);
     if (query.trim()) {
-      toastApi.show({ message: 'Search started', type: 'info' });
+      toastApiRef.current.show({ message: 'Search started', type: 'info', toastId: 'explore-search-started' });
     }
   };
 
