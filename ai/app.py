@@ -8,6 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
 from ai.services.recommendation_pipeline import run_pipeline
+from ai.core.personalizer import apply_personalization
 
 app = FastAPI()
 
@@ -36,5 +37,18 @@ def health():
 
 
 @app.get("/analyze")
-def analyze(query: str, top_n: int = 5):
-    return run_pipeline(query, top_n)
+def analyze(query: str, top_n: int = 5, age_group: str | None = None, interest_mode: str | None = None):
+    result = run_pipeline(query, top_n)
+
+    try:
+        results = result.get('results') if isinstance(result, dict) else None
+        if results is not None:
+            personalized = apply_personalization(results, age_group=age_group, interest_mode=interest_mode)
+            result['results'] = personalized
+            result['age_group'] = age_group
+            result['interest_mode'] = interest_mode
+    except Exception:
+        # Personalization must not break the pipeline — fallback to original
+        pass
+
+    return result

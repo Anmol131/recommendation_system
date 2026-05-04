@@ -196,10 +196,12 @@ export const checkFavorite = async (itemType, itemId) => {
   const { data } = await instance.get(`/user/favorites/check/${itemType}/${itemId}`);
   return data;
 };
-export const analyzeQuery = async (query, topN = 5) => {
-  const { data } = await instance.get('/ai/analyze', {
-    params: { query, top_n: topN },
-  });
+export const analyzeQuery = async (query, topN = 5, ageGroup = null, interestMode = null) => {
+  const params = { query, top_n: topN };
+  if (ageGroup) params.age_group = ageGroup;
+  if (interestMode) params.interest_mode = interestMode;
+
+  const { data } = await instance.get('/ai/analyze', { params });
   return data;
 };
 

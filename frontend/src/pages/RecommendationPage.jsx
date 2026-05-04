@@ -20,6 +20,8 @@ export default function RecommendationPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState('');
+  const [ageGroup, setAgeGroup] = useState('all');
+  const [interestMode, setInterestMode] = useState('mixed');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [data, setData] = useState(null);
@@ -65,7 +67,7 @@ export default function RecommendationPage() {
       setLoading(true);
       setError('');
       const loadingToastId = toastApi.showLoading({ message: 'Generating recommendations...' });
-      const result = await analyzeQuery(searchQuery, 5);
+      const result = await analyzeQuery(searchQuery, 5, ageGroup === 'all' ? null : ageGroup, interestMode === 'mixed' ? null : interestMode);
       setData(result);
       saveToCache(searchQuery, result);
       toastApi.update({ id: loadingToastId, message: 'Recommendations ready', type: 'success' });
@@ -202,22 +204,45 @@ export default function RecommendationPage() {
                 />
               </div>
 
-              <div className="flex gap-3 lg:w-auto">
-                <button
-                  type="button"
-                  onClick={handleBrowseSearch}
-                  className="inline-flex flex-1 items-center justify-center rounded-2xl border border-primary/30 bg-light-surface-alt px-5 py-3 text-sm font-semibold text-primary transition-all hover:bg-primary/10 dark:bg-dark-surface-alt"
-                >
-                  Search
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-secondary px-5 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:shadow-xl active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  <Wand2 size={16} />
-                  {loading ? 'Searching...' : 'AI Recommend'}
-                </button>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2">
+                  <span className="text-xs text-light-text-secondary dark:text-dark-text-secondary">Age</span>
+                  <select value={ageGroup} onChange={(e) => setAgeGroup(e.target.value)} className="ml-1 rounded-xl border bg-white py-2 px-3 text-sm outline-none dark:bg-slate-900">
+                    <option value="all">All</option>
+                    <option value="child">Child</option>
+                    <option value="teen">Teen</option>
+                    <option value="adult">Adult</option>
+                  </select>
+                </label>
+
+                <label className="flex items-center gap-2">
+                  <span className="text-xs text-light-text-secondary dark:text-dark-text-secondary">Mode</span>
+                  <select value={interestMode} onChange={(e) => setInterestMode(e.target.value)} className="ml-1 rounded-xl border bg-white py-2 px-3 text-sm outline-none dark:bg-slate-900">
+                    <option value="mixed">Mixed</option>
+                    <option value="popular">Popular</option>
+                    <option value="niche">Niche</option>
+                    <option value="highly_rated">Highly rated</option>
+                    <option value="recent">Recent</option>
+                  </select>
+                </label>
+
+                <div className="flex gap-3 lg:w-auto">
+                  <button
+                    type="button"
+                    onClick={handleBrowseSearch}
+                    className="inline-flex flex-1 items-center justify-center rounded-2xl border border-primary/30 bg-light-surface-alt px-5 py-3 text-sm font-semibold text-primary transition-all hover:bg-primary/10 dark:bg-dark-surface-alt"
+                  >
+                    Search
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-secondary px-5 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:shadow-xl active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <Wand2 size={16} />
+                    {loading ? 'Searching...' : 'AI Recommend'}
+                  </button>
+                </div>
               </div>
             </div>
 
