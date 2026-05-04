@@ -1,4 +1,5 @@
 import re
+import time
 from typing import Dict, List, Optional, Set
 
 from ai.recommenders.base_recommender import BaseRecommender
@@ -16,8 +17,55 @@ STOPWORDS = {
 
 
 class BookRecommender(BaseRecommender):
+    CACHE_TTL_SECONDS = 600
+    _docs_cache: Optional[List[Dict]] = None
+    _cache_expiry: float = 0.0
+
     def __init__(self):
         self.collection = get_collection("books")
+
+    def get_cached_docs(self) -> List[Dict]:
+        return self._load_docs()
+
+    def clear_cache(self) -> None:
+        self.__class__._docs_cache = None
+        self.__class__._cache_expiry = 0.0
+
+    def _is_cache_valid(self) -> bool:
+        return (
+            self.__class__._docs_cache is not None
+            and self.__class__._cache_expiry > time.time()
+        )
+
+    def _load_docs(self) -> List[Dict]:
+        if self._is_cache_valid():
+            return self.__class__._docs_cache or []
+
+        projection = {
+            "_id": 0,
+            "isbn": 1,
+            "title": 1,
+            "author": 1,
+            "year": 1,
+            "publisher": 1,
+            "cover": 1,
+            "avgRating": 1,
+            "ratingCount": 1,
+            "description": 1,
+            "pageCount": 1,
+            "lang": 1,
+            "categories": 1,
+            "enriched": 1,
+        }
+
+        try:
+            docs = list(self.collection.find({}, projection))
+        except Exception:
+            docs = []
+
+        self.__class__._docs_cache = docs
+        self.__class__._cache_expiry = time.time() + self.CACHE_TTL_SECONDS
+        return docs
 
     def _safe_float(self, value, default: float = 0.0) -> float:
         try:
@@ -92,19 +140,7 @@ class BookRecommender(BaseRecommender):
 
         reference_words = set(reference_title.split())
 
-        books = self.collection.find(
-            {},
-            {
-                "_id": 0,
-                "isbn": 1,
-                "title": 1,
-                "author": 1,
-                "publisher": 1,
-                "year": 1,
-                "categories": 1,
-                "description": 1,
-            },
-        )
+        books = self.get_cached_docs()
 
         best_match = None
         best_score = 0
@@ -178,27 +214,7 @@ class BookRecommender(BaseRecommender):
                         reference_book.get("description", "") or ""
                     )
 
-        books = list(
-            self.collection.find(
-                {},
-                {
-                    "_id": 0,
-                    "isbn": 1,
-                    "title": 1,
-                    "author": 1,
-                    "year": 1,
-                    "publisher": 1,
-                    "cover": 1,
-                    "avgRating": 1,
-                    "ratingCount": 1,
-                    "description": 1,
-                    "pageCount": 1,
-                    "lang": 1,
-                    "categories": 1,
-                    "enriched": 1,
-                },
-            )
-        )
+        books = self.get_cached_docs()
 
         for book in books:
             score = 0

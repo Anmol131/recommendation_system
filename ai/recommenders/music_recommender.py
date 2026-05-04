@@ -1,5 +1,6 @@
 import math
 import re
+import time
 from typing import Dict, List, Optional, Set
 
 from ai.recommenders.base_recommender import BaseRecommender
@@ -27,8 +28,58 @@ MUSIC_GENRE_TERMS = {
 
 
 class MusicRecommender(BaseRecommender):
+    CACHE_TTL_SECONDS = 600
+    _docs_cache: Optional[List[Dict]] = None
+    _cache_expiry: float = 0.0
+
     def __init__(self):
         self.collection = get_collection("musics")
+
+    def get_cached_docs(self) -> List[Dict]:
+        return self._load_docs()
+
+    def clear_cache(self) -> None:
+        self.__class__._docs_cache = None
+        self.__class__._cache_expiry = 0.0
+
+    def _is_cache_valid(self) -> bool:
+        return (
+            self.__class__._docs_cache is not None
+            and self.__class__._cache_expiry > time.time()
+        )
+
+    def _load_docs(self) -> List[Dict]:
+        if self._is_cache_valid():
+            return self.__class__._docs_cache or []
+
+        projection = {
+            "_id": 0,
+            "trackId": 1,
+            "title": 1,
+            "artist": 1,
+            "album": 1,
+            "genre": 1,
+            "genres": 1,
+            "popularity": 1,
+            "explicit": 1,
+            "durationSec": 1,
+            "cover": 1,
+            "previewUrl": 1,
+            "spotifyUrl": 1,
+            "enriched": 1,
+            "lastfmId": 1,
+            "lastfmUrl": 1,
+            "albumArt": 1,
+        }
+
+        try:
+            docs = list(self.collection.find({}, projection))
+        except Exception:
+            docs = []
+
+        self.__class__._docs_cache = docs
+        self.__class__._cache_expiry = time.time() + self.CACHE_TTL_SECONDS
+        return docs
 
     def _safe_float(self, value, default: float = 0.0) -> float:
         try:
@@ -182,19 +233,7 @@ class MusicRecommender(BaseRecommender):
 
         reference_words = set(reference_title.lower().split())
 
-        musics = self.collection.find(
-            {},
-            {
-                "_id": 0,
-                "trackId": 1,
-                "title": 1,
-                "artist": 1,
-                "album": 1,
-                "genre": 1,
-                "genres": 1,
-                "explicit": 1,
-            },
-        )
+        musics = self.get_cached_docs()
 
         best_match = None
         best_score = 0
@@ -374,30 +413,7 @@ class MusicRecommender(BaseRecommender):
                     )
                     reference_explicit = self._safe_bool(reference_track.get("explicit"), False)
 
-        musics = list(
-            self.collection.find(
-                {},
-                {
-                    "_id": 0,
-                    "trackId": 1,
-                    "title": 1,
-                    "artist": 1,
-                    "album": 1,
-                    "genre": 1,
-                    "popularity": 1,
-                    "explicit": 1,
-                    "durationSec": 1,
-                    "cover": 1,
-                    "previewUrl": 1,
-                    "spotifyUrl": 1,
-                    "enriched": 1,
-                    "lastfmId": 1,
-                    "lastfmUrl": 1,
-                    "albumArt": 1,
-                    "genres": 1,
-                },
-            )
-        )
+        musics = self.get_cached_docs()
 
         for track in musics:
             score = 0

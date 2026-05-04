@@ -1,4 +1,5 @@
 import re
+import time
 from typing import Dict, List, Optional, Set
 
 from ai.recommenders.base_recommender import BaseRecommender
@@ -15,8 +16,57 @@ STOPWORDS = {
 
 
 class GameRecommender(BaseRecommender):
+    CACHE_TTL_SECONDS = 600
+    _docs_cache: Optional[List[Dict]] = None
+    _cache_expiry: float = 0.0
+
     def __init__(self):
         self.collection = get_collection("games")
+
+    def get_cached_docs(self) -> List[Dict]:
+        return self._load_docs()
+
+    def clear_cache(self) -> None:
+        self.__class__._docs_cache = None
+        self.__class__._cache_expiry = 0.0
+
+    def _is_cache_valid(self) -> bool:
+        return (
+            self.__class__._docs_cache is not None
+            and self.__class__._cache_expiry > time.time()
+        )
+
+    def _load_docs(self) -> List[Dict]:
+        if self._is_cache_valid():
+            return self.__class__._docs_cache or []
+
+        projection = {
+            "_id": 0,
+            "gameId": 1,
+            "title": 1,
+            "genres": 1,
+            "platform": 1,
+            "pcPlatform": 1,
+            "releaseYear": 1,
+            "image": 1,
+            "developer": 1,
+            "rating": 1,
+            "totalReviews": 1,
+            "recommendations": 1,
+            "installs": 1,
+            "source": 1,
+            "description": 1,
+            "enriched": 1,
+        }
+
+        try:
+            docs = list(self.collection.find({}, projection))
+        except Exception:
+            docs = []
+
+        self.__class__._docs_cache = docs
+        self.__class__._cache_expiry = time.time() + self.CACHE_TTL_SECONDS
+        return docs
 
     def _parse_genres(self, genres_value) -> List[str]:
         if not genres_value:
@@ -75,19 +125,7 @@ class GameRecommender(BaseRecommender):
 
         reference_words = set(reference_title.split())
 
-        games = self.collection.find(
-            {},
-            {
-                "_id": 0,
-                "gameId": 1,
-                "title": 1,
-                "genres": 1,
-                "platform": 1,
-                "source": 1,
-                "developer": 1,
-                "releaseYear": 1,
-            },
-        )
+        games = self.get_cached_docs()
 
         best_match = None
         best_score = 0
@@ -172,29 +210,7 @@ class GameRecommender(BaseRecommender):
                     )
                     reference_year = reference_game.get("releaseYear")
 
-        games = list(
-            self.collection.find(
-                {},
-                {
-                    "_id": 0,
-                    "gameId": 1,
-                    "title": 1,
-                    "genres": 1,
-                    "platform": 1,
-                    "pcPlatform": 1,
-                    "releaseYear": 1,
-                    "image": 1,
-                    "developer": 1,
-                    "rating": 1,
-                    "totalReviews": 1,
-                    "recommendations": 1,
-                    "installs": 1,
-                    "source": 1,
-                    "description": 1,
-                    "enriched": 1,
-                },
-            )
-        )
+        games = self.get_cached_docs()
 
         for game in games:
             score = 0
