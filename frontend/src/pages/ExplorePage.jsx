@@ -60,13 +60,123 @@ const parseYear = (item) => {
   return match ? Number(match[0]) : null;
 };
 
-const parseGenres = (item) => {
-  if (Array.isArray(item?.genres)) return item.genres.filter(Boolean).map((entry) => String(entry).trim());
-  if (typeof item?.genres === 'string') {
-    return item.genres.split(',').map((entry) => entry.trim()).filter(Boolean);
+const TMDB_MOVIE_GENRES = {
+  28: "Action",
+  12: "Adventure",
+  16: "Animation",
+  35: "Comedy",
+  80: "Crime",
+  99: "Documentary",
+  18: "Drama",
+  10751: "Family",
+  14: "Fantasy",
+  36: "History",
+  27: "Horror",
+  10402: "Music",
+  9648: "Mystery",
+  10749: "Romance",
+  878: "Sci-Fi",
+  10770: "TV Movie",
+  53: "Thriller",
+  10752: "War",
+  37: "Western",
+};
+
+const mapTmdbIdToName = (id) => TMDB_MOVIE_GENRES[Number(id)] || null;
+
+const ensureString = (v) => (v === null || v === undefined ? null : String(v).trim());
+
+const parseGenres = (item, type) => {
+  const result = [];
+
+  if (!item) return result;
+
+  const push = (val) => {
+    const s = ensureString(val);
+    if (s) result.push(s);
+  };
+
+  // MOVIES: handle TMDB numeric ids, objects {id,name}, strings
+  if (type === 'movie') {
+    if (Array.isArray(item?.genres)) {
+      item.genres.forEach((entry) => {
+        if (entry && typeof entry === 'object') {
+          push(entry.name || entry.title || entry.genre);
+        } else if (entry && !Number.isNaN(Number(entry))) {
+          const mapped = mapTmdbIdToName(entry);
+          if (mapped) push(mapped);
+        } else {
+          push(entry);
+        }
+      });
+    }
+
+    if (Array.isArray(item?.genre_ids)) {
+      item.genre_ids.forEach((id) => {
+        const mapped = mapTmdbIdToName(id);
+        if (mapped) push(mapped);
+      });
+    }
+
+    if (typeof item?.genres === 'string' && item.genres.includes(',')) {
+      item.genres.split(',').forEach((g) => push(g));
+    } else if (typeof item?.genres === 'string') {
+      push(item.genres);
+    }
+
+    if (typeof item?.genre === 'string') push(item.genre);
   }
-  if (typeof item?.genre === 'string') return [item.genre.trim()];
-  return [];
+
+  // BOOKS
+  else if (type === 'book') {
+    if (Array.isArray(item?.genres)) item.genres.forEach(push);
+    if (Array.isArray(item?.categories)) item.categories.forEach(push);
+    if (Array.isArray(item?.volumeInfo?.categories)) item.volumeInfo.categories.forEach(push);
+    if (typeof item?.genre === 'string') push(item.genre);
+    if (typeof item?.category === 'string') push(item.category);
+  }
+
+  // GAMES
+  else if (type === 'game') {
+    if (Array.isArray(item?.genres)) item.genres.forEach((g) => {
+      if (g && typeof g === 'object') push(g.name || g.genre);
+      else push(g);
+    });
+    if (Array.isArray(item?.tags)) item.tags.forEach((t) => push(t));
+    if (Array.isArray(item?.categories)) item.categories.forEach((c) => push(c));
+    if (typeof item?.genre === 'string') push(item.genre);
+  }
+
+  // MUSIC
+  else if (type === 'music') {
+    if (Array.isArray(item?.genres)) item.genres.forEach(push);
+    if (Array.isArray(item?.tags)) item.tags.forEach(push);
+    if (Array.isArray(item?.artistGenre)) item.artistGenre.forEach(push);
+    if (typeof item?.genre === 'string') push(item.genre);
+  }
+
+  // Fallback: generic fields
+  if (result.length === 0) {
+    if (Array.isArray(item?.genres)) item.genres.forEach(push);
+    if (typeof item?.genres === 'string') item.genres.split(',').forEach((g) => push(g));
+    if (typeof item?.genre === 'string') push(item.genre);
+  }
+
+  // Deduplicate and clean
+  const seen = new Set();
+  const final = [];
+  result.forEach((g) => {
+    const s = String(g).trim();
+    if (!s) return;
+    // skip numeric-only entries that couldn't be mapped
+    if (/^\d+$/.test(s)) return;
+    if (!seen.has(s)) {
+      seen.add(s);
+      final.push(s);
+    }
+  });
+
+  return final;
 };
 
 const parseRating = (item) => {
@@ -78,10 +188,10 @@ const parseRating = (item) => {
 const parseTitle = (item) => item?.title || item?.name || 'Untitled';
 
 const parseMeta = (item, type) => {
-  if (type === 'movie') return item?.director ? `Director: ${item.director}` : `Genre: ${parseGenres(item)[0] || 'N/A'}`;
-  if (type === 'book') return item?.author ? `Author: ${item.author}` : `Genre: ${parseGenres(item)[0] || 'N/A'}`;
-  if (type === 'game') return item?.developer ? `Developer: ${item.developer}` : `Genre: ${parseGenres(item)[0] || 'N/A'}`;
-  return item?.artist ? `Artist: ${item.artist}` : `Genre: ${parseGenres(item)[0] || 'N/A'}`;
+  if (type === 'movie') return item?.director ? `Director: ${item.director}` : `Genre: ${parseGenres(item, type)[0] || 'N/A'}`;
+  if (type === 'book') return item?.author ? `Author: ${item.author}` : `Genre: ${parseGenres(item, type)[0] || 'N/A'}`;
+  if (type === 'game') return item?.developer ? `Developer: ${item.developer}` : `Genre: ${parseGenres(item, type)[0] || 'N/A'}`;
+  return item?.artist ? `Artist: ${item.artist}` : `Genre: ${parseGenres(item, type)[0] || 'N/A'}`;
 };
 
 const parseImage = (item) => item?.poster || item?.cover || item?.image || item?.posterPath || IMAGE_FALLBACK;
@@ -103,7 +213,7 @@ const mapMedia = (rawItems, type) => rawItems.map((item, index) => {
     rating: parseRating(item),
     meta: parseMeta(item, normalizedType),
     image: parseImage(item),
-    genres: parseGenres(item),
+    genres: parseGenres(item, normalizedType),
     year: parseYear(item),
     source: item,
   };

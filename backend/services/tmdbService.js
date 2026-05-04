@@ -5,6 +5,30 @@ const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const TMDB_BASE_URL = process.env.TMDB_BASE_URL || 'https://api.themoviedb.org/3';
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500';
 
+const TMDB_MOVIE_GENRES = {
+  28: "Action",
+  12: "Adventure",
+  16: "Animation",
+  35: "Comedy",
+  80: "Crime",
+  99: "Documentary",
+  18: "Drama",
+  10751: "Family",
+  14: "Fantasy",
+  36: "History",
+  27: "Horror",
+  10402: "Music",
+  9648: "Mystery",
+  10749: "Romance",
+  878: "Sci-Fi",
+  10770: "TV Movie",
+  53: "Thriller",
+  10752: "War",
+  37: "Western",
+};
+
+const mapTmdbIdToName = (id) => TMDB_MOVIE_GENRES[Number(id)] || null;
+
 async function searchMovies(query) {
   try {
     const response = await axios.get(`${TMDB_BASE_URL}/search/movie`, {
@@ -23,7 +47,7 @@ async function searchMovies(query) {
       movieId: r.id,
       title: r.title,
       year: r.release_date ? parseInt(r.release_date.slice(0, 4), 10) : null,
-      genres: (r.genre_ids || []).map(String),
+      genres: (r.genre_ids || []).map((id) => mapTmdbIdToName(id)).filter(Boolean),
       avgRating: r.vote_average,
       ratingCount: r.vote_count,
       tmdbId: r.id,
