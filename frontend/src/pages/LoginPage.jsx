@@ -13,7 +13,7 @@ function LoginPage() {
   const toastApi = useToast();
   const shownLoginToast = useRef(false);
 
-  const fromPath = location.state?.from || '/profile';
+  const fromPath = location.state?.from || '/';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,7 +29,7 @@ function LoginPage() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      navigate('/profile', { replace: true });
+      navigate('/', { replace: true });
     }
   }, [loading, isAuthenticated, navigate]);
 
