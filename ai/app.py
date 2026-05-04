@@ -1,14 +1,15 @@
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+
+from ai.core.preprocessing import preprocess_query
+from ai.services.recommendation_pipeline import run_pipeline
+from ai.core.personalizer import apply_personalization
 
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
-
-from ai.services.recommendation_pipeline import run_pipeline
-from ai.core.personalizer import apply_personalization
 
 app = FastAPI()
 
@@ -38,6 +39,10 @@ def health():
 
 @app.get("/analyze")
 def analyze(query: str, top_n: int = 5, age_group: str | None = None, interest_mode: str | None = None):
+    cleaned_query_data = preprocess_query(query)
+    if not cleaned_query_data.get("cleaned_query") or not cleaned_query_data.get("keywords"):
+        raise HTTPException(status_code=400, detail="Please enter a valid recommendation query.")
+
     result = run_pipeline(query, top_n)
 
     try:

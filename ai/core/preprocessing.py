@@ -3,6 +3,25 @@ from typing import Dict, List
 
 from ai.utils.constants import STOPWORDS, CONTENT_TYPE_KEYWORDS
 
+BLOCKED_QUERY_TOKENS = {
+    "script",
+    "alert",
+    "ne",
+    "gt",
+    "lt",
+    "regex",
+    "function",
+    "onclick",
+    "html",
+    "body",
+    "iframe",
+    "select",
+    "drop",
+    "insert",
+    "update",
+    "delete",
+}
+
 
 SINGULAR_MEDIA_TERMS = {
     "movie",
@@ -55,11 +74,46 @@ EXPLICIT_CONTEXT_WORDS = {
 }
 
 
+def sanitize_query(text: str) -> str:
+    """Remove unsafe HTML, operator tokens, regex noise, and blocked keywords."""
+    if not text:
+        return ""
+
+    text = str(text)
+
+    # Remove script tags and payload entirely.
+    text = re.sub(r'(?is)<script.*?>.*?</script>', " ", text)
+    # Remove remaining HTML tags.
+    text = re.sub(r'(?is)<[^>]+>', " ", text)
+
+    # Remove operator-like tokens and JSON-looking fragments.
+    text = re.sub(r'\$[a-zA-Z_][a-zA-Z0-9_]*\b', " ", text)
+    text = re.sub(r'\b(?:false|true|null)\b', " ", text, flags=re.IGNORECASE)
+
+    # Remove blocked keywords and suspicious tokens.
+    text = re.sub(
+        r'(?i)\b(?:script|alert|ne|gt|lt|regex|function|onclick|html|body|iframe|select|drop|insert|update|delete)\b',
+        " ",
+        text,
+    )
+
+    # Remove commonly abused regex fragments and punctuation-only expressions.
+    text = re.sub(r'\(\s*[a-z0-9]+\s*\+\s*\)\+', " ", text, flags=re.IGNORECASE)
+    text = re.sub(r'\[\s*\]', " ", text)
+    text = re.sub(r'\{\s*\}', " ", text)
+    text = re.sub(r'\.\*', " ", text)
+    text = re.sub(r'[\[\]\{\}\(\)\|\\/\^\$\*\+\?\.<>=:;"\'`~]', " ", text)
+
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
 def normalize_text(text: str) -> str:
     """
     Lowercase and clean the text.
     Keep letters, numbers, and spaces only.
     """
+    text = sanitize_query(text)
     text = text.lower().strip()
     text = re.sub(r"[^a-z0-9\s]", " ", text)
     text = re.sub(r"\s+", " ", text)
@@ -77,7 +131,13 @@ def remove_stopwords(tokens: List[str]) -> List[str]:
     """
     Remove common words that do not add recommendation value.
     """
-    return [token for token in tokens if token not in STOPWORDS and len(token) > 1]
+    return [
+        token
+        for token in tokens
+        if token not in STOPWORDS
+        and token not in BLOCKED_QUERY_TOKENS
+        and len(token) > 1
+    ]
 
 
 def _normalized_keyword_map() -> Dict[str, set]:
@@ -151,6 +211,23 @@ def detect_content_types(content_type_scores: Dict[str, int], minimum_score: int
     ]
 
 
+def looks_like_ambiguous_media_phrase(tokens: List[str]) -> bool:
+    """
+    Detect phrases like 'game of thrones' where a singular media word is more
+    likely part of a title/entity phrase than a real request for that domain.
+    """
+    if len(tokens) < 3:
+        return False
+
+    first = tokens[0]
+    second = tokens[1]
+
+    if first in SINGULAR_MEDIA_TERMS and second in CONNECTOR_WORDS:
+        return True
+
+    return False
+
+
 def preprocess_query(query: str) -> Dict:
     """
     Main preprocessing function.
@@ -161,6 +238,7 @@ def preprocess_query(query: str) -> Dict:
     keywords = remove_stopwords(tokens)
     content_type_scores = build_content_type_scores(tokens)
     content_types = detect_content_types(content_type_scores)
+    ambiguous_entity_phrase = looks_like_ambiguous_media_phrase(tokens)
 
     return {
         "original_query": query,
@@ -169,4 +247,5 @@ def preprocess_query(query: str) -> Dict:
         "keywords": keywords,
         "content_type_scores": content_type_scores,
         "content_types": content_types,
+        "ambiguous_entity_phrase": ambiguous_entity_phrase,
     }

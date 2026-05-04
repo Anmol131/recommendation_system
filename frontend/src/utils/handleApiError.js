@@ -5,6 +5,7 @@ export function handleApiError(error, fallbackMessage = 'Something went wrong') 
   const resp = error.response?.data;
   if (resp) {
     if (typeof resp === 'string') return resp;
+    if (resp.detail) return resp.detail;
     if (resp.message) return resp.message;
     if (resp.error) return resp.error;
   }
