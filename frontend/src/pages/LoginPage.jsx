@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { Chrome, Lock, Mail } from 'lucide-react';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Lock, Mail } from 'lucide-react';
 import * as endpoints from '../api/endpoints';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -8,8 +8,11 @@ import { handleApiError } from '../utils/handleApiError';
 
 function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, isAuthenticated, loading } = useAuth();
   const toastApi = useToast();
+
+  const fromPath = location.state?.from?.pathname || '/profile';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,7 +20,7 @@ function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   if (!loading && isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/profile" replace />;
   }
 
   const handleSubmit = async (event) => {
@@ -29,7 +32,7 @@ function LoginPage() {
       const authPayload = await endpoints.login({ email, password });
       await login(authPayload);
       toastApi.show({ message: 'Login successful', type: 'success' });
-      navigate('/');
+      navigate(fromPath, { replace: true });
     } catch (apiError) {
       const msg = handleApiError(apiError, 'Login failed. Please try again.');
       setError(msg);
@@ -114,29 +117,6 @@ function LoginPage() {
                 {submitting ? 'LOGGING IN...' : 'LOGIN'}
               </button>
             </form>
-
-            <div className="relative my-8 flex items-center">
-              <div className="h-px flex-grow bg-light-surface-alt dark:bg-dark-surface-alt" />
-              <span className="mx-4 shrink-0 text-[10px] font-bold uppercase tracking-widest text-light-text-secondary/40 dark:text-dark-text-secondary/40">or continue with</span>
-              <div className="h-px flex-grow bg-light-surface-alt dark:bg-dark-surface-alt" />
-            </div>
-
-            <div className="mb-10 grid grid-cols-2 gap-4">
-              <button
-                type="button"
-                className="group flex items-center justify-center gap-2 rounded-lg border border-light-surface-alt dark:border-dark-surface-alt bg-light-surface dark:bg-dark-surface px-4 py-3 transition-all duration-200 hover:bg-light-surface-alt dark:hover:bg-dark-surface-alt shadow-sm"
-              >
-                <Chrome className="h-5 w-5 text-light-text-secondary/60 dark:text-dark-text-secondary/60 transition-colors group-hover:text-primary" />
-                <span className="text-xs font-semibold text-light-text-secondary/60 dark:text-dark-text-secondary/60">Google</span>
-              </button>
-              <button
-                type="button"
-                className="group flex items-center justify-center gap-2 rounded-lg border border-light-surface-alt dark:border-dark-surface-alt bg-light-surface dark:bg-dark-surface px-4 py-3 transition-all duration-200 hover:bg-light-surface-alt dark:hover:bg-dark-surface-alt shadow-sm"
-              >
-                <span className="text-sm font-bold text-light-text-secondary/60 dark:text-dark-text-secondary/60 transition-colors group-hover:text-primary">A</span>
-                <span className="text-xs font-semibold text-light-text-secondary/60 dark:text-dark-text-secondary/60">Apple</span>
-              </button>
-            </div>
 
             <div className="text-center">
               <p className="text-xs font-medium text-light-text-secondary dark:text-dark-text-secondary">

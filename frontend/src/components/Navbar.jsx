@@ -55,7 +55,7 @@ const Navbar = () => {
   const handleLogout = () => {
     setIsMenuOpen(false);
     logout();
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   const scrollToContactSection = (behavior = 'smooth') => {
