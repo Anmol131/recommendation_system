@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Lock, Mail } from 'lucide-react';
 import * as endpoints from '../api/endpoints';
 import { useAuth } from '../context/AuthContext';
@@ -11,16 +11,30 @@ function LoginPage() {
   const location = useLocation();
   const { login, isAuthenticated, loading } = useAuth();
   const toastApi = useToast();
+  const shownLoginToast = useRef(false);
 
-  const fromPath = location.state?.from?.pathname || '/profile';
+  const fromPath = location.state?.from || '/profile';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (location.state?.message && !shownLoginToast.current) {
+      toastApi.show({ message: location.state.message, type: 'info' });
+      shownLoginToast.current = true;
+    }
+  }, [location.state?.message, toastApi]);
+
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      navigate('/profile', { replace: true });
+    }
+  }, [loading, isAuthenticated, navigate]);
+
   if (!loading && isAuthenticated) {
-    return <Navigate to="/profile" replace />;
+    return null;
   }
 
   const handleSubmit = async (event) => {

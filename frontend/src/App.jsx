@@ -23,7 +23,6 @@ import AdminContentListPage from './pages/admin/AdminContentListPage';
 import AdminContentFormPage from './pages/admin/AdminContentFormPage';
 import AdminSearchLogsPage from './pages/admin/AdminSearchLogsPage';
 import AdminProtectedRoute from './components/admin/AdminProtectedRoute';
-import { useToast } from './context/ToastContext';
 
 function ScrollToTopOnRouteChange() {
   const location = useLocation();
@@ -39,22 +38,28 @@ function ScrollToTopOnRouteChange() {
   return null;
 }
 
+function getRedirectPath(location) {
+  if (!location) {
+    return '/profile';
+  }
+
+  const pathname = typeof location.pathname === 'string' ? location.pathname : '';
+  const search = typeof location.search === 'string' ? location.search : '';
+  const path = `${pathname}${search}`;
+
+  return path || '/profile';
+}
+
 function ProtectedRoute({ children }) {
   const { user, isLoading } = useAuth();
-  const toastApi = useToast();
-
-  useEffect(() => {
-    if (!isLoading && !user) {
-      toastApi.show({ message: 'Please login to continue', type: 'info' });
-    }
-  }, [isLoading, user, toastApi]);
+  const location = useLocation();
 
   if (isLoading) {
     return <div className="px-6 py-24 text-center text-muted">Loading...</div>;
   }
 
   if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: getRedirectPath(location) }} replace />;
   }
 
   return children;
