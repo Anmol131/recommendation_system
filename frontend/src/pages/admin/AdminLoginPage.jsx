@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, LogIn } from 'lucide-react';
 import * as api from '../../api/endpoints';
 import { useToast } from '../../context/ToastContext';
@@ -7,6 +7,7 @@ import { useAdminAuth } from '../../context/AdminAuthContext';
 
 function AdminLoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { adminUser, adminLoading, adminLogin } = useAdminAuth();
   const [formData, setFormData] = useState({
     email: '',
@@ -22,6 +23,12 @@ function AdminLoginPage() {
       navigate('/admin/dashboard');
     }
   }, [adminUser, adminLoading, navigate]);
+
+  useEffect(() => {
+    if (!adminLoading && !adminUser && location.state?.adminAccessRequired) {
+      toastApi.show({ message: 'Admin access required', type: 'error' });
+    }
+  }, [adminLoading, adminUser, location.state, toastApi]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

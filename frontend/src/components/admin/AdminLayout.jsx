@@ -11,8 +11,8 @@ function AdminLayout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   const handleAdminLogout = () => {
+    navigate('/admin/login', { replace: true });
     adminLogout();
-    navigate('/admin/login');
   };
 
   return (

@@ -1,21 +1,9 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAdminAuth } from '../../context/AdminAuthContext';
-import { useToast } from '../../context/ToastContext';
 
 function AdminProtectedRoute({ children }) {
   const { adminUser, adminLoading, adminLogout } = useAdminAuth();
-  const toastApi = useToast();
-
-  useEffect(() => {
-    if (adminLoading) return;
-
-    if (!adminUser) {
-      toastApi.show({ message: 'Admin access required', type: 'error' });
-    } else if (adminUser.role !== 'admin') {
-      toastApi.show({ message: 'Access denied', type: 'error' });
-    }
-  }, [adminLoading, adminUser, toastApi]);
 
   if (adminLoading) {
     return (
@@ -29,14 +17,14 @@ function AdminProtectedRoute({ children }) {
   }
 
   if (!adminUser) {
-    return <Navigate to="/admin/login" replace />;
+    return <Navigate to="/admin/login" replace state={{ adminAccessRequired: true }} />;
   }
 
   // Verify admin role
   if (adminUser.role !== 'admin') {
     // Clear invalid admin token and redirect
     adminLogout();
-    return <Navigate to="/admin/login" replace />;
+    return <Navigate to="/admin/login" replace state={{ adminAccessRequired: true }} />;
   }
 
   return children;
