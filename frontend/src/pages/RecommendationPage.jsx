@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Search, Sparkles, Wand2 } from 'lucide-react';
+import { Search, Sparkles, Wand2, Trash2 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { analyzeQuery } from '../api/endpoints';
 import RecommendationCard from '../components/RecommendationCard';
@@ -13,6 +13,9 @@ const EXAMPLE_QUERIES = [
   'Best songs by Drake',
 ];
 
+const CACHE_KEY = 'vibeify:lastAiRecommendation';
+const CACHE_TTL = 1000 * 60 * 30; // 30 minutes
+
 export default function RecommendationPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -20,9 +23,30 @@ export default function RecommendationPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [data, setData] = useState(null);
+  const mountedRef = useRef(false);
   const lastAutoQueryRef = useRef('');
   const inputRef = useRef(null);
   const toastApi = useToast();
+
+  // Helper: Save data to cache
+  const saveToCache = useCallback((submittedQuery, responseData) => {
+    try {
+      const cacheData = {
+        query: submittedQuery,
+        parsedQuery: responseData,
+        results: responseData?.results || [],
+        timestamp: Date.now(),
+      };
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+    } catch {
+      console.warn('Failed to save to sessionStorage');
+    }
+  }, []);
+
+  // Helper: Clear cache
+  const clearCache = useCallback(() => {
+    sessionStorage.removeItem(CACHE_KEY);
+  }, []);
 
   const runSearch = useCallback(async (searchQuery) => {
     if (!searchQuery.trim()) {
@@ -32,12 +56,18 @@ export default function RecommendationPage() {
       return;
     }
 
+    // Guard: if already loading, don't submit again
+    if (loading) {
+      return;
+    }
+
     try {
       setLoading(true);
       setError('');
       const loadingToastId = toastApi.showLoading({ message: 'Generating recommendations...' });
       const result = await analyzeQuery(searchQuery, 5);
       setData(result);
+      saveToCache(searchQuery, result);
       toastApi.update({ id: loadingToastId, message: 'Recommendations ready', type: 'success' });
       if (!result?.results?.length) {
         toastApi.show({ message: 'No recommendations found', type: 'info' });
@@ -50,18 +80,51 @@ export default function RecommendationPage() {
     } finally {
       setLoading(false);
     }
-  }, [toastApi]);
+  }, [loading, toastApi, saveToCache]);
 
+  // On mount, restore from cache if available
   useEffect(() => {
-    const incomingQuery = (searchParams.get('query') || '').trim();
+    if (mountedRef.current) return;
+    mountedRef.current = true;
 
-    if (!incomingQuery) return;
-    if (incomingQuery === lastAutoQueryRef.current) return;
+    // Call getCachedData directly without making it a dependency
+    const isCacheValid = () => {
+      try {
+        const cached = sessionStorage.getItem(CACHE_KEY);
+        if (!cached) return false;
+        const parsed = JSON.parse(cached);
+        const age = Date.now() - (parsed.timestamp || 0);
+        return age < CACHE_TTL;
+      } catch {
+        return false;
+      }
+    };
 
-    lastAutoQueryRef.current = incomingQuery;
-    setQuery(incomingQuery);
-    runSearch(incomingQuery);
-  }, [searchParams, runSearch]);
+    const getCachedDataForRestore = () => {
+      if (!isCacheValid()) {
+        sessionStorage.removeItem(CACHE_KEY);
+        return null;
+      }
+      try {
+        const cached = sessionStorage.getItem(CACHE_KEY);
+        return cached ? JSON.parse(cached) : null;
+      } catch {
+        return null;
+      }
+    };
+
+    const cached = getCachedDataForRestore();
+    const urlQuery = (searchParams.get('query') || '').trim();
+
+    if (cached) {
+      setQuery(cached.query);
+      setData(cached.parsedQuery);
+      lastAutoQueryRef.current = cached.query;
+    } else if (urlQuery) {
+      setQuery(urlQuery);
+      lastAutoQueryRef.current = urlQuery;
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -93,6 +156,14 @@ export default function RecommendationPage() {
     requestAnimationFrame(() => {
       inputRef.current?.focus();
     });
+  };
+
+  const handleClearResults = () => {
+    setQuery('');
+    setData(null);
+    setError('');
+    clearCache();
+    inputRef.current?.focus();
   };
 
   const hasSearched = Boolean(data);
@@ -141,7 +212,8 @@ export default function RecommendationPage() {
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-secondary px-5 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:shadow-xl active:scale-[0.99]"
+                  disabled={loading}
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-secondary px-5 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:shadow-xl active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <Wand2 size={16} />
                   {loading ? 'Searching...' : 'AI Recommend'}
@@ -149,17 +221,30 @@ export default function RecommendationPage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 pt-1">
-              {EXAMPLE_QUERIES.map((example) => (
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+              <div className="flex flex-wrap gap-2">
+                {EXAMPLE_QUERIES.map((example) => (
+                  <button
+                    key={example}
+                    type="button"
+                    onClick={() => handleExampleClick(example)}
+                    className="rounded-full border border-primary/20 bg-light-bg/90 px-3.5 py-1.5 text-xs font-medium text-light-text-secondary transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary dark:border-primary/25 dark:bg-dark-bg/70 dark:text-dark-text-secondary"
+                  >
+                    {example}
+                  </button>
+                ))}
+              </div>
+              {hasSearched && (
                 <button
-                  key={example}
                   type="button"
-                  onClick={() => handleExampleClick(example)}
-                  className="rounded-full border border-primary/20 bg-light-bg/90 px-3.5 py-1.5 text-xs font-medium text-light-text-secondary transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary dark:border-primary/25 dark:bg-dark-bg/70 dark:text-dark-text-secondary"
+                  onClick={handleClearResults}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-red-300/40 bg-red-50/60 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100/60 dark:border-red-800/40 dark:bg-red-950/40 dark:text-red-300 dark:hover:bg-red-950/60"
+                  aria-label="Clear results"
                 >
-                  {example}
+                  <Trash2 size={13} />
+                  Clear
                 </button>
-              ))}
+              )}
             </div>
           </form>
         </section>
