@@ -187,3 +187,5 @@ BENCHMARK_CASES = [
         "must_not_be_empty": True,
     },
 ]
+
+__all__ = ["BENCHMARK_CASES"]
