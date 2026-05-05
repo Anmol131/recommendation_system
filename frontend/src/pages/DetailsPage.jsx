@@ -228,27 +228,8 @@ function DetailsPage() {
     fetchData();
   }, [id, retryCount, type, isAuthenticated, authLoading]);
 
-  const handleShare = async () => {
-    const url = window.location.href;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: item?.title || 'Vibeify', text: item?.title || 'Vibeify content', url });
-        toastApi.show({ message: 'Share link opened', type: 'success' });
-        return;
-      } catch (shareError) {
-        if (shareError?.name !== 'AbortError') {
-          toastApi.show({ message: 'Share failed', type: 'error' });
-        }
-      }
-    }
-
-    try {
-      await navigator.clipboard.writeText(url);
-      toastApi.show({ message: 'Link copied to clipboard', type: 'success' });
-    } catch {
-      toastApi.show({ message: 'Share failed', type: 'error' });
-    }
+  const handleShare = () => {
+    toastApi.show({ message: 'Feature currently unavailable', type: 'info' });
   };
 
   const handleToggleSaved = async () => {
