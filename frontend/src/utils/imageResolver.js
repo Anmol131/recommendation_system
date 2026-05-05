@@ -1,26 +1,10 @@
 import { normalizeType } from './typeNormalizer';
 
 const FALLBACK_IMAGES = {
-  movie: [
-    '/placeholders/movie-1.svg',
-    '/placeholders/movie-2.svg',
-    '/placeholders/movie-3.svg',
-  ],
-  book: [
-    '/placeholders/book-1.svg',
-    '/placeholders/book-2.svg',
-    '/placeholders/book-3.svg',
-  ],
-  game: [
-    '/placeholders/game-1.svg',
-    '/placeholders/game-2.svg',
-    '/placeholders/game-3.svg',
-  ],
-  music: [
-    '/placeholders/music-1.svg',
-    '/placeholders/music-2.svg',
-    '/placeholders/music-3.svg',
-  ],
+  movie: '/placeholders/movie.png',
+  book: '/placeholders/book.png',
+  game: '/placeholders/game.png',
+  music: '/placeholders/music.png',
 };
 
 const IMAGE_FIELDS = [
@@ -66,34 +50,10 @@ const resolveImageField = (item) => {
   return '';
 };
 
-const hashString = (value) => {
-  if (!value || typeof value !== 'string') return 0;
-  let hash = 0;
-  for (let i = 0; i < value.length; i += 1) {
-    hash = (hash * 31 + value.charCodeAt(i)) | 0;
-  }
-  return Math.abs(hash);
-};
-
 export const resolveImageUrl = (item, type = 'movie', fallbackSeed = '') => {
   const detectedImage = resolveImageField(item);
   if (detectedImage) return detectedImage;
 
   const normalizedType = normalizeType(type) || 'movie';
-
-  const fallbackItems = FALLBACK_IMAGES[normalizedType] || FALLBACK_IMAGES.movie;
-  const seed = String(
-    fallbackSeed ||
-      item?.id ||
-      item?._id ||
-      item?.trackId ||
-      item?.isbn ||
-      item?.gameId ||
-      item?.tmdbId ||
-      item?.title ||
-      item?.name ||
-      '',
-  );
-  const index = hashString(seed) % fallbackItems.length;
-  return fallbackItems[index];
+  return FALLBACK_IMAGES[normalizedType] || FALLBACK_IMAGES.movie;
 };
