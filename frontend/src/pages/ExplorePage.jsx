@@ -193,7 +193,7 @@ const parseMeta = (item, type) => {
   return item?.artist ? `Artist: ${item.artist}` : `Genre: ${parseGenres(item, type)[0] || 'N/A'}`;
 };
 
-const parseImage = (item, type, index) => resolveImageUrl(item, type, item?.id ?? item?._id ?? item?.trackId ?? item?.isbn ?? item?.gameId ?? `${type}-${index}`);
+const parseImage = (item, type) => resolveImageUrl(item, type);
 
 const parseId = (item, type) => {
   if (type === 'movie') return item?.movieId ?? item?.tmdbId ?? item?.id ?? item?._id;
@@ -211,7 +211,7 @@ const mapMedia = (rawItems, type) => rawItems.map((item, index) => {
     title: parseTitle(item),
     rating: parseRating(item),
     meta: parseMeta(item, normalizedType),
-    image: parseImage(item, normalizedType, index),
+    image: parseImage(item, normalizedType),
     genres: parseGenres(item, normalizedType),
     year: parseYear(item),
     source: item,
