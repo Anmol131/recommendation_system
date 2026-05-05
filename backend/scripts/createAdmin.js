@@ -1,50 +1,54 @@
 #!/usr/bin/env node
+
 /**
  * Admin Account Creation Script
- * Usage: node backend/scripts/createAdmin.js
+ * Usage:
+ *   node backend/scripts/createAdmin.js
+ *
+ * Required backend/.env values:
+ *   ADMIN_EMAIL=your_admin_email@example.com
+ *   ADMIN_PASSWORD=your_secure_password
  */
 
-require('dotenv').config({ path: __dirname + '/../.env' });
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
+
 const mongoose = require('mongoose');
 const User = require('../models/User');
 const connectDB = require('../config/db');
 
 const createAdmin = async () => {
   try {
-    console.log('🔐 Admin Account Creation Script');
-    console.log('================================\n');
-    
+    const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+    if (!adminEmail || !adminPassword) {
+      throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be set in backend/.env');
+    }
+
+    if (adminPassword.length < 8) {
+      throw new Error('ADMIN_PASSWORD must be at least 8 characters long');
+    }
+
     await connectDB();
-    console.log('✅ Connected to MongoDB\n');
 
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@example.com';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    const existingAdmin = await User.findOne({ email: adminEmail });
 
-    // Check if admin already exists
-    const existingAdmin = await User.findOne({ email: adminEmail.toLowerCase() });
-    
     if (existingAdmin) {
       if (existingAdmin.role === 'admin') {
-        console.log(`ℹ️  Admin account already exists: ${adminEmail}`);
-        console.log(`   Email: ${existingAdmin.email}`);
-        console.log(`   Role: ${existingAdmin.role}`);
-        console.log(`   Verified: ${existingAdmin.isVerified}`);
+        console.log(`Admin account already exists: ${existingAdmin.email}`);
       } else {
-        console.log(`⚠️  User exists but is not an admin: ${adminEmail}`);
-        console.log('   Converting to admin...');
         existingAdmin.role = 'admin';
         existingAdmin.isVerified = true;
         await existingAdmin.save();
-        console.log('✅ User converted to admin successfully\n');
+
+        console.log(`Existing user converted to admin: ${existingAdmin.email}`);
       }
     } else {
-      console.log(`Creating admin account...`);
-      console.log(`   Email: ${adminEmail}`);
-      console.log(`   Password: ${adminPassword}\n`);
-
       const newAdmin = await User.create({
         name: 'Administrator',
-        email: adminEmail.toLowerCase(),
+        email: adminEmail,
         password: adminPassword,
         role: 'admin',
         isVerified: true,
@@ -54,25 +58,18 @@ const createAdmin = async () => {
         history: []
       });
 
-      console.log('✅ Admin account created successfully!\n');
-      console.log('Admin Details:');
-      console.log(`   Email: ${newAdmin.email}`);
-      console.log(`   Password: ${adminPassword}`);
-      console.log(`   Role: ${newAdmin.role}`);
-      console.log(`   ID: ${newAdmin._id}\n`);
+      console.log('Admin account created successfully.');
+      console.log(`Email: ${newAdmin.email}`);
+      console.log(`Role: ${newAdmin.role}`);
     }
 
-    console.log('📝 Next steps:');
-    console.log(`   1. Go to http://localhost:3000/admin/login`);
-    console.log(`   2. Use email: ${adminEmail}`);
-    console.log(`   3. Use password: ${adminPassword}`);
-    console.log(`   4. Change password after first login\n`);
-
-    process.exit(0);
+    console.log(`Admin login page: ${frontendUrl}/admin/login`);
   } catch (error) {
-    console.error('❌ Error creating admin account:');
+    console.error('Failed to create admin account.');
     console.error(error.message);
-    process.exit(1);
+    process.exitCode = 1;
+  } finally {
+    await mongoose.connection.close();
   }
 };
 
