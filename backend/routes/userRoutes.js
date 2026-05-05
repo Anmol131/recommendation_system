@@ -28,21 +28,9 @@ router.put('/profile/username', protect, updateUsername);
 router.put('/profile/password', protect, updatePassword);
 router.post('/history', addHistory);
 router.get('/history', getHistory);
-router.get('/favorites', (req, res, next) => {
-  console.log('GET /favorites route hit, user:', req.user?.id);
-  next();
-}, getFavorites);
-router.post('/favorites', (req, res, next) => {
-  console.log('POST /favorites route hit, user:', req.user?.id, 'body:', req.body);
-  next();
-}, addFavorite);
-router.delete('/favorites/:itemType/:itemId', (req, res, next) => {
-  console.log('DELETE /favorites route hit, user:', req.user?.id, 'params:', req.params);
-  next();
-}, removeFavorite);
-router.get('/favorites/check/:itemType/:itemId', (req, res, next) => {
-  console.log('GET /favorites/check route hit, user:', req.user?.id, 'params:', req.params);
-  next();
-}, checkFavorite);
+router.get('/favorites', getFavorites);
+router.post('/favorites', addFavorite);
+router.delete('/favorites/:itemType/:itemId', removeFavorite);
+router.get('/favorites/check/:itemType/:itemId', checkFavorite);
 
 module.exports = router;

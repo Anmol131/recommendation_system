@@ -211,8 +211,7 @@ function DetailsPage() {
           try {
             const favoriteCheck = await endpoints.checkFavorite(type, id);
             setIsFavorite(favoriteCheck?.isFavorite || false);
-          } catch (favError) {
-            console.warn('Could not check favorite status:', favError);
+          } catch {
             setIsFavorite(false);
           }
         } else {
@@ -242,7 +241,6 @@ function DetailsPage() {
         return;
       } catch (shareError) {
         if (shareError?.name !== 'AbortError') {
-          console.error('Share failed:', shareError);
           toastApi.show({ message: 'Share failed', type: 'error' });
         }
       }
@@ -251,8 +249,7 @@ function DetailsPage() {
     try {
       await navigator.clipboard.writeText(url);
       toastApi.show({ message: 'Link copied to clipboard', type: 'success' });
-    } catch (clipboardError) {
-      console.error('Clipboard copy failed:', clipboardError);
+    } catch {
       toastApi.show({ message: 'Share failed', type: 'error' });
     }
   };

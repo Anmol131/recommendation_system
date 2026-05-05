@@ -45,7 +45,6 @@ async function searchBooks(query) {
     });
 
     if (!response.data.items || response.data.items.length === 0) {
-      console.warn('[GoogleBooks] No results for query:', query);
       return [];
     }
     const items = response.data.items;

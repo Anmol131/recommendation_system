@@ -51,12 +51,6 @@ router.get('/analyze', optionalAuth, async (req, res) => {
   try {
     const { query, top_n } = req.query;
 
-    console.log('[recommendation] query received:', {
-      query,
-      top_n,
-      userId: req.user?._id || null,
-    });
-
     const aiResponse = await axios.get('http://localhost:8000/analyze', {
       params: { query, top_n },
       timeout: 30000,
@@ -92,14 +86,6 @@ router.get('/analyze', optionalAuth, async (req, res) => {
         resultsCount: results.length,
         userId: req.user?._id || null,
         createdAt: new Date(),
-      });
-
-      console.log('[recommendation] search log saved:', {
-        id: searchLog._id,
-        query: searchLog.query,
-        detectedType: searchLog.detectedType,
-        detectedIntent: searchLog.detectedIntent,
-        resultsCount: searchLog.resultsCount,
       });
     } catch (logError) {
       console.error('[recommendation] failed to save search log:', logError.message);

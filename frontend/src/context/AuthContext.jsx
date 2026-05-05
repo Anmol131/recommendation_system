@@ -72,9 +72,8 @@ export const AuthProvider = ({ children }) => {
           localStorage.setItem(AVATAR_STORAGE_KEY, resolvedAvatar);
           setUser(apiUser ? { ...apiUser, avatar: resolvedAvatar, bio: resolvedBio } : null);
         }
-      } catch (error) {
+      } catch {
         if (!cancelled) {
-          console.error('Failed to restore user session:', error);
           localStorage.removeItem(TOKEN_STORAGE_KEY);
           localStorage.removeItem(AVATAR_STORAGE_KEY);
           setToken(null);
@@ -96,38 +95,28 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = useCallback(async (emailOrPayload, password) => {
-    try {
-      const responseOrPayload =
-        typeof emailOrPayload === 'object' && emailOrPayload !== null
-          ? emailOrPayload
-          : await api.login(emailOrPayload, password);
+    const responseOrPayload =
+      typeof emailOrPayload === 'object' && emailOrPayload !== null
+        ? emailOrPayload
+        : await api.login(emailOrPayload, password);
 
-      const { token: newToken, user: rawUser } = normalizeAuthPayload(responseOrPayload);
-      if (!newToken || !rawUser) {
-        throw new Error('Invalid login response');
-      }
-
-      const resolvedAvatar = rawUser.avatar || getStoredAvatar();
-      const resolvedBio = typeof rawUser.bio === 'string' ? rawUser.bio : '';
-      localStorage.setItem(TOKEN_STORAGE_KEY, newToken);
-      setToken(newToken);
-      setUser({ ...rawUser, avatar: resolvedAvatar, bio: resolvedBio });
-      setUserAvatar(resolvedAvatar);
-      return responseOrPayload;
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
+    const { token: newToken, user: rawUser } = normalizeAuthPayload(responseOrPayload);
+    if (!newToken || !rawUser) {
+      throw new Error('Invalid login response');
     }
+
+    const resolvedAvatar = rawUser.avatar || getStoredAvatar();
+    const resolvedBio = typeof rawUser.bio === 'string' ? rawUser.bio : '';
+    localStorage.setItem(TOKEN_STORAGE_KEY, newToken);
+    setToken(newToken);
+    setUser({ ...rawUser, avatar: resolvedAvatar, bio: resolvedBio });
+    setUserAvatar(resolvedAvatar);
+    return responseOrPayload;
   }, [setUserAvatar]);
 
   const register = useCallback(async (name, email, password) => {
-    try {
-      const response = await api.register(name, email, password);
-      return response;
-    } catch (error) {
-      console.error('Registration failed:', error);
-      throw error;
-    }
+    const response = await api.register(name, email, password);
+    return response;
   }, [setUserAvatar]);
 
   const logout = useCallback(() => {

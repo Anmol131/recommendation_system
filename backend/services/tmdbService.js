@@ -40,7 +40,6 @@ async function searchMovies(query) {
       },
     });
 
-    console.log('[TMDB] total_results:', response.data.total_results);
     const results = response.data.results || [];
 
     const mapped = results.map((r) => ({

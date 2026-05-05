@@ -42,7 +42,7 @@ export default function RecommendationPage() {
       };
       sessionStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
     } catch {
-      console.warn('Failed to save to sessionStorage');
+      // Cache writes can fail in private browsing or storage-restricted environments.
     }
   }, []);
 

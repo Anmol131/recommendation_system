@@ -149,8 +149,7 @@ function HomePage() {
         const response = await endpoints.getMovies({ limit: 4, sort: 'rating' });
         const items = unwrapItems(response).map((item) => ({ ...item, type: 'movie' }));
         setTrendingItems(items.slice(0, 4));
-      } catch (error) {
-        console.error('Failed to load trending items:', error);
+      } catch {
         setTrendingItems([]);
       } finally {
         setLoadingTrending(false);
@@ -184,8 +183,7 @@ function HomePage() {
         }
 
         setRecommendedItems(mixed.slice(0, 4));
-      } catch (error) {
-        console.error('Failed to load recommended items:', error);
+      } catch {
         setRecommendedItems([]);
       } finally {
         setLoadingRecommended(false);

@@ -288,14 +288,8 @@ function ExplorePage() {
         let fetchedItems = [];
         let fetchedTotal = 0;
         
-        if (selectedType === 'games') {
-          console.log('[ExplorePage:GAMES] Loading games - appliedQuery:', appliedQuery, 'page:', page, 'location:', window.location.search);
-        }
-        console.log('[ExplorePage] Loading data for selectedType:', selectedType, 'appliedQuery:', appliedQuery, 'page:', page);
-
         if (selectedType === 'all') {
           if (appliedQuery) {
-            console.log('[ExplorePage] Searching all types with query:', appliedQuery);
             const [moviesRes, booksRes, gamesRes, musicRes] = await Promise.allSettled([
               SEARCH_REQUESTS.movies(appliedQuery),
               SEARCH_REQUESTS.books(appliedQuery),
@@ -312,10 +306,7 @@ function ExplorePage() {
 
             fetchedItems = [...movies, ...books, ...games, ...music];
             fetchedTotal = fetchedItems.length;
-            
-            console.log('[ExplorePage] Search results - movies:', movies.length, 'books:', books.length, 'games:', games.length, 'music:', music.length, 'total:', fetchedTotal);
           } else {
-            console.log('[ExplorePage] Browsing all types with limit per type:', 4);
             const limitPerType = 4;
             const [moviesRes, booksRes, gamesRes, musicRes] = await Promise.allSettled([
               LIST_REQUESTS.movies(page, limitPerType),
@@ -343,8 +334,6 @@ function ExplorePage() {
               unwrapTotal(gamesPayload, games.length),
               unwrapTotal(musicPayload, music.length),
             ].reduce((sum, value) => sum + value, 0);
-            
-            console.log('[ExplorePage] Browse results - movies:', movies.length, 'books:', books.length, 'games:', games.length, 'music:', music.length, 'total:', fetchedTotal);
           }
         } else {
           const typeMap = {
@@ -354,26 +343,19 @@ function ExplorePage() {
             music: 'music',
           };
           const normalizedType = typeMap[selectedType];
-          console.log('[ExplorePage] Loading specific type - selectedType:', selectedType, 'normalizedType:', normalizedType);
 
           if (appliedQuery) {
-            console.log('[ExplorePage] Searching type:', normalizedType, 'with query:', appliedQuery);
             const payload = await SEARCH_REQUESTS[selectedType](appliedQuery);
             if (fetchTokenRef.current !== token) return;
 
             fetchedItems = mapMedia(unwrapItems(payload), normalizedType);
             fetchedTotal = fetchedItems.length;
-            
-            console.log('[ExplorePage] Search type results - type:', normalizedType, 'count:', fetchedItems.length);
           } else {
-            console.log('[ExplorePage] Browse type:', normalizedType, 'with page:', page, 'limit: 16');
             const payload = await LIST_REQUESTS[selectedType](page, 16);
             if (fetchTokenRef.current !== token) return;
 
             fetchedItems = mapMedia(unwrapItems(payload), normalizedType);
             fetchedTotal = unwrapTotal(payload, fetchedItems.length);
-            
-            console.log('[ExplorePage] Browse type results - type:', normalizedType, 'count:', fetchedItems.length, 'total:', fetchedTotal);
           }
         }
 
@@ -381,13 +363,6 @@ function ExplorePage() {
         const displayItems = selectedType !== 'all' 
           ? fetchedItems.filter(item => normalizeType(selectedType) === item.type)
           : fetchedItems;
-        
-        if (selectedType === 'games') {
-          console.log('[ExplorePage:GAMES] After filtering - fetchedItems:', fetchedItems.length, 'displayItems:', displayItems.length, 'itemTypes:', displayItems.slice(0, 5).map(x => x.type));
-        }
-        if (displayItems.length < fetchedItems.length) {
-          console.log('[ExplorePage] Filtered items - before:', fetchedItems.length, 'after:', displayItems.length);
-        }
 
         setItems((current) => (isFirstPage ? displayItems : [...current, ...displayItems]));
         setTotalItems(fetchedTotal);
@@ -401,7 +376,6 @@ function ExplorePage() {
         }
       } catch (fetchError) {
         if (fetchTokenRef.current !== token) return;
-        console.error('[ExplorePage] Fetch error:', fetchError);
         if (page === 1) {
           setItems([]);
           setTotalItems(0);
@@ -435,7 +409,6 @@ function ExplorePage() {
     });
     
     const genres = ['All', ...Array.from(setOfGenres).sort((a, b) => a.localeCompare(b)).slice(0, 16)];
-    console.log('[ExplorePage] Available genres for type:', selectedType, 'count:', genres.length - 1);
     return genres;
   }, [items, selectedType]);
 
@@ -455,8 +428,6 @@ function ExplorePage() {
       const yearMatch = matchesYearBucket(item.year, selectedYears);
       return genreMatch && ratingMatch && yearMatch;
     });
-    
-    console.log('[ExplorePage] Filtered items - activeType:', selectedType, 'genre:', activeGenre, 'minRating:', minRating, 'result count:', result.length);
     return result;
   }, [activeGenre, items, minRating, selectedYears, selectedType]);
 

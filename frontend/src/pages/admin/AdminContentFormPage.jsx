@@ -64,7 +64,6 @@ function AdminContentFormPage() {
       const msg = handleApiError(err, 'Error loading content');
       setError(msg);
       toastApi.show({ message: 'Content loaded failed', type: 'error' });
-      console.error(err);
     } finally {
       setFetchLoading(false);
     }
@@ -120,7 +119,6 @@ function AdminContentFormPage() {
       const msg = handleApiError(err, 'Error saving content');
       setError(msg);
       toastApi.show({ message: msg, type: 'error' });
-      console.error(err);
     } finally {
       setLoading(false);
     }

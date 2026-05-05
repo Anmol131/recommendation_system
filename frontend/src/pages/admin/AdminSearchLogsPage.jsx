@@ -57,7 +57,6 @@ function AdminSearchLogsPage() {
       const message = handleApiError(err, 'Error loading search logs');
       setError(message);
       toastApi.show({ message: 'Search logs load failed', type: 'error' });
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -119,9 +118,7 @@ function AdminSearchLogsPage() {
         throw new Error('Admin token not found. Please login again.');
       }
 
-      console.log('Deleting log:', deleteTarget.id);
       const response = await api.deleteAdminSearchLog(deleteTarget.id);
-      console.log('Delete response:', response);
       
       if (response.success || response.message) {
         setLogs(logs.filter((log) => log._id !== deleteTarget.id));
@@ -130,7 +127,6 @@ function AdminSearchLogsPage() {
         throw new Error('Unexpected response format');
       }
     } catch (err) {
-      console.error('Full error object:', err);
       const errorMsg = 
         err.response?.data?.message || 
         err.message || 

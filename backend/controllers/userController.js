@@ -83,12 +83,7 @@ const updateAvatar = async (req, res) => {
 
 const updateBio = async (req, res) => {
   try {
-    console.log('Bio update route hit');
-    console.log('Body:', req.body);
-    console.log('User:', req.user?._id);
-
     if (typeof req.body?.bio !== 'string') {
-      console.log('Bio validation failed - not a string');
       return res.status(400).json({ success: false, message: 'Bio must be a string' });
     }
 
@@ -96,22 +91,17 @@ const updateBio = async (req, res) => {
     const bio = bioInput.trim();
 
     if (bio.length > 150) {
-      console.log('Bio validation failed - too long');
       return res.status(400).json({ success: false, message: 'Bio must be 150 characters or fewer' });
     }
 
     const user = await User.findById(req.user._id);
 
     if (!user) {
-      console.log('User not found:', req.user._id);
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    console.log('Updating bio from:', user.bio, 'to:', bio);
     user.bio = bio;
     await user.save();
-    
-    console.log('Bio updated successfully');
 
     const sanitizedUser = user.toObject();
     delete sanitizedUser.password;
@@ -249,7 +239,6 @@ const getHistory = async (req, res) => {
 
 const getFavorites = async (req, res) => {
   try {
-    console.log('getFavorites called for user:', req.user._id);
     const user = await User.findById(req.user._id).select('favorites');
 
     if (!user) {
@@ -266,7 +255,6 @@ const getFavorites = async (req, res) => {
 
 const addFavorite = async (req, res) => {
   try {
-    console.log('addFavorite called for user:', req.user._id, 'body:', req.body);
     const { itemId, itemType, title, imageUrl, year, rating, genre } = req.body;
 
     if (!itemId || !itemType || !title) {
@@ -321,7 +309,6 @@ const addFavorite = async (req, res) => {
 
 const removeFavorite = async (req, res) => {
   try {
-    console.log('removeFavorite called for user:', req.user._id, 'params:', req.params);
     const { itemType, itemId } = req.params;
 
     if (!itemType || !itemId) {
@@ -360,7 +347,6 @@ const removeFavorite = async (req, res) => {
 
 const checkFavorite = async (req, res) => {
   try {
-    console.log('checkFavorite called for user:', req.user._id, 'params:', req.params);
     const { itemType, itemId } = req.params;
 
     if (!itemType || !itemId) {

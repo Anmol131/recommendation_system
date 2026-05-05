@@ -79,7 +79,6 @@ function AdminUsersPage() {
       const message = handleApiError(err, 'Failed to load users');
       setError(message);
       toastApi.show({ message: 'Users loaded failed', type: 'error' });
-      console.error('Failed to load users:', err);
     } finally {
       setLoading(false);
     }

@@ -40,7 +40,6 @@ const mapTrack = (track, topTags = []) => ({
 
 const upsertTrack = async (mapped) => {
   if (!mapped.lastfmId) {
-    console.warn('[LastFM] Skipping track with no lastfmId:', mapped.title);
     return null;
   }
   return Music.findOneAndUpdate(
@@ -59,7 +58,6 @@ async function searchTracks(query, limit = 20) {
   const total = parseInt(response.data?.results?.['opensearch:totalResults'] || 0);
 
   if (!tracks || tracks.length === 0) {
-    console.warn('[LastFM] No results for query:', query);
     return { results: [], total: 0 };
   }
 
@@ -142,7 +140,6 @@ async function getSimilarTracks(artist, track, limit = 10) {
 
 async function testConnection() {
   const { results } = await searchTracks('coldplay', 2);
-  console.log('[LastFM] testConnection results:', results.length);
   return results.length > 0;
 }
 

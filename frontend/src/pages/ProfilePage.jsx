@@ -120,7 +120,6 @@ function ProfilePage() {
       setFavorites(Array.isArray(data) ? data : []);
     } catch (err) {
       const msg = handleApiError(err, 'Failed to load favorites');
-      console.warn('Failed to load favorites:', err);
       toastApi.show({ message: msg, type: 'error' });
       setFavorites([]);
     } finally {
@@ -180,8 +179,6 @@ function ProfilePage() {
 
     try {
       const trimmedBio = bioDraft.trim();
-      console.log('Updating bio:', trimmedBio);
-      
       const response = await endpoints.updateBio(trimmedBio);
       const data = toProfileData(response);
 
@@ -197,7 +194,6 @@ function ProfilePage() {
       setIsEditingBio(false);
       toastApi.show({ message: 'Bio updated successfully', type: 'success' });
     } catch (err) {
-      console.error('Bio update error:', err);
       const msg = handleApiError(err, 'Failed to update bio. Please try again.');
       setBioError(msg);
       toastApi.show({ message: msg, type: 'error' });

@@ -742,15 +742,6 @@ const getSearchLogs = async (req, res) => {
 
 		let query = {};
 
-		console.log('[admin] fetching search logs:', {
-			page: pageNum,
-			limit: limitNum,
-			type,
-			search,
-			startDate,
-			endDate,
-		});
-
 		if (searchValue) {
 			query.query = { $regex: escapeRegex(searchValue), $options: 'i' };
 		}

@@ -53,7 +53,6 @@ function AdminContentListPage() {
       const msg = handleApiError(err, 'Error loading content');
       setError(msg);
       toastApi.show({ message: 'Content loaded failed', type: 'error' });
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -72,7 +71,7 @@ function AdminContentListPage() {
       } else {
         toastApi.show({ message: 'Failed to delete content', type: 'error' });
       }
-    } catch (err) {
+    } catch {
       toastApi.show({ message: 'Error deleting content', type: 'error' });
     }
   };

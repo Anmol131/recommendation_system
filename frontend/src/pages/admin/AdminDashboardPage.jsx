@@ -29,7 +29,6 @@ function AdminDashboardPage() {
       const msg = handleApiError(err, 'Error loading dashboard');
       setError(msg);
       toastApi.show({ message: 'Dashboard stats load failed', type: 'error' });
-      console.error(err);
     } finally {
       setLoading(false);
     }

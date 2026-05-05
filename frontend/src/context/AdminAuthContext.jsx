@@ -53,9 +53,8 @@ export const AdminAuthProvider = ({ children }) => {
         if (!cancelled) {
           setAdminUser(apiAdminUser);
         }
-      } catch (error) {
+      } catch {
         if (!cancelled) {
-          console.error('Failed to restore admin session:', error);
           localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
           localStorage.removeItem(ADMIN_USER_STORAGE_KEY);
           setAdminToken(null);
@@ -77,26 +76,21 @@ export const AdminAuthProvider = ({ children }) => {
   }, [toastApi]);
 
   const adminLogin = useCallback(async (emailOrPayload, password) => {
-    try {
-      const responseOrPayload =
-        typeof emailOrPayload === 'object' && emailOrPayload !== null
-          ? emailOrPayload
-          : await api.adminLogin(emailOrPayload, password);
+    const responseOrPayload =
+      typeof emailOrPayload === 'object' && emailOrPayload !== null
+        ? emailOrPayload
+        : await api.adminLogin(emailOrPayload, password);
 
-      const { adminToken: newAdminToken, adminUser: rawAdminUser } = normalizeAdminAuthPayload(responseOrPayload);
-      if (!newAdminToken || !rawAdminUser) {
-        throw new Error('Invalid admin login response');
-      }
-
-      localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, newAdminToken);
-      localStorage.setItem(ADMIN_USER_STORAGE_KEY, JSON.stringify(rawAdminUser));
-      setAdminToken(newAdminToken);
-      setAdminUser(rawAdminUser);
-      return responseOrPayload;
-    } catch (error) {
-      console.error('Admin login failed:', error);
-      throw error;
+    const { adminToken: newAdminToken, adminUser: rawAdminUser } = normalizeAdminAuthPayload(responseOrPayload);
+    if (!newAdminToken || !rawAdminUser) {
+      throw new Error('Invalid admin login response');
     }
+
+    localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, newAdminToken);
+    localStorage.setItem(ADMIN_USER_STORAGE_KEY, JSON.stringify(rawAdminUser));
+    setAdminToken(newAdminToken);
+    setAdminUser(rawAdminUser);
+    return responseOrPayload;
   }, []);
 
   const adminLogout = useCallback(() => {
