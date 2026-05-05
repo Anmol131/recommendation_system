@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight, Sparkles, Star } from 'lucide-react';
+import { resolveImageUrl } from '../utils/typeNormalizer';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=800';
 
@@ -68,7 +69,7 @@ export default function RecommendationCard({ item }) {
   const itemType = normalizeType(item.type);
   const itemId = getItemId(item, itemType);
   const typeMeta = TYPE_META[itemType] || TYPE_META.movie;
-  const imageSrc = item.poster || item.posterPath || item.image || item.cover || item.albumArt || item.thumbnail || FALLBACK_IMAGE;
+  const imageSrc = resolveImageUrl(item) || FALLBACK_IMAGE;
   const creatorInfo = getCreatorInfo(item, itemType);
   const genres = toTags(item);
   const rating = toRating(item);

@@ -2,7 +2,7 @@
 import { Search, Sparkles, Star } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import * as endpoints from '../api/endpoints';
-import { normalizeType, typeToLabel, normalizeTypeForUI } from '../utils/typeNormalizer';
+import { normalizeType, typeToLabel, normalizeTypeForUI, resolveImageUrl } from '../utils/typeNormalizer';
 import { useToast } from '../context/ToastContext';
 import { handleApiError } from '../utils/handleApiError';
 
@@ -194,7 +194,7 @@ const parseMeta = (item, type) => {
   return item?.artist ? `Artist: ${item.artist}` : `Genre: ${parseGenres(item, type)[0] || 'N/A'}`;
 };
 
-const parseImage = (item) => item?.poster || item?.cover || item?.image || item?.posterPath || IMAGE_FALLBACK;
+const parseImage = (item) => resolveImageUrl(item) || IMAGE_FALLBACK;
 
 const parseId = (item, type) => {
   if (type === 'movie') return item?.movieId ?? item?.tmdbId ?? item?.id ?? item?._id;
