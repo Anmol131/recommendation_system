@@ -82,13 +82,3 @@ export const typeToLabel = (type) => {
   return 'Unknown';
 };
 
-export const resolveImageUrl = (item) => {
-  if (!item || typeof item !== 'object') return '';
-
-  return item?.imageUrl || item?.image || item?.image_url
-    || item?.thumbnail || item?.thumbnailUrl || item?.thumbnail_url
-    || item?.coverImage || item?.coverUrl || item?.cover_image || item?.cover_url
-    || item?.artworkUrl || item?.artwork_url || item?.albumImage || item?.album_image
-    || item?.poster || item?.posterUrl || item?.poster_url || item?.posterPath || item?.backdropPath
-    || item?.cover || item?.background_image || item?.backgroundImage || item?.albumArt || item?.artwork || '';
-};

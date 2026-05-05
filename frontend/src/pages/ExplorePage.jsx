@@ -2,7 +2,8 @@
 import { Search, Sparkles, Star } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import * as endpoints from '../api/endpoints';
-import { normalizeType, typeToLabel, normalizeTypeForUI, resolveImageUrl } from '../utils/typeNormalizer';
+import { normalizeType, typeToLabel, normalizeTypeForUI } from '../utils/typeNormalizer';
+import { resolveImageUrl } from '../utils/imageResolver';
 import { useToast } from '../context/ToastContext';
 import { handleApiError } from '../utils/handleApiError';
 
@@ -36,8 +37,6 @@ const TYPE_LABEL = {
   game: 'Game',
   music: 'Music',
 };
-
-const IMAGE_FALLBACK = 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=800';
 
 const unwrapItems = (payload) => {
   if (!payload) return [];
@@ -194,7 +193,7 @@ const parseMeta = (item, type) => {
   return item?.artist ? `Artist: ${item.artist}` : `Genre: ${parseGenres(item, type)[0] || 'N/A'}`;
 };
 
-const parseImage = (item) => resolveImageUrl(item) || IMAGE_FALLBACK;
+const parseImage = (item, type, index) => resolveImageUrl(item, type, item?.id ?? item?._id ?? item?.trackId ?? item?.isbn ?? item?.gameId ?? `${type}-${index}`);
 
 const parseId = (item, type) => {
   if (type === 'movie') return item?.movieId ?? item?.tmdbId ?? item?.id ?? item?._id;
@@ -212,7 +211,7 @@ const mapMedia = (rawItems, type) => rawItems.map((item, index) => {
     title: parseTitle(item),
     rating: parseRating(item),
     meta: parseMeta(item, normalizedType),
-    image: parseImage(item),
+    image: parseImage(item, normalizedType, index),
     genres: parseGenres(item, normalizedType),
     year: parseYear(item),
     source: item,

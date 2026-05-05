@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle, ArrowRight, Bookmark, BookmarkCheck, ChevronLeft, Play, RefreshCw, Share2, Sparkles } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import * as endpoints from '../api/endpoints';
-import { resolveImageUrl } from '../utils/typeNormalizer';
+import { resolveImageUrl } from '../utils/imageResolver';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
@@ -279,7 +279,7 @@ function DetailsPage() {
           itemId: id,
           itemType: type,
           title: item.title || item.name || 'Untitled',
-          imageUrl: resolveImageUrl(item) || '',
+          imageUrl: resolveImageUrl(item, type) || '',
           year: item.year || item.releaseDate || item.publishedYear || '',
           rating: item.rating || item.avgRating || item.averageRating || null,
           genre: item.genre || (item.genres && item.genres[0]) || '',
@@ -421,7 +421,7 @@ function DetailsPage() {
             <div className="relative">
               <div className="aspect-[2/3] overflow-hidden rounded-l-[2rem] lg:rounded-l-[2rem] lg:rounded-r-none bg-light-surface-alt dark:bg-dark-surface-alt">
                 <img
-                  src={resolveImageUrl(item) || FALLBACK_IMAGE}
+                  src={resolveImageUrl(item, type) || FALLBACK_IMAGE}
                   alt={item?.title || 'Content artwork'}
                   className="h-full w-full object-cover"
                 />
@@ -570,7 +570,7 @@ function DetailsPage() {
                   imageUrl: FALLBACK_IMAGE,
                 }))
               : similar.slice(0, 4)).map((card) => {
-              const imageUrl = card.imageUrl || card.poster || FALLBACK_IMAGE;
+              const imageUrl = card._placeholder ? FALLBACK_IMAGE : resolveImageUrl(card, card.type || type);
               const label = card._placeholder ? 'Loading...' : card.title || 'Untitled';
               const metadata = card._placeholder
                 ? 'Finding matching mood'
