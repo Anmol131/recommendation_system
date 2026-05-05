@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { BarChart3, FileText, Search, Users } from 'lucide-react';
 
-function AdminSidebar({ isOpen, mobileMenuOpen, onMobileClose }) {
+function AdminSidebar({ mobileMenuOpen, onMobileClose }) {
   const location = useLocation();
 
   const menuItems = [

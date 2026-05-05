@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import * as api from '../api/endpoints';
 import { useToast } from './ToastContext';

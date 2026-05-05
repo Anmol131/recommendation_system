@@ -7,13 +7,6 @@ import { useToast } from '../context/ToastContext';
 import { handleApiError } from '../utils/handleApiError';
 import { AVATARS, AvatarDisplay } from '../constants/avatars';
 
-const fallbackGenres = {
-  movie: 'Cinema',
-  book: 'Literature',
-  game: 'Action RPG',
-  music: 'Alt Mix',
-};
-
 function toProfileData(response) {
   if (!response) {
     return null;

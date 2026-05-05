@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, ArrowRight, Bookmark, BookmarkCheck, ChevronLeft, Play, RefreshCw, Share2, Sparkles } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import * as endpoints from '../api/endpoints';
@@ -160,14 +160,11 @@ function DetailsPage() {
   const { type, id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const similarSectionRef = useRef(null);
-
   const [item, setItem] = useState(null);
   const [similar, setSimilar] = useState([]);
   const [loading, setLoading] = useState(true);
   const [similarLoading, setSimilarLoading] = useState(true);
   const [error, setError] = useState('');
-  const [saved, setSaved] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
@@ -310,10 +307,6 @@ function DetailsPage() {
     } else {
       navigate('/explore');
     }
-  };
-
-  const scrollToSimilar = () => {
-    similarSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const actionButtons = useMemo(() => getActionButtons(item || {}, type), [item, type]);

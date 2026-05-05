@@ -34,7 +34,7 @@ function AdminDashboardPage() {
     }
   };
 
-  const StatCard = ({ icon: Icon, label, value, color }) => (
+  const StatCard = ({ icon, label, value, color }) => (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border-l-4" style={{ borderColor: color }}>
       <div className="flex items-center justify-between">
         <div>
@@ -42,7 +42,7 @@ function AdminDashboardPage() {
           <p className="text-3xl font-bold text-gray-900 dark:text-white">{value ?? '—'}</p>
         </div>
         <div className="p-3 rounded-full" style={{ backgroundColor: `${color}20` }}>
-          <Icon size={32} style={{ color }} />
+          {React.createElement(icon, { size: 32, style: { color } })}
         </div>
       </div>
     </div>

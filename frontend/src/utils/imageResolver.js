@@ -50,7 +50,7 @@ const resolveImageField = (item) => {
   return '';
 };
 
-export const resolveImageUrl = (item, type = 'movie', fallbackSeed = '') => {
+export const resolveImageUrl = (item, type = 'movie') => {
   const detectedImage = resolveImageField(item);
   if (detectedImage) return detectedImage;
 
