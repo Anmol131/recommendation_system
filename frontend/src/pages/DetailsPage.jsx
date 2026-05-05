@@ -14,6 +14,21 @@ const TYPE_COPY = {
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=1200';
 
+const normalizeTypeLabel = (rawType) => {
+  const typeMap = {
+    movie: 'Movie',
+    movies: 'Movie',
+    book: 'Book',
+    books: 'Book',
+    music: 'Music',
+    musics: 'Music',
+    game: 'Game',
+    games: 'Game',
+  };
+  if (!rawType || typeof rawType !== 'string') return 'Content';
+  return typeMap[rawType.toLowerCase()] || `${rawType.charAt(0).toUpperCase()}${rawType.slice(1).toLowerCase()}`;
+};
+
 const cleanTitleForSearch = (title) => {
   if (!title || typeof title !== 'string') return '';
   let cleaned = title.trim();
@@ -158,6 +173,7 @@ function DetailsPage() {
   const toastApi = useToast();
 
   const typeInfo = TYPE_COPY[type] || TYPE_COPY.movie;
+  const typeLabel = normalizeTypeLabel(type);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -419,7 +435,7 @@ function DetailsPage() {
                   { label: item?.rating ? `★ ${item.rating}` : null },
                   { label: item?.year || item?.releaseDate },
                   { label: item?.genre || (item?.genres && item.genres[0]) },
-                  { label: typeInfo.label.slice(0, -1) },
+                  { label: typeLabel },
                 ].filter(badge => badge.label).map((badge) => (
                   <span
                     key={badge.label}
@@ -484,7 +500,7 @@ function DetailsPage() {
                 <h2 className="mb-4 text-lg font-semibold text-light-text dark:text-dark-text">Details</h2>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {[
-                    { label: 'Type', value: typeInfo.label.slice(0, -1) || 'Content' },
+                    { label: 'Type', value: typeLabel || 'Content' },
                     { label: 'Genre', value: item?.genre || (item?.genres && item.genres[0]) || 'N/A' },
                     { label: 'Language', value: item?.language || 'N/A' },
                     { label: 'Rating', value: item?.rating || 'N/A' },
