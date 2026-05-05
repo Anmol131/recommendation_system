@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle, ArrowRight, Bookmark, BookmarkCheck, ChevronLeft, Play, RefreshCw, Share2, Sparkles } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import * as endpoints from '../api/endpoints';
+import { resolveImageUrl } from '../utils/typeNormalizer';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
@@ -278,7 +279,7 @@ function DetailsPage() {
           itemId: id,
           itemType: type,
           title: item.title || item.name || 'Untitled',
-          imageUrl: item.imageUrl || item.poster || item.thumbnail || item.cover || item.background_image || '',
+          imageUrl: resolveImageUrl(item) || '',
           year: item.year || item.releaseDate || item.publishedYear || '',
           rating: item.rating || item.avgRating || item.averageRating || null,
           genre: item.genre || (item.genres && item.genres[0]) || '',
@@ -420,7 +421,7 @@ function DetailsPage() {
             <div className="relative">
               <div className="aspect-[2/3] overflow-hidden rounded-l-[2rem] lg:rounded-l-[2rem] lg:rounded-r-none bg-light-surface-alt dark:bg-dark-surface-alt">
                 <img
-                  src={item?.imageUrl || item?.poster || item?.cover || item?.thumbnail || item?.background_image || FALLBACK_IMAGE}
+                  src={resolveImageUrl(item) || FALLBACK_IMAGE}
                   alt={item?.title || 'Content artwork'}
                   className="h-full w-full object-cover"
                 />
